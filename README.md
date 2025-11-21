@@ -98,6 +98,8 @@ cdl ..              # cd to the parent directory and list it
 cdl ~               # cd to the previous directory ($OLD_PWD) and list it
 ```
 
+<img width="1717" height="788" alt="image" src="https://github.com/user-attachments/assets/6e5dcd7e-c66d-4374-ba90-0393c7c6a7e3" />
+
 ### Use command output as a target directory
 
 Since pipelines run in subshells, use **command substitution** to let `cdl` actually change your current directory:
