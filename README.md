@@ -10,8 +10,8 @@ A small Bash helper that combines `cd` and a compact, colored `ls` into a single
 
 1. **`cd` + `ls` in one step**
 
-   * `cdl /path/to/dir` → change into `/path/to/dir` and show a listing.
-   * `cdl` with no arguments → go to `$HOME` and list it.
+   * `cdl /path/to/dir` -> change into `/path/to/dir` and show a listing.
+   * `cdl` with no arguments -> go to `$HOME` and list it.
 
 2. **Argument, stdin, or fallback**
 
