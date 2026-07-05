@@ -1,15 +1,21 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Name: cdl.sh
 # Author: Nikita Neverov (BMTLab)
-# Version: 1.0.0
-# Date: 2025-11-21
+# Version: 1.0.1
+# Date: 2026-07-03
 # License: MIT
 #
 # Description:
 #   Convenience helper that combines "cd" and a compact, colored "ls"
 #   into a single command. It changes directory and immediately prints
 #   a human-friendly listing of the target directory.
+#
+#   Compatibility:
+#     - Source it into bash or zsh (Linux and macOS);
+#       both shells are explicitly supported.
+#     - The rich two-column listing needs GNU ls (or gls);
+#       on BSD/macOS it degrades to a plain `ls -AlhG`.
 #
 #   Behavior:
 #     - With argument:
@@ -33,7 +39,7 @@
 #         Standard "ls -AlhG" output fallback to avoid crashes/parsing errors.
 #
 # Usage:
-#   # In your shell init (e.g., ~/.bashrc):
+#   # In your shell init (e.g., ~/.bashrc or ~/.zshrc):
 #   source /path/to/cdl.sh
 #
 #   # Then, interactively:
@@ -396,13 +402,33 @@ function cdl() {
   __cdl_print_listing
 }
 
-# Execution Guard:
-# This file must be sourced, not executed!
-# If executed as a script, print an error and exit with CDL_ERR_NOT_SOURCED.
-if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
+# Execution guard: this helper must be sourced, not executed.
+# Only a sourced function can change the parent shell's directory,
+# so running the file directly would do nothing useful.
+#
+# Detecting "sourced vs executed" is shell-specific,
+# so bash and zsh are handled explicitly:
+#   - zsh:  ZSH_EVAL_CONTEXT contains ':file' when sourced,
+#           and is plain 'toplevel' when executed.
+#   - bash: BASH_SOURCE[0] equals $0 only on direct execution.
+# Under any other shell we stay silent,
+# rather than risk a false "not sourced" error.
+__cdl_executed=0
+if [[ -n ${ZSH_VERSION-} ]]; then
+  case "${ZSH_EVAL_CONTEXT-}" in
+    *:file*) ;;            # sourced
+    *) __cdl_executed=1 ;; # executed as a script
+  esac
+elif [[ -n ${BASH_VERSION-} ]]; then
+  [[ ${BASH_SOURCE[0]} == "$0" ]] && __cdl_executed=1
+fi
+
+if [[ $__cdl_executed -eq 1 ]]; then
   error_msg='cdl.sh is a shell helper and must be sourced, not executed. '
   error_msg+="Run:  'source $0'"
   __cdl_error "$error_msg" "$CDL_ERR_NOT_SOURCED" \
     || exit "$?"
 fi
+
+unset __cdl_executed
 ### End

@@ -1,6 +1,6 @@
 # cdl
 
-A small Bash helper that combines `cd` and a compact, colored `ls` into a single interactive command.
+A small Bash/Zsh helper that combines `cd` and a compact, colored `ls` into a single interactive command.
 
 > It changes the current directory and immediately prints a clear, compact overview of its contents - showing names, sizes, timestamps and symlink targets, with directories first and a layout that adapts to your terminal width and the amount of content.
 
@@ -42,7 +42,8 @@ A small Bash helper that combines `cd` and a compact, colored `ls` into a single
 
 ## Requirements
 
-* **Bash** (uses `[[ ... ]]`, `local`, and other Bash features)
+* **Bash or Zsh** - the helper is sourced into your interactive shell and
+  uses only constructs both shells share (`[[ ... ]]`, `local`, `builtin`, `$'...'`).
 * Standard `ls` (GNU or BSD)
 
 Optional:
@@ -67,7 +68,7 @@ ln -s <path-to-cdl.sh>/cdl.sh <path-to-home>/.cdl.sh
 
 ### 2. Source it from your shell profile
 
-In `~/.bashrc` (or `~/.bash_profile` / `~/.profile` depending on your setup):
+In `~/.bashrc` or `~/.zshrc` (or `~/.bash_profile` / `~/.profile`, depending on your setup):
 
 ```bash
 if [[ -f "${HOME}/.cdl.sh" ]]; then
@@ -75,12 +76,13 @@ if [[ -f "${HOME}/.cdl.sh" ]]; then
 fi
 ```
 
+The same snippet works in both Bash and Zsh.
 Reload your shell configuration or open a new terminal.
 
 After that, `cdl` is available as a shell function.
 
 > [!IMPORTANT]
-> If you run `./cdl.sh` directly, it will print an error and exit with `CDL_ERR_NOT_SOURCED`. 
+> If you run `./cdl.sh` directly (under Bash or Zsh), it will print an error and exit with `CDL_ERR_NOT_SOURCED`.
 > The script must be **sourced**, because only a sourced function can change the parent shell's current directory.
 
 ---
