@@ -251,10 +251,19 @@ function install_packages() {
 
   if [[ $(uname -s) == 'Darwin' ]]; then
     HOMEBREW_NO_AUTO_UPDATE=1 brew install --quiet "$@"
-  else
-    sudo apt-get update -qq
-    sudo apt-get install -y -qq --no-install-recommends "$@" >/dev/null
+    return
   fi
+
+  # apt rebuilds the index of the man pages after an install,
+  # which takes long enough on the Ubuntu images of GitHub
+  # to run a job out of time; CI reads no man pages.
+  # The log names each step, so a stall shows where it is.
+  sudo rm -f /var/lib/man-db/auto-update
+  printf 'apt-get update\n'
+  sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq
+  printf 'apt-get install %s\n' "$*"
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+    --no-install-recommends "$@" >/dev/null
 }
 
 # endregion
