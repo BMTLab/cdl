@@ -61,6 +61,17 @@ jobs:
         with:
           persist-credentials: false
 
+      # The pinned downloads, .deb files and Homebrew bottles of earlier runs:
+      # install-tools.sh checks each download against its pinned digest,
+      # Homebrew each bottle against its formula,
+      # and the .deb files are those apt fetched and checked on a miss.
+      # The release job uses no cache, so none can reach what it publishes.
+      - name: 💾 Tool cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/cdl-ci
+          key: tools-${{ matrix.os }}-${{ matrix.packages }}-${{ hashFiles('tools/ci/install-tools.sh') }}
+
       - name: 🔧 Install tools
         env:
           PACKAGES: ${{ matrix.packages }}

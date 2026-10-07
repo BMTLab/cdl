@@ -330,6 +330,15 @@ the code of the recipe shows in its error line (`Error 71`).
   a download reaches the PATH only after its digest matches.
   To move one, change the version,
   and take the new digests from the release page.
+- A job keeps its tools and packages in a cache (`actions/cache`),
+  keyed by the runner image, the package list
+  and the hash of `tools/ci/install-tools.sh`.
+  A cached download is used only while it matches its pinned digest;
+  a package the image has already is not installed;
+  the .deb files of the others install from the cache with `dpkg`,
+  without `apt-get update`, which on a miss gets two minutes
+  and three attempts, since it stalls at times on Ubuntu 22.04.
+  The release job uses no cache.
 - The test matrix covers what cdl promises: Ubuntu 26.04 (uutils ls),
   24.04 (GNU ls), 22.04 (the oldest bash and zsh), and macOS 26 twice,
   with the BSD ls and `/bin/bash` 3.2, then with Homebrew's gls.

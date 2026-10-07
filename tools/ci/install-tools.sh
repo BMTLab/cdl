@@ -12,6 +12,12 @@
 #   and bats-core is checked out at a pinned commit,
 #   so a moved tag or a swapped asset cannot slip into a build.
 #
+#   The cache directory, which actions/cache keeps between runs,
+#   spares the network: a pinned download found there is used
+#   while it still matches its digest, the .deb files there install
+#   without apt-get update, and Homebrew keeps its bottles there,
+#   checked against the digests of its formulae.
+#
 # Usage:
 #   tools/ci/install-tools.sh TOOL...
 #
@@ -27,13 +33,15 @@
 #   GITHUB_PATH: set by GitHub Actions (and by nektos/act);
 #   without it, the tools still land in the tools directory,
 #   which the caller puts on PATH.
+#   CI_CACHE_DIR: the cache directory (default: ~/.cache/cdl-ci).
 #
 # Exit Codes:
 #   0: Success.
 #   10: INSTALL_ERR_USAGE
 #      No tool was named.
 #   11: INSTALL_ERR_DOWNLOAD
-#      A download failed or did not match its pinned digest.
+#      A download failed or did not match its pinned digest,
+#      or apt-get could not reach its mirrors.
 #   12: INSTALL_ERR_PLATFORM
 #      There is no pinned binary for this machine.
 
@@ -70,21 +78,35 @@ readonly BATS_COMMIT='eb7f42f8d608ac693d7a4b67474f6714ea68cfc5'
 
 # endregion
 
+# region Limits
+
+# apt-get update reaches the mirrors only on a cache miss,
+# and one that stalls, as it does at times on Ubuntu 22.04,
+# gets two minutes an attempt instead of the whole job.
+readonly APT_UPDATE_TIMEOUT_SECONDS=120
+readonly APT_UPDATE_ATTEMPTS=3
+
+# endregion
+
 TOOLS_PREFIX="${RUNNER_TEMP:-${HOME}/.local}/cdl-tools"
 readonly TOOLS_PREFIX
 readonly TOOLS_BIN="${TOOLS_PREFIX}/bin"
 
+CACHE_DIR="${CI_CACHE_DIR:-${HOME}/.cache/cdl-ci}"
+readonly CACHE_DIR
+
 DOWNLOADS="$(mktemp -d)"
 readonly DOWNLOADS
-trap 'rm -rf -- "$DOWNLOADS"' EXIT
+trap 'rm -rf -- "${DOWNLOADS}"' EXIT
 
 # region Helpers
 
 #######################################
-# Download a file and check it against its SHA-256 digest.
+# Download a file, or take it from the cache,
+# and check it against its SHA-256 digest.
 #
-# The file lands in a scratch directory;
-# only a file that matches its digest is handed on.
+# Only a file that matches its digest is handed on;
+# a cached file that does not is fetched again.
 #
 # Arguments:
 #   1: URL.
@@ -99,8 +121,14 @@ trap 'rm -rf -- "$DOWNLOADS"' EXIT
 function download_verified() {
   local -r url="$1"
   local -r expected="$2"
-  local -r file="${DOWNLOADS}/${url##*/}"
+  local -r file="${CACHE_DIR}/downloads/${url##*/}"
 
+  if [[ -f ${file} && $(sha256_of "${file}") == "${expected}" ]]; then
+    printf '%s\n' "${file}"
+    return 0
+  fi
+
+  mkdir -p "${file%/*}"
   if ! curl --fail --silent --show-error --location --retry 3 \
     --output "${file}" "${url}"; then
     ci_error "download failed: ${url}" "${INSTALL_ERR_DOWNLOAD}" || return
@@ -109,6 +137,7 @@ function download_verified() {
   local actual
   actual="$(sha256_of "${file}")"
   if [[ ${actual} != "${expected}" ]]; then
+    rm -f "${file}"
     ci_error "digest mismatch for ${url}: got ${actual}" "${INSTALL_ERR_DOWNLOAD}" || return
   fi
 
@@ -250,20 +279,144 @@ function install_packages() {
   fi
 
   if [[ $(uname -s) == 'Darwin' ]]; then
-    HOMEBREW_NO_AUTO_UPDATE=1 brew install --quiet "$@"
-    return
+    install_brew_packages "$@"
+  else
+    install_apt_packages "$@"
+  fi
+}
+
+#######################################
+# Install packages with Homebrew, which keeps its bottles in the cache
+# and checks each against the digest of its formula.
+#
+# Arguments:
+#   $@: Package names.
+#######################################
+function install_brew_packages() {
+  HOMEBREW_CACHE="${CACHE_DIR}/homebrew" HOMEBREW_NO_AUTO_UPDATE=1 \
+    brew install --quiet "$@"
+}
+
+#######################################
+# Install the packages the runner lacks, from the cache if it can.
+#
+# A package whose command is on the PATH already is left alone.
+# The .deb files of the others come from the cache;
+# only on a miss, or when they no longer install,
+# apt-get reaches the mirrors and fills the cache again.
+# The log names each step, so a stall shows where it is.
+#
+# Arguments:
+#   $@: Package names, each also the name of its command.
+#
+# Returns:
+#   0 on success; INSTALL_ERR_DOWNLOAD if the mirrors cannot be reached.
+#######################################
+function install_apt_packages() {
+  local -r debs="${CACHE_DIR}/apt"
+  local package
+  local -a missing=()
+
+  for package in "$@"; do
+    if ! command -v "${package}" >/dev/null; then
+      missing+=("${package}")
+    fi
+  done
+  if ((${#missing[@]} == 0)); then
+    printf 'apt: %s already installed\n' "$*"
+    return 0
   fi
 
   # apt rebuilds the index of the man pages after an install,
-  # which takes long enough on the Ubuntu images of GitHub
-  # to run a job out of time; CI reads no man pages.
-  # The log names each step, so a stall shows where it is.
+  # which can take minutes on the Ubuntu images of GitHub;
+  # CI reads no man pages.
   sudo rm -f /var/lib/man-db/auto-update
-  printf 'apt-get update\n'
-  sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq
-  printf 'apt-get install %s\n' "$*"
-  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
-    --no-install-recommends "$@" >/dev/null
+
+  if install_debs "${debs}"; then
+    printf 'apt: %s installed from the cache\n' "${missing[*]}"
+    return 0
+  fi
+
+  rm -rf "${debs}"
+  update_package_lists || return
+  download_debs "${debs}" "${missing[@]}" || return
+  if ! install_debs "${debs}"; then
+    ci_error "the .deb files of ${missing[*]} did not install" "${INSTALL_ERR_DOWNLOAD}" || return
+  fi
+}
+
+#######################################
+# Install the .deb files of a directory, if there are any.
+#
+# A cached file older than the version a newer runner image ships
+# is skipped rather than installed over it (--refuse-downgrade).
+#
+# Arguments:
+#   1: Directory of .deb files.
+#
+# Returns:
+#   0 once they are installed; 1 if there are none, or dpkg fails.
+#######################################
+function install_debs() {
+  local -r debs="$1"
+  local -a files=("${debs}"/*.deb)
+
+  if [[ ! -f ${files[0]} ]]; then
+    return 1
+  fi
+
+  printf 'dpkg -i %s\n' "${files[*]##*/}"
+  sudo DEBIAN_FRONTEND=noninteractive dpkg -i --refuse-downgrade "${files[@]}" >/dev/null
+}
+
+#######################################
+# Refresh the package lists of apt, in bounded attempts.
+#
+# Globals:
+#   APT_UPDATE_TIMEOUT_SECONDS, APT_UPDATE_ATTEMPTS (read).
+#
+# Returns:
+#   0 on success; INSTALL_ERR_DOWNLOAD after the last failed attempt.
+#######################################
+function update_package_lists() {
+  local -i attempt
+
+  for ((attempt = 1; attempt <= APT_UPDATE_ATTEMPTS; attempt++)); do
+    printf 'apt-get update, attempt %d of %d\n' "${attempt}" "${APT_UPDATE_ATTEMPTS}"
+    if timeout "${APT_UPDATE_TIMEOUT_SECONDS}" \
+      sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq; then
+      return 0
+    fi
+  done
+
+  ci_error "apt-get update failed ${APT_UPDATE_ATTEMPTS} times" "${INSTALL_ERR_DOWNLOAD}"
+}
+
+#######################################
+# Download the .deb files of packages and of the dependencies they lack.
+#
+# apt writes them as root;
+# actions/cache saves them as the runner, after the job.
+#
+# Arguments:
+#   1: Directory for the .deb files.
+#   $@: Package names.
+#
+# Returns:
+#   0 on success; INSTALL_ERR_DOWNLOAD otherwise.
+#######################################
+function download_debs() {
+  local -r debs="$1"
+  shift
+
+  mkdir -p "${debs}/partial"
+  printf 'apt-get install --download-only %s\n' "$*"
+  if ! sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
+    --download-only -o Dir::Cache::archives="${debs}" "$@" >/dev/null; then
+    ci_error "apt-get could not download $*" "${INSTALL_ERR_DOWNLOAD}" || return
+  fi
+  sudo rm -rf "${debs}/partial" "${debs}/lock"
+  sudo chown -R "$(id -u):$(id -g)" "${debs}"
 }
 
 # endregion
