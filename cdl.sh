@@ -16,7 +16,7 @@
 #     - The compact listing needs an ls that speaks GNU options:
 #       GNU ls, uutils ls, or Homebrew's gls.
 #       With BSD ls (the macOS default) cdl prints `ls -Alh` as is.
-#     - Any POSIX awk will do: gawk, mawk, BSD awk or busybox awk.
+#     - Any POSIX awk will do: gawk, mawk, BSD awk or busybox awk 1.34+.
 #
 #   Listing format (GNU-compatible ls):
 #     - On a terminal, a header line first:

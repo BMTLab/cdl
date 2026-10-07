@@ -41,6 +41,33 @@ function gnu_compatible_ls() {
 }
 
 #######################################
+# Tell whether busybox brings an awk that cdl supports: 1.34 or later.
+#
+# busybox rewrote the parser of its awk in 1.34;
+# the awk of 1.30, the busybox of Ubuntu 22.04,
+# loses functions of the program of cdl and fails on calling them.
+#
+# Returns:
+#   0 if it does; 1 otherwise.
+#######################################
+function supported_busybox_awk() {
+  local version
+
+  command -v busybox >/dev/null || return 1
+  busybox awk 'BEGIN {}' 2>/dev/null || return 1
+
+  # The first line of its help reads "BusyBox v1.37.0 (...) multi-call binary."
+  version="$(busybox 2>&1 | head -n 1)"
+  version="${version#BusyBox v}"
+  version="${version%% *}"
+  local -ir major="${version%%.*}"
+  version="${version#*.}"
+  local -ir minor="${version%%.*}"
+
+  ((major > 1 || (major == 1 && minor >= 34)))
+}
+
+#######################################
 # Skip the test unless a GNU-compatible ls is installed:
 # the compact listing needs one, and macOS has only the BSD ls.
 #######################################
@@ -95,7 +122,7 @@ function available_awks() {
       printf '%s\n' "${name}"
     fi
   done
-  if command -v busybox >/dev/null && busybox awk 'BEGIN {}' 2>/dev/null; then
+  if supported_busybox_awk; then
     printf 'busybox-awk\n'
   fi
   if command -v gawk >/dev/null && [[ ${SANDBOX_UTF8_LOCALE} != 'C' ]]; then

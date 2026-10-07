@@ -9,7 +9,8 @@
 #                   once alone and once with Homebrew's gls;
 #                   bats itself runs on Homebrew's bash,
 #                   while cdl runs on /bin/bash.
-# The awk tests run with every awk installed: gawk, mawk, busybox, BSD awk.
+# The awk tests run with every awk installed: gawk, mawk, busybox, BSD awk;
+# busybox from 1.34, so not the 1.30 of Ubuntu 22.04.
 
 name: Tests
 

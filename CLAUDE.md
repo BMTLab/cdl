@@ -212,7 +212,8 @@ A table holds short cells; a longer explanation goes below it, as a list.
 ### awk
 
 - POSIX awk only,
-  because the program runs under gawk, mawk, busybox awk and BSD awk:
+  because the program runs under gawk, mawk, busybox awk (1.34 and later,
+  as the parser of 1.30 loses functions) and BSD awk:
   no `gensub`, `strftime`, `length(array)`, `\x` escapes
   or regex intervals (`{n}`).
 - Byte mode: `cdl.sh` runs awk under `LC_ALL=C` and decodes UTF-8 by hand.

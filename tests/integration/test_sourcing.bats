@@ -286,6 +286,7 @@ done
   if [[ ${CDL_SHELL_KIND} != 'zsh' ]]; then
     skip 'zsh only'
   fi
+  require_gnu_compatible_ls
   local -r target="$(make_dir 'my target')"
   make_entries "${target}" 'entry'
 

@@ -45,7 +45,7 @@ echo '[[ -f ~/.cdl.sh ]] && source ~/.cdl.sh' >>~/.bashrc   # or ~/.zshrc
 
 Then open a new terminal and try `cdl ~`.
 
-cdl needs bash 3.2+ or zsh 5.0+, and any POSIX awk.
+cdl needs bash 3.2+ or zsh 5.0+, and any POSIX awk (busybox from 1.34).
 GNU `ls`, uutils `ls` or Homebrew's `gls` give the compact listing;
 with the BSD `ls` of macOS, cdl prints a plain `ls -Alh`
 (`brew install coreutils` brings `gls`).
