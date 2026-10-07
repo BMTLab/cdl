@@ -121,9 +121,10 @@ function in_terminal() {
   fi
 
   # The pty turns LF into CR LF, and the BSD script of macOS echoes
-  # the ^D it sends at the end of its stdin, with two backspaces.
+  # the ^D it sends at the end of its stdin: a caret, a D,
+  # and two backspaces over them.
   transcript="${transcript//$'\r'/}"
-  printf '%s\n' "${transcript//$'\004\b\b'/}"
+  printf '%s\n' "${transcript//$'^D\b\b'/}"
   return "${rc}"
 }
 

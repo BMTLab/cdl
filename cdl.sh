@@ -2096,7 +2096,8 @@ function __cdl_format_listing() {
       encoded = ""
       for (i = 1; i <= length(path); i++) {
         char = substr(path, i, 1)
-        encoded = encoded (char ~ /^[A-Za-z0-9._~\/-]$/ ? char : percent_escape(char))
+        if (char !~ /^[A-Za-z0-9._~\/-]$/) char = percent_escape(char)
+        encoded = encoded char
       }
       return encoded
     }
