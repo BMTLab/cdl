@@ -1,0 +1,71 @@
+# .github/workflows/ci-main.yml
+#
+# The entry point of CI.
+# It runs on pushes and pull requests to main, on version tags,
+# once a week (so a drifting runner image shows up without a push),
+# and by hand, and hands the work to reusable workflows:
+#   - ci-lint.yml:           ShellCheck, shfmt and the style tests;
+#   - ci-workflow-lint.yml:  actionlint and zizmor for these very files;
+#   - ci-test.yml:           the suite on Linux and macOS, in bash and zsh;
+#   - ci-release.yml:        the GitHub release of a version tag.
+#
+# Every action is pinned to a commit, with its version in a comment;
+# Dependabot keeps both up to date.
+
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*.*.*'
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+
+# A newer push to the same branch or pull request
+# cancels the run it makes obsolete.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+# Each job asks for what it needs, and nothing by default.
+permissions: {}
+
+jobs:
+  lint:
+    name: 🧹 Lint
+    uses: ./.github/workflows/ci-lint.yml
+    permissions:
+      contents: read
+
+  workflow-lint:
+    name: 🪝 Workflow lint
+    uses: ./.github/workflows/ci-workflow-lint.yml
+    permissions:
+      contents: read
+
+  test:
+    name: 🧪 Tests
+    uses: ./.github/workflows/ci-test.yml
+    permissions:
+      contents: read
+
+  release:
+    name: 🛳️ Release
+    needs:
+      - lint
+      - workflow-lint
+      - test
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    uses: ./.github/workflows/ci-release.yml
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    with:
+      tag: ${{ github.ref_name }}

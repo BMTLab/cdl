@@ -1,0 +1,40 @@
+# .editorconfig
+#
+# One source of formatting truth for editors and for shfmt:
+# shfmt reads the shell keys below when it runs without flags,
+# so `make format`, CI and IDE plugins all format the same way.
+
+root = true
+
+[*]
+charset                  = utf-8
+end_of_line              = lf
+insert_final_newline     = true
+trim_trailing_whitespace = true
+indent_style             = space
+indent_size              = 2
+
+# Shell: shfmt options (see `man shfmt`, section EditorConfig).
+[*.{sh,bash}]
+shell_variant      = bash
+binary_next_line   = true
+switch_case_indent = true
+
+# The test tools in tests/support/bin are shell scripts without an extension.
+[tests/support/bin/*]
+shell_variant      = bash
+binary_next_line   = true
+switch_case_indent = true
+
+[*.bats]
+shell_variant      = bats
+binary_next_line   = true
+switch_case_indent = true
+
+[{Makefile,*.mk}]
+indent_style = tab
+indent_size  = 4
+
+[*.md]
+# Two trailing spaces are a hard line break in Markdown.
+trim_trailing_whitespace = false

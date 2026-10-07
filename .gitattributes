@@ -1,15 +1,48 @@
-# Use LF for all text files in this (Unix-oriented) project
+# .gitattributes
+
+# ─── Line endings ───────────────────────────────────────────────────────
+# Text files are LF everywhere:
+# a cdl.sh checked out with CRLF fails in bash with `$'\r': command not found`.
 * text=auto eol=lf
 
-# Shell scripts
-*.sh   text eol=lf
-*.bash text eol=lf
-*.zsh  text eol=lf
+*.sh      text eol=lf diff=bash
+*.bash    text eol=lf diff=bash
+*.bats    text eol=lf diff=bash
+tests/support/bin/* text eol=lf diff=bash
+*.py      text eol=lf diff=python
+*.md      text eol=lf diff=markdown
+*.yml     text eol=lf
+Makefile  text eol=lf
 
-# Python scripts
-*.py   text eol=lf
+# ─── Binary assets ──────────────────────────────────────────────────────
+*.png     binary
+*.jpg     binary
+*.gif     binary
 
-# Docs / metadata
-*.md    text eol=lf diff=markdown
-*.txt   text eol=lf
-LICENSE text eol=lf
+# ─── GitHub language statistics ─────────────────────────────────────────
+# The suite is shell code too; Markdown is documentation.
+*.bats    linguist-language=Shell
+*.md      linguist-documentation
+
+# ─── Release tarball ────────────────────────────────────────────────────
+# `git archive` drops these, so the tarball of a release holds
+# what a user needs: cdl.sh and its documentation.
+# The Makefile goes too, since its targets need the tests and tools,
+# and so does the recipe of the demo; the GIF stays for the README.
+.editorconfig             export-ignore
+.gitattributes            export-ignore
+.github/                  export-ignore
+.gitignore                export-ignore
+.idea/                    export-ignore
+.markdownlint-cli2.jsonc  export-ignore
+.pre-commit-config.yaml   export-ignore
+.shellcheckrc             export-ignore
+.vscode/                  export-ignore
+CLAUDE.md                 export-ignore
+CONTRIBUTING.md           export-ignore
+Makefile                  export-ignore
+committed.toml            export-ignore
+docs/demo/demo.tape       export-ignore
+docs/demo/setup.bash      export-ignore
+tests/                    export-ignore
+tools/                    export-ignore

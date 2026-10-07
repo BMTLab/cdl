@@ -1,0 +1,57 @@
+# .github/workflows/ci-workflow-lint.yml
+#
+# Static analysis of the workflows themselves:
+#   - actionlint catches broken expressions, unknown inputs
+#     and, through ShellCheck, mistakes in `run:` blocks;
+#     both tools come pinned from tools/ci/install-tools.sh,
+#     and the findings go to the job log,
+#     which works for pull requests from forks too;
+#   - zizmor audits the workflows for security mistakes,
+#     such as template injection, unpinned actions or broad permissions.
+
+name: Workflow lint
+
+on:
+  workflow_call:
+
+permissions: {}
+
+jobs:
+  actionlint:
+    name: actionlint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+
+    steps:
+      - name: ⚙️ Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: 🔧 Install tools
+        run: tools/ci/install-tools.sh shellcheck actionlint
+
+      - name: 🪝 actionlint
+        run: actionlint -color
+
+  zizmor:
+    name: zizmor
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+
+    steps:
+      - name: ⚙️ Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: 🌈 zizmor
+        uses: zizmorcore/zizmor-action@cc914d7f3750a2d13d75c7f184a1060aa0e9d482 # v0.6.4
+        with:
+          # Findings fail the job and show in its log,
+          # without needing the code-scanning upload.
+          advanced-security: false

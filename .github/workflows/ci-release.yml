@@ -1,0 +1,73 @@
+# .github/workflows/ci-release.yml
+#
+# Publishes the GitHub release of a version tag, after lint and tests passed.
+# Each step runs one command of tools/ci/release.sh,
+# which names its failures with distinct exit codes:
+#   1. the tag must name the version in the header of cdl.sh;
+#   2. the release notes are the CHANGELOG section of that version;
+#   3. the assets are cdl.sh itself, for a one-line install,
+#      and a source tarball from `git archive`
+#      without the development files marked export-ignore,
+#      each with a SHA-256 file;
+#   4. gh publishes the release, which needs no third-party action;
+#   5. GitHub signs a build provenance for the assets,
+#      and gh verifies it, as a user would.
+
+name: Release
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: 'The version tag to release, e.g. v2.0.0'
+        required: true
+        type: string
+
+permissions: {}
+
+jobs:
+  release:
+    name: Release ${{ inputs.tag }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+
+    env:
+      TAG: ${{ inputs.tag }}
+      ASSETS_DIR: release-assets
+      NOTES_FILE: release-notes.md
+
+    steps:
+      - name: ⚙️ Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: 🔒 Check the tag against cdl.sh
+        run: tools/ci/release.sh check "${TAG}"
+
+      - name: 📝 Release notes
+        run: tools/ci/release.sh notes "${VERSION}" "${NOTES_FILE}"
+
+      - name: 📦 Assets
+        run: tools/ci/release.sh assets "${TAG}" "${ASSETS_DIR}"
+
+      - name: 🛳️ GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: tools/ci/release.sh publish "${TAG}" "${ASSETS_DIR}" "${NOTES_FILE}"
+
+      - name: 🔏 Build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: |
+            ${{ env.ASSETS_DIR }}/cdl.sh
+            ${{ env.ASSETS_DIR }}/cdl-${{ inputs.tag }}.tar.gz
+
+      - name: ✅ Verify the provenance
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: tools/ci/release.sh verify "${ASSETS_DIR}"

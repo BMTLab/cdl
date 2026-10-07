@@ -1,0 +1,48 @@
+# .github/workflows/ci-lint.yml
+#
+# ShellCheck, shfmt and the style tests, through the same make targets
+# a contributor runs, so CI and `make check` cannot disagree;
+# and markdownlint, through the action that bundles the markdownlint
+# of `make lint-md`, with every dependency pinned by its commit.
+# The job runs on Ubuntu 26.04, whose Python ships the Unicode version
+# the width table in cdl.sh was generated from,
+# so the table is really compared with its generator here.
+
+name: Lint
+
+on:
+  workflow_call:
+
+permissions: {}
+
+jobs:
+  lint:
+    name: ShellCheck, shfmt, markdownlint, style
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+      - name: ⚙️ Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: 🔧 Install tools
+        run: tools/ci/install-tools.sh shellcheck shfmt bats zsh
+
+      - name: ℹ️ Environment
+        run: tools/ci/report-environment.sh bash zsh
+
+      - name: 🔍 ShellCheck and zsh -n
+        run: make lint
+
+      - name: 🎨 shfmt
+        run: make format-check
+
+      - name: 📝 markdownlint
+        uses: DavidAnson/markdownlint-cli2-action@21c1be1b93ad9ed58fa840aacc3f279cde2a72ff # v24.2.0
+
+      - name: 📐 Style tests
+        run: make test-style

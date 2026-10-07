@@ -1,0 +1,8 @@
+# Issues start from one of the forms in this directory,
+# so every report arrives with the details it needs.
+blank_issues_enabled: false
+
+contact_links:
+  - name: 🔒 Security issue
+    url: https://github.com/BMTLab/cdl/blob/main/SECURITY.md
+    about: Report vulnerabilities privately, as the security policy explains.

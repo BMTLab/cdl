@@ -1,0 +1,197 @@
+#!/usr/bin/env bash
+
+# Name: tests/support/bin/zsh-completions
+# Author: Nikita Neverov (BMTLab)
+# License: MIT
+#
+# Description:
+#   Print what zsh offers to complete a command line,
+#   one candidate per line, sorted:
+#   the completion of cdl as a user meets it at the prompt.
+#
+#   An interactive zsh runs on a pseudo-terminal (the zpty module)
+#   with compinit and cdl.sh loaded.
+#   The line is typed only once its prompt shows,
+#   when the line editor owns the terminal;
+#   before that, the terminal would read control keys itself.
+#   A wrapper around compadd writes down every candidate it is handed,
+#   and a key bound to a widget after the Tab says
+#   when the completion is over, so nothing waits on a timer.
+#
+#   The zsh code lives in strings,
+#   because the linters of this repository read only bash.
+#
+# Usage:
+#   zsh-completions [--before-compinit] SCRIPT DIRECTORY LINE
+#   zsh-completions cdl.sh ~/work 'cdl p'   # pictures, projects, ...
+#
+#   --before-compinit sources SCRIPT first, then runs compinit,
+#   as an rc file may do.
+#
+# Environment:
+#   CDL_ZSH: the zsh to run (default: zsh from PATH).
+#
+# Exit Codes:
+#   0: Success.
+#   60: ZSH_COMPLETIONS_ERR_USAGE
+#      Unknown option, or not three arguments.
+#   61: ZSH_COMPLETIONS_ERR_TIMEOUT
+#      The completion did not finish within five seconds.
+
+set -o errexit -o nounset -o pipefail
+
+readonly ZSH_COMPLETIONS_ERR_USAGE=60
+readonly ZSH_COMPLETIONS_ERR_TIMEOUT=61
+
+# The line the widget below writes when the completion is over.
+readonly DONE_MARKER='--completion-done--'
+
+# The prompt of the session, which says the line editor is ready.
+readonly READY_PROMPT='<completion-ready>'
+
+# region zsh code
+
+# Sourced by the zsh on the pseudo-terminal, before the line is typed.
+# Its values arrive in the environment, so the code stays fixed text.
+# shellcheck disable=SC2016 # zsh expands these, not bash
+readonly SESSION_SETUP='
+bindkey -e
+if (( CDL_COMPLETION_BEFORE_COMPINIT )); then
+  source "$CDL_COMPLETION_SCRIPT"
+  autoload -Uz compinit && compinit -u -D
+else
+  autoload -Uz compinit && compinit -u -D
+  source "$CDL_COMPLETION_SCRIPT"
+fi
+cd "$CDL_COMPLETION_DIRECTORY"
+
+# Write down the candidates of each compadd call that adds them;
+# the calls that only test words (-O, -A, -D) pass straight through.
+function compadd() {
+  if [[ ${@[1,(i)(-|--)]} == *-(O|A|D)\ * ]]; then
+    builtin compadd "$@"
+    return
+  fi
+
+  local -a found
+  builtin compadd -O found "$@"
+  if (( ${#found} )); then
+    print -rl -- "${found[@]}" >>| "$CDL_COMPLETION_HITS"
+  fi
+  builtin compadd "$@"
+}
+
+function __completion_done() {
+  print -r -- "$CDL_COMPLETION_DONE" >>| "$CDL_COMPLETION_HITS"
+}
+zle -N __completion_done
+bindkey "^X^G" __completion_done
+
+PS1="$CDL_COMPLETION_READY"
+'
+
+# Run by `zsh -f`: start the session, wait for its prompt,
+# type the line, a Tab and ^X^G, then wait for the marker.
+# Every wait drains what the session prints,
+# as a full terminal buffer would stop its zsh in the middle of a prompt,
+# and gives up after 100 rounds of 50 ms.
+# shellcheck disable=SC2016 # zsh expands these, not bash
+readonly SESSION_DRIVER='
+zmodload zsh/zpty zsh/zselect
+typeset screen=""
+integer tries
+
+function drain() {
+  local chunk
+  while zpty -r -t session chunk; do
+    screen+=$chunk
+  done
+}
+
+zpty session "${CDL_ZSH:-zsh}" -f -i
+zpty -w session "source ${(q)CDL_COMPLETION_SETUP}"
+for (( tries = 0; tries < 100; tries++ )); do
+  drain
+  [[ $screen == *$CDL_COMPLETION_READY* ]] && break
+  zselect -t 5
+done
+
+zpty -w -n session "${CDL_COMPLETION_LINE}"$'"'"'\t\x18\x07'"'"'
+for (( tries = 0; tries < 100; tries++ )); do
+  drain
+  if [[ $(<$CDL_COMPLETION_HITS) == *$CDL_COMPLETION_DONE* ]]; then
+    zpty -d session
+    exit 0
+  fi
+  zselect -t 5
+done
+
+zpty -d session
+exit 1
+'
+
+# endregion
+
+# region Main
+
+#######################################
+# Print the completions of a command line in zsh.
+#
+# Arguments:
+#   1: 1 to source cdl.sh before compinit; 0 after it.
+#   2: cdl.sh to source.
+#   3: Directory to complete in.
+#   4: Command line to complete.
+#
+# Outputs:
+#   The candidates to stdout, one per line, sorted and unique.
+#
+# Returns:
+#   0 on success; ZSH_COMPLETIONS_ERR_TIMEOUT if zsh never finished.
+#######################################
+function print_completions() {
+  local -r work_dir="$(mktemp -d)"
+  # shellcheck disable=SC2064 # the path is fixed now, on purpose
+  trap "rm -rf -- '${work_dir}'" EXIT
+
+  printf '%s\n' "${SESSION_SETUP}" >"${work_dir}/setup.zsh"
+  : >"${work_dir}/hits"
+
+  if ! CDL_COMPLETION_BEFORE_COMPINIT="$1" CDL_COMPLETION_SCRIPT="$2" \
+    CDL_COMPLETION_DIRECTORY="$3" CDL_COMPLETION_LINE="$4" \
+    CDL_COMPLETION_SETUP="${work_dir}/setup.zsh" CDL_COMPLETION_HITS="${work_dir}/hits" \
+    CDL_COMPLETION_DONE="${DONE_MARKER}" CDL_COMPLETION_READY="${READY_PROMPT}" \
+    "${CDL_ZSH:-zsh}" -f -c "${SESSION_DRIVER}"; then
+    printf 'zsh-completions: no answer from zsh for: %s\n' "$4" >&2
+    return "${ZSH_COMPLETIONS_ERR_TIMEOUT}"
+  fi
+
+  grep -vxF -- "${DONE_MARKER}" "${work_dir}/hits" | LC_ALL=C sort -u
+}
+
+#######################################
+# Check the arguments, then print the completions.
+#
+# Arguments:
+#   $@: [--before-compinit] SCRIPT DIRECTORY LINE.
+#######################################
+function main() {
+  local -i before_compinit=0
+  if [[ ${1-} == '--before-compinit' ]]; then
+    before_compinit=1
+    shift
+  fi
+
+  if (($# != 3)) || [[ $1 == -* ]]; then
+    printf 'Usage: zsh-completions [--before-compinit] SCRIPT DIRECTORY LINE\n' >&2
+    return "${ZSH_COMPLETIONS_ERR_USAGE}"
+  fi
+
+  print_completions "${before_compinit}" "$@"
+}
+
+main "$@"
+
+# endregion
+
+### End

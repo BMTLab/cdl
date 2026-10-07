@@ -1,0 +1,93 @@
+# .github/workflows/ci-test.yml
+#
+# The unit and integration tests, once per shell,
+# on the systems cdl promises to support:
+#   - Ubuntu 26.04: uutils ls, the default `ls` there;
+#   - Ubuntu 24.04: GNU ls;
+#   - Ubuntu 22.04: the oldest bash and zsh of the matrix (5.1 and 5.8);
+#   - macOS 26:     BSD ls and the bash 3.2 that macOS ships,
+#                   once alone and once with Homebrew's gls;
+#                   bats itself runs on Homebrew's bash,
+#                   while cdl runs on /bin/bash.
+# The awk tests run with every awk installed: gawk, mawk, busybox, BSD awk.
+
+name: Tests
+
+on:
+  workflow_call:
+
+permissions: {}
+
+jobs:
+  bats:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    permissions:
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Ubuntu 26.04, uutils ls
+            os: ubuntu-26.04
+            shells: bash zsh
+            packages: zsh mawk busybox
+          - name: Ubuntu 24.04, GNU ls
+            os: ubuntu-24.04
+            shells: bash zsh
+            packages: zsh mawk busybox
+          - name: Ubuntu 22.04, bash 5.1
+            os: ubuntu-22.04
+            shells: bash zsh
+            packages: zsh mawk
+          - name: macOS 26, BSD ls, bash 3.2
+            os: macos-26
+            shells: /bin/bash zsh
+            packages: bash
+          - name: macOS 26, gls
+            os: macos-26
+            shells: /bin/bash zsh
+            packages: bash coreutils
+
+    env:
+      REPORT_DIR: bats-reports
+
+    steps:
+      - name: ⚙️ Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: 🔧 Install tools
+        env:
+          PACKAGES: ${{ matrix.packages }}
+        run: |
+          # The package list splits into words on purpose.
+          # shellcheck disable=SC2086
+          tools/ci/install-tools.sh bats ${PACKAGES}
+
+      - name: ℹ️ Environment
+        env:
+          TEST_SHELLS: ${{ matrix.shells }}
+        run: |
+          # shellcheck disable=SC2086
+          tools/ci/report-environment.sh ${TEST_SHELLS}
+
+      - name: 🧪 Run the suite
+        env:
+          TEST_SHELLS: ${{ matrix.shells }}
+        run: make test-shells TEST_SHELLS="${TEST_SHELLS}" BATS_REPORT_DIR="${REPORT_DIR}"
+
+      # nektos/act sets ACT, and its artifact server
+      # does not speak the protocol of upload-artifact v7,
+      # so local runs skip the upload.
+      - name: 📤 Upload the reports
+        if: ${{ !cancelled() && !env.ACT }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: bats-reports-${{ strategy.job-index }}
+          path: ${{ env.REPORT_DIR }}
+          if-no-files-found: warn
+          retention-days: 14

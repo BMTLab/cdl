@@ -1,0 +1,16 @@
+# .github/zizmor.yml
+#
+# Settings for zizmor (https://docs.zizmor.sh/configuration/),
+# which ci-workflow-lint.yml runs on every push and pull request.
+
+rules:
+  # zizmor asks for the `$/` form of a reference to this repository.
+  # The reusable workflows that ci-main.yml calls are read
+  # from the commit under test either way;
+  # `$/` protects actions loaded from the workspace at run time,
+  # which this repository has none of.
+  # `./` keeps the workflows runnable under nektos/act,
+  # which does not know `$/` yet (act 0.2.89).
+  self-repository:
+    ignore:
+      - ci-main.yml

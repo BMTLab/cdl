@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+
+# Name: tests/support/bin/screen-cells
+# Author: Nikita Neverov (BMTLab)
+# License: MIT
+#
+# Description:
+#   Print how many screen cells each line of stdin takes,
+#   one number per line, ignoring escape sequences.
+#
+#   A deliberately small oracle, independent of the width table
+#   inside cdl.sh, so the two cannot share a mistake.
+#   It knows only the scripts the tests use:
+#     - combining marks (U+0300..U+036F): no cells;
+#     - CJK, kana, Hangul, fullwidth forms, emoji: two cells;
+#     - everything else: one cell.
+#
+#   It runs as its own process on purpose:
+#   bats traps every command of a test,
+#   which makes a per-character loop inside a test crawl.
+#
+# Usage:
+#   printf '%s\n' 'Отчёт 日本' | screen-cells   # prints 10
+#
+# Environment:
+#   SANDBOX_UTF8_LOCALE: a UTF-8 locale for reading characters
+#   (set by tests/support/sandbox.bash).
+
+set -o errexit -o nounset -o pipefail
+
+#######################################
+# Report whether a code point is a combining mark.
+#
+# Arguments:
+#   1: Code point.
+#######################################
+function is_combining() {
+  local -ir code="$1"
+
+  ((code >= 0x0300 && code <= 0x036F))
+}
+
+#######################################
+# Report whether a code point takes two cells.
+#
+# Arguments:
+#   1: Code point.
+#######################################
+function is_wide() {
+  local -ir code="$1"
+
+  ((code >= 0x1100 && code <= 0x115F)) \
+    || ((code >= 0x3040 && code <= 0x30FF)) \
+    || ((code >= 0x4E00 && code <= 0x9FFF)) \
+    || ((code >= 0xAC00 && code <= 0xD7A3)) \
+    || ((code >= 0xFF01 && code <= 0xFF60)) \
+    || ((code >= 0x1F300 && code <= 0x1FAFF))
+}
+
+#######################################
+# Count the screen cells of one line of plain text.
+#
+# Arguments:
+#   1: Text without escape sequences.
+#
+# Outputs:
+#   The number of cells to stdout.
+#######################################
+function count_cells() {
+  local -r text="$1"
+  local -i cells=0 code index
+  local char
+
+  for ((index = 0; index < ${#text}; index++)); do
+    char="${text:index:1}"
+    printf -v code '%d' "'${char}"
+
+    if is_combining "${code}"; then
+      continue
+    elif is_wide "${code}"; then
+      cells+=2
+    else
+      cells+=1
+    fi
+  done
+
+  printf '%d\n' "${cells}"
+}
+
+#######################################
+# Entry point: count the cells of every line on stdin.
+#
+# Globals:
+#   SANDBOX_UTF8_LOCALE (read).
+#######################################
+function main() {
+  # Characters, not bytes: bash reads the locale when LC_ALL changes.
+  LC_ALL="${SANDBOX_UTF8_LOCALE:-C.UTF-8}"
+
+  local line
+  LC_ALL=C sed -E $'s#\033\\[[0-?]*[ -/]*[@-~]##g; s#\033\\][^\a\033]*(\a|\033\\\\)##g' \
+    | while IFS= read -r line; do
+      count_cells "${line}"
+    done
+}
+
+main "$@"
+
+### End

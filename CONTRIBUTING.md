@@ -1,71 +1,150 @@
 # Contributing to cdl
 
-We love your input! We want to make contributing to this project as easy and transparent as possible, whether it's:
+Thank you for helping. Bug reports, fixes and ideas are all welcome.
 
-- Reporting a bug
-- Discussing the current state of the code
-- Submitting a fix
-- Proposing new features
-- Becoming a maintainer
+## Reporting a bug
 
-## We Develop with GitHub
+Open an [issue](https://github.com/BMTLab/cdl/issues/new/choose)
+with the bug report form. The most useful reports name:
 
-We use GitHub to host code, to track issues and feature requests, as well as accept pull requests.
+- the version of cdl (`cdl --version`);
+- the shell and its version (`bash --version`, `zsh --version`);
+- the `ls` in use (`ls --version`, or "BSD ls" on macOS) and the `awk`;
+- the smallest sequence of commands that shows the problem.
 
-## We Use [GitHub Flow](https://guides.github.com/introduction/flow/index.html), So All Code Changes Happen Through Pull Requests
+Report security issues privately, as [SECURITY.md](./SECURITY.md) explains.
 
-Pull requests are the best way to propose changes to the codebase (we
-use [GitHub Flow](https://guides.github.com/introduction/flow/index.html)). We actively welcome your pull requests:
+## Setting up
 
-1. Fork the repo and create your branch from `main`/`dev`.
-2. If you've added code that should be tested, add tests.
-3. If you've changed APIs, update the documentation.
-4. Ensure the test suite passes.
-5. Make sure your code lints.
-6. Issue that pull request!
+You need bash, zsh, [bats-core](https://github.com/bats-core/bats-core) 1.11+,
+[ShellCheck](https://www.shellcheck.net), [shfmt](https://github.com/mvdan/sh)
+and [markdownlint-cli2](https://github.com/DavidAnson/markdownlint-cli2)
+(`npm install --global markdownlint-cli2`);
+Python 3 runs the generator of the width table and its tests.
+[pre-commit](https://pre-commit.com) runs the git hooks
+(`pipx install pre-commit` or `uv tool install pre-commit`).
+`make demo` records the GIF of the README
+with [vhs](https://github.com/charmbracelet/vhs),
+which also needs ttyd and ffmpeg.
 
-## Any contributions you make will be under the MIT Software License
+```bash
+make deps     # shows what is installed and what is missing
+make hooks    # installs the git hooks, once per clone
+make check    # lint, Markdown lint, format check and every test, as CI runs it
+```
 
-In short, when you submit code changes, 
-your submissions are understood to be under the same [MIT License](https://choosealicense.com/licenses/mit/)
-that covers the project. Feel free to contact the maintainers if that's a concern.
+Before each commit, the hooks lint the staged files
+and run the style tests and `make smoke`, in a few seconds;
+then they check the commit message.
+`make check` stays the full gate.
 
-## Report bugs using Github's [issues](https://github.com/BMTLab/cdl/issues)
+## How cdl is built
 
-We use GitHub issues to track public bugs. Report a bug
-by [opening a new issue](https://github.com/BMTLab/cdl/issues/new); it's that easy!
+`cdl.sh` is one file, sourced into bash or zsh,
+and its `# region` blocks read top to bottom:
 
-## Write bug reports with detail, background, and sample code
+1. **Version and error codes** and the **shell check**:
+   POSIX code, so `sh` stops cleanly.
+2. **Session state**, **Messages** and **Settings**:
+   what the probes learned, the help and the errors,
+   and the `CDL_*` variables, read and checked on every call.
+3. **Input**, **Paths** and **Navigation**: pick the target
+   (operand, piped path, `$HOME`), read a `file://` URI or a leading `~`,
+   and enter it with `builtin cd`, or the directory of a file.
+4. **Terminal**, **Header** and **Tool detection**:
+   width, height and colors, the directory and git branch for the header,
+   and which `ls` and `awk` to run, probed once per shell session.
+5. **Listing**: run `ls -l` with a pinned time style in the C locale.
+6. **Formatter**: an awk program that parses each line,
+   makes names safe for the terminal, measures them in screen cells,
+   writes the header and the hyperlinks,
+   and lays the entries out in as many columns as fit.
+7. **Public API**, **Completion** and **Replacing cd**:
+   `cdl`, `cdl_list`, their Tab completion in bash and zsh,
+   and the `cd` of `CDL_REPLACE_CD`, then the **execution guard**.
 
-**Great Bug Reports** tend to have:
+The width table at the end of the formatter is generated:
+edit `tools/gen-width-table.py`, never the table,
+and run `make widths` to rewrite it from Python's Unicode database.
 
-- A quick summary and/or background
-- Steps to reproduce
-    - Be specific!
-    - Give sample code if you can.
-- What you expected would happen
-- What actually happens
-- Notes (possibly including why you think this might be happening, or stuff you tried that didn't work)
+## Tests
 
-People *love* thorough bug reports.
+The suite lives in `tests/`:
 
-## Use a Consistent Coding Style
+| Directory           | What it covers                                                      |
+|---------------------|---------------------------------------------------------------------|
+| `tests/unit`        | The formatter, fed with canned `ls -l` lines.                       |
+| `tests/integration` | cdl end to end: navigation, pipes, listing, `ls` flavors, rc files. |
+| `tests/style`       | The code style rules and the facts several files share.             |
+| `tests/support`     | Helpers loaded by every test (see `test_helper.bash`).              |
 
-* You can use any editor you like but ensure your code conforms to the project's coding conventions
-(e.g., indentation,comments, naming conventions).
-* Project owner uses _JetBrains PyCharm_.
+Every unit and integration test runs once per shell in `TEST_SHELLS`:
+`make test TEST_SHELLS='bash zsh /bin/bash'`.
+Each test starts from a sandbox (its own `HOME`, `PATH`, locale and terminal),
+where fakes stand in for BSD `ls`, `gls` and other awks
+(see `tests/support/fakes.bash`).
 
-## License
+A good test states one rule in its name
+(`a second operand fails with CDL_ERR_USAGE instead of being ignored`)
+and follows the Arrange, Act and Assert sections.
+Prefer one parameterized test over copies:
+see `bats_test_function` in `tests/unit/test_formatter.bats`.
 
-By contributing, you agree that your contributions will be licensed under its MIT License.
+A few quick tests, one or two for each main path of cdl,
+carry the tag `# bats test_tags=smoke`.
+`make smoke` runs only them, in every shell of `TEST_SHELLS`,
+and so does the pre-commit hook.
 
-## References
+## Commit messages
 
-Please ensure all contributions are accompanied by corresponding updates
-to documentation, tests, and examples as necessary.
+The commit-msg hook holds every message to the same form,
+the rules of `committed.toml` and of the message hooks
+in `.pre-commit-config.yaml`:
 
-## Community
+- a subject of at most 72 characters, capitalized, without a full stop,
+  starting with a verb in the imperative mood:
+  "Fix", never "Fixed", "Fixes" or "Fixing";
+- a blank line, then a body wrapped at 72 columns
+  that says what changed and why;
+  a longer URL ends its line, since only a last word may run over;
+- no WIP or `fixup!` commits, and no em-dash.
 
-- Joining the conversation on GitHub issues is encouraged. Your opinions are important to us!
+```text
+Fix the width of Hangul names in the listing
 
-Thank you for contributing to the **BMTLab/cdl** project!
+The width table missed the Hangul Jamo Extended-B block,
+so names with those letters pushed the next column to the right.
+```
+
+## Code style
+
+[CLAUDE.md](./CLAUDE.md) holds the full house rules,
+for people and coding agents alike. In short:
+
+- English for code, comments and messages; no em-dash anywhere.
+- Single quotes unless a string expands something.
+- `function name() { ... }` declarations, each with a documentation header.
+- `local -r`, `local -i` and friends wherever they fit.
+- Errors go through `__cdl_error` with a named `CDL_ERR_*` code.
+- The return codes of cdl go by tens: the tens digit names what failed,
+  and the units digit why. Every tool of the repository owns
+  a block of ten exit codes that no other tool uses.
+  CLAUDE.md has both, under "Exit codes".
+- Long files fold into `# region` and `# endregion` blocks.
+- Comments explain why, and break lines between phrases, never inside one.
+
+`make format` applies `.editorconfig` through shfmt,
+`make lint` applies `.shellcheckrc` through ShellCheck,
+and `make lint-md` applies `.markdownlint-cli2.jsonc` through markdownlint.
+The style tests check the rest.
+
+## Pull requests
+
+1. Fork the repository and branch from `main`.
+2. Add a test for every fixed bug and every new behavior.
+3. Update the README and the `Unreleased` section of `CHANGELOG.md`.
+4. Run `make check`, and commit with the hooks installed.
+5. Open the pull request; the template lists what reviewers look for.
+
+By contributing, you agree that your work is licensed
+under the [MIT License](./LICENSE).

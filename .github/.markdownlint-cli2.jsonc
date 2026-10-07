@@ -1,0 +1,9 @@
+// .github/.markdownlint-cli2.jsonc
+//
+// The pull request template fills the body of a page
+// that has its own title, so it starts at the second level.
+{
+  "config": {
+    "MD041": false
+  }
+}

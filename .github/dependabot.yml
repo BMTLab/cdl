@@ -1,0 +1,41 @@
+# .github/dependabot.yml
+#
+# Keeps the actions in .github/workflows
+# and the hook repositories in .pre-commit-config.yaml up to date.
+# They are pinned to commits with the version in a comment,
+# and Dependabot moves both together in one weekly pull request per kind.
+# A release must be a week old before it is proposed,
+# so a compromised version has time to be noticed and pulled.
+# The commit messages keep the default "Bump ..." subject,
+# which meets the rules of committed.toml; a "ci:" prefix would not.
+
+version: 2
+
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      github-actions:
+        patterns:
+          - '*'
+    labels:
+      - dependencies
+      - github-actions
+
+  - package-ecosystem: pre-commit
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      pre-commit:
+        patterns:
+          - '*'
+    labels:
+      - dependencies
+      - pre-commit

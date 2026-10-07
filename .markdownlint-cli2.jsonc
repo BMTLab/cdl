@@ -1,0 +1,31 @@
+// .markdownlint-cli2.jsonc
+//
+// The Markdown rules of the repository, read by markdownlint-cli2
+// in `make lint-md`, in CI and in editors that know it.
+// Every rule of markdownlint applies, with these settings:
+{
+  "config": {
+    "default": true,
+
+    // Prose breaks at phrase boundaries (CLAUDE.md, "Comments"),
+    // with lines of at most 80 columns;
+    // stern flags a longer line wherever a break would help,
+    // and lets a lone URL run on; tables and code blocks may run longer.
+    "MD013": { "line_length": 80, "code_blocks": false, "tables": false, "stern": true },
+
+    // Keep a Changelog repeats Fixed, Changed and Added under each version.
+    "MD024": { "siblings_only": true },
+
+    // The README centers its title and opening, folds reference sections
+    // and names keys; nothing else needs HTML.
+    "MD033": {
+      "allowed_elements": ["b", "code", "details", "div", "h1", "kbd", "summary"]
+    },
+
+    // Tables are aligned, so their source reads like the rendered page.
+    "MD060": { "style": "aligned" }
+  },
+  // Every Markdown file of the repository, the hidden .github included.
+  "globs": ["**/*.md", ".github/**/*.md"],
+  "ignores": [".idea/**", "node_modules/**"]
+}
