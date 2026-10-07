@@ -32,7 +32,7 @@ function demo_make_home() {
 
   # The folder that may not be entered has to open up before it can go.
   if [[ -d ${home} ]]; then
-    chmod -R u+rwx -- "${home}"
+    chmod -R u+rwx "${home}"
     rm -rf -- "${home}"
   fi
   mkdir -p -- "${home}"
@@ -90,7 +90,7 @@ function demo_make_project() {
   demo_file "${project}/LICENSE" 1.1K '2026-01-14 09:00'
   demo_file "${project}/Makefile" 2.3K '2026-09-28 21:17'
   demo_file "${project}/deploy.sh" 760 '2026-09-30 16:42'
-  chmod +x -- "${project}/deploy.sh"
+  chmod +x "${project}/deploy.sh"
   demo_file "${project}/Отчёт за квартал.pdf" 1.4M '2026-09-29 10:12'
   demo_file "${project}/日本語メモ.txt" 380 '2026-09-25 08:31'
   demo_file "${project}/.gitignore" 120 '2026-01-14 09:00'
@@ -140,7 +140,7 @@ function demo_make_locked() {
   local -r locked="$1"
 
   mkdir -p -- "${locked}/inner"
-  chmod 000 -- "${locked}"
+  chmod 000 "${locked}"
 }
 
 # endregion

@@ -19,9 +19,7 @@ load '../support/test_helper'
 
 function setup() {
   sandbox_setup
-  if ! gnu_compatible_ls >/dev/null; then
-    skip 'no GNU-compatible ls on this machine'
-  fi
+  require_gnu_compatible_ls
   LISTED_DIR="$(make_dir 'listed')"
 }
 
@@ -41,8 +39,10 @@ function setup() {
 }
 
 @test "names sort by bytes, uppercase first, whatever the locale" {
-  # Arrange
-  make_entries "${LISTED_DIR}" 'beta' 'Alpha' 'alpha' 'Beta' 'Ёлка' 'ёж'
+  # Arrange:
+  # no two names differ in case alone, which the file system of macOS ignores;
+  # a locale would put beta before Bravo, and ёж before Ёлка.
+  make_entries "${LISTED_DIR}" 'beta' 'Alpha' 'zulu' 'Bravo' 'Ёлка' 'ёж'
 
   # Act
   run --separate-stderr in_shell 'COLUMNS=60 cdl "$1"' "${LISTED_DIR}"
@@ -50,7 +50,7 @@ function setup() {
   # Assert
   assert_success
   assert_equal "$(awk '{ print $NF }' <<<"${output}")" \
-    "$(printf '%s\n' Alpha Beta alpha beta Ёлка ёж)" 'order of names'
+    "$(printf '%s\n' Alpha Bravo beta zulu Ёлка ёж)" 'order of names'
 }
 
 @test "hidden entries are listed, but not . and .." {

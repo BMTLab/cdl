@@ -19,9 +19,7 @@ load '../support/test_helper'
 
 function setup() {
   sandbox_setup
-  if ! gnu_compatible_ls >/dev/null; then
-    skip 'no GNU-compatible ls on this machine'
-  fi
+  require_gnu_compatible_ls
 
   export CDL_REPLACE_CD=1 CDL_COLOR=never CDL_HEADER=never
   NOTES_DIR="$(make_dir 'notes')"

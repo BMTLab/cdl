@@ -23,9 +23,7 @@ load '../support/test_helper'
 
 function setup() {
   sandbox_setup
-  if ! gnu_compatible_ls >/dev/null; then
-    skip 'no GNU-compatible ls on this machine'
-  fi
+  require_gnu_compatible_ls
   LISTED_DIR="$(make_dir 'listed')"
   make_entries "${LISTED_DIR}" 'src/' 'notes.md'
 }

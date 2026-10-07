@@ -120,7 +120,10 @@ function in_terminal() {
     transcript="$(script -qec "${quoted}" /dev/null </dev/null)" || rc=$?
   fi
 
-  printf '%s\n' "${transcript//$'\r'/}"
+  # The pty turns LF into CR LF, and the BSD script of macOS echoes
+  # the ^D it sends at the end of its stdin, with two backspaces.
+  transcript="${transcript//$'\r'/}"
+  printf '%s\n' "${transcript//$'\004\b\b'/}"
   return "${rc}"
 }
 

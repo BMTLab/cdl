@@ -41,6 +41,16 @@ function gnu_compatible_ls() {
 }
 
 #######################################
+# Skip the test unless a GNU-compatible ls is installed:
+# the compact listing needs one, and macOS has only the BSD ls.
+#######################################
+function require_gnu_compatible_ls() {
+  if ! gnu_compatible_ls >/dev/null; then
+    skip 'no GNU-compatible ls on this machine'
+  fi
+}
+
+#######################################
 # Find GNU ls itself, the reference for sizes.
 #
 # uutils ls speaks the GNU options but rounds some sizes its own way,
@@ -269,7 +279,7 @@ function __fakes_install() {
   local -r body="$2"
 
   printf '#!/bin/sh\n%s\n' "${body}" >"${FAKE_BIN}/${name}"
-  chmod +x -- "${FAKE_BIN}/${name}"
+  chmod +x "${FAKE_BIN}/${name}"
 }
 
 # endregion

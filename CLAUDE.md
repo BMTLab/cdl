@@ -291,6 +291,12 @@ the code of the recipe shows in its error line (`Error 71`).
   of the width table in `cdl.sh`; extend both when the samples gain a script.
 - A fixed bug gets a test that fails on the old code;
   a new behavior gets its test before the README mentions it.
+- The suite runs on macOS too, where act cannot take it:
+  BSD `chmod` reads a `--` after the mode as a file name,
+  BSD `script` echoes the `^D` that ends its input,
+  the file system ignores case, `/bin/bash` is 3.2,
+  and `sh` is that bash in POSIX mode.
+  A test that reads the compact listing calls `require_gnu_compatible_ls`.
 - `# bats test_tags=smoke` marks the quick tests of the main paths of cdl,
   which `make smoke` and the pre-commit hook run.
   Tag a test only when it is fast and covers a path no tagged test does,

@@ -149,6 +149,7 @@ done
 
 @test "CDL_COLOR=always colors a listing that goes to a pipe" {
   # Arrange: no terminal, so auto would print plain text.
+  require_gnu_compatible_ls
 
   # Act
   run --separate-stderr in_shell 'CDL_COLOR=always cdl "$1"' "${LISTED_DIR}"
@@ -160,6 +161,7 @@ done
 
 @test "CDL_COLOR=always wins over NO_COLOR, as no-color.org asks" {
   # Arrange
+  require_gnu_compatible_ls
   export NO_COLOR=1
 
   # Act
@@ -219,6 +221,7 @@ done
 @test "CDL_WIDTH wins over COLUMNS" {
   # Arrange:
   # these rows sit side by side in 130 columns, but not in 80.
+  require_gnu_compatible_ls
   make_entries "${LISTED_DIR}" 'a-name-of-some-length.txt' 'another-name-of-length.txt'
 
   # Act

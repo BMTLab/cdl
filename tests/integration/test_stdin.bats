@@ -24,6 +24,7 @@ function setup() {
 
 @test "a piped path is listed" {
   # Arrange
+  require_gnu_compatible_ls
   local -r target="$(make_dir 'target')"
   make_entries "${target}" 'piped-entry'
 
@@ -54,6 +55,7 @@ function setup() {
 
 @test "the first non-blank line of the pipe is used, trimmed" {
   # Arrange
+  require_gnu_compatible_ls
   local -r target="$(make_dir 'target')"
   make_entries "${target}" 'chosen'
 
@@ -68,6 +70,7 @@ function setup() {
 
 @test "an operand wins over a piped path" {
   # Arrange
+  require_gnu_compatible_ls
   local -r operand="$(make_dir 'operand')"
   local -r piped="$(make_dir 'piped')"
   make_entries "${operand}" 'from-operand'

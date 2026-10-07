@@ -22,9 +22,7 @@ load '../support/test_helper'
 
 function setup() {
   sandbox_setup
-  if ! gnu_compatible_ls >/dev/null; then
-    skip 'no GNU-compatible ls on this machine'
-  fi
+  require_gnu_compatible_ls
 
   DOCS_DIR="$(make_dir 'docs')"
   make_entries "${DOCS_DIR}" 'drafts/' 'notes.md' 'report.pdf'

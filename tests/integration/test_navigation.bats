@@ -107,6 +107,7 @@ function setup() {
   # Arrange:
   # cd prints the directory it found through CDPATH;
   # the listing must be all that cdl prints.
+  require_gnu_compatible_ls
   local -r base="$(make_dir 'base')"
   make_entries "$(make_dir 'base/target')" 'only-file'
 

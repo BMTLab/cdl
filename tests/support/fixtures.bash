@@ -81,7 +81,7 @@ function __fixtures_make_executable() {
   local -r file="$1"
 
   : >"${file}"
-  chmod +x -- "${file}"
+  chmod +x "${file}"
 }
 
 #######################################

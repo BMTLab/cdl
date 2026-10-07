@@ -23,9 +23,7 @@ load '../support/test_helper'
 
 function setup() {
   sandbox_setup
-  if ! gnu_compatible_ls >/dev/null; then
-    skip 'no GNU-compatible ls on this machine'
-  fi
+  require_gnu_compatible_ls
 
   # 60 columns keep one entry per line, so a test can count lines.
   export COLUMNS=60

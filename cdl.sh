@@ -152,14 +152,18 @@ CDL_VERSION='2.0.0'
 
 # Only bash and zsh can run the rest of the file.
 # A POSIX sh (dash, for example) stops here with a clear message
-# instead of tripping over the first `[[` below.
-# SC2292: `[[` may not exist in this shell yet.
+# instead of tripping over the first `[[` below;
+# so does bash run as sh, as on macOS, which works in POSIX mode,
+# where bash 3.2 cannot read the process substitutions further down.
+# The pattern sees both: no version of bash or zsh, or the posix option.
 # SC2317: `exit` runs when the file is executed rather than sourced.
-# shellcheck disable=SC2292,SC2317
-if [ -z "${BASH_VERSION-}${ZSH_VERSION-}" ]; then
-  printf 'cdl: cdl.sh must be sourced into bash or zsh\n' >&2
-  return "${CDL_ERR_NOT_SOURCED}" 2>/dev/null || exit "${CDL_ERR_NOT_SOURCED}"
-fi
+# shellcheck disable=SC2317
+case "${BASH_VERSION-}${ZSH_VERSION-}::${SHELLOPTS-}:" in
+  ::* | *:posix:*)
+    printf 'cdl: cdl.sh must be sourced into bash or zsh\n' >&2
+    return "${CDL_ERR_NOT_SOURCED}" 2>/dev/null || exit "${CDL_ERR_NOT_SOURCED}"
+    ;;
+esac
 
 # zsh needs `-g`: plugin managers source files from inside functions,
 # where a bare `readonly` would create a local instead.

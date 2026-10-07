@@ -42,7 +42,8 @@ and this project adheres to [Semantic Versioning][semver].
 - `QUOTING_STYLE` in the environment no longer changes how names show;
   it used to wrap names with spaces in quotes.
 - A shell running with `set -e` no longer dies when `tput` fails.
-- `sh cdl.sh` stops with a message and `CDL_ERR_NOT_SOURCED`;
+- `sh cdl.sh` stops with a message and `CDL_ERR_NOT_SOURCED`,
+  also where sh is bash in POSIX mode, as on macOS;
   it used to print `[[: not found` and return 0.
 - An unreadable directory (searchable, but not readable) is entered
   and reported with the new `CDL_ERR_LIST`; cdl used to return 0.

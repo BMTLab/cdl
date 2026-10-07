@@ -44,6 +44,17 @@ function setup() {
   assert_stderr_contains 'cdl.sh must be'
 }
 
+@test "bash in POSIX mode, as sh is on macOS, refuses cdl.sh with CDL_ERR_NOT_SOURCED" {
+  # Arrange: no fixtures needed.
+
+  # Act
+  run --separate-stderr bash --posix "${CDL_SCRIPT}"
+
+  # Assert
+  assert_failure 50
+  assert_stderr_contains 'cdl.sh must be sourced into bash or zsh'
+}
+
 @test "the return codes keep their documented values" {
   # Arrange: no fixtures needed.
 
@@ -228,6 +239,7 @@ done
   # Arrange:
   # without COLUMNS and TERM, tput fails,
   # which must not end a shell running with errexit.
+  require_gnu_compatible_ls
   local -r target="$(make_dir 'target')"
   make_entries "${target}" 'entry'
 
@@ -246,6 +258,7 @@ done
 
 @test "user aliases and functions named ls, awk or tput do not change the listing" {
   # Arrange
+  require_gnu_compatible_ls
   local -r target="$(make_dir 'target')"
   make_entries "${target}" 'entry'
 
@@ -307,6 +320,7 @@ done
 
 @test "cdl_list lists the current directory and keeps OLDPWD" {
   # Arrange
+  require_gnu_compatible_ls
   local -r first="$(make_dir 'first')"
   local -r second="$(make_dir 'second')"
   make_entries "${second}" 'entry'
@@ -322,6 +336,7 @@ done
 
 @test "a cd wrapper written for cdl 1.0 keeps working" {
   # Arrange
+  require_gnu_compatible_ls
   local -r target="$(make_dir 'target')"
   make_entries "${target}" 'entry'
 
