@@ -262,7 +262,8 @@ function named_exit_codes() {
   local -a violations=()
 
   # Act:
-  # the settings are the variables that __cdl_read_settings reads.
+  # the settings are the variables that __cdl_read_settings reads,
+  # as list_cdl_settings finds them for the sandbox too.
   while IFS= read -r name; do
     settings+=1
     if ! grep -qE "^#   ${name} " "${CDL_SCRIPT}"; then
@@ -274,7 +275,7 @@ function named_exit_codes() {
     if [[ ${readme} != *"| \`${name}\`"* ]]; then
       violations+=("${name}: missing from the table of settings in README.md")
     fi
-  done < <(sed -n 's/^  __cdl_setting_[a-z_]*="\${\(CDL_[A-Z_]*\)[-:].*/\1/p' "${CDL_SCRIPT}")
+  done < <(list_cdl_settings)
 
   # Assert
   if ((settings == 0)); then

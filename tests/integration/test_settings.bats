@@ -10,6 +10,7 @@
 #   --version, and -L and -P for cd.
 #   A setting is checked before cdl moves,
 #   so a typo in an rc file shows at once and changes nothing.
+#   The settings of the shell that runs the suite stay out of every test.
 #
 #   Each test follows the Arrange-Act-Assert pattern.
 
@@ -304,6 +305,23 @@ done
   # Assert
   assert_failure 10
   assert_stderr_contains "cdl: Unexpected argument: '${LISTED_DIR}'"
+}
+
+# endregion
+
+# region The shell of the user
+
+@test "a setting that the shell running the suite exports never reaches a test" {
+  # Arrange: the README has the user export CDL_REPLACE_CD=1.
+  export CDL_REPLACE_CD=1 CDL_COLOR='always'
+
+  # Act
+  sandbox_setup
+  run --separate-stderr in_shell 'printf "%s %s" "${CDL_REPLACE_CD-unset}" "${CDL_COLOR-unset}"'
+
+  # Assert
+  assert_success
+  assert_output 'unset unset'
 }
 
 # endregion
