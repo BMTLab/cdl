@@ -1209,7 +1209,7 @@ function __cdl_should_link() {
     always) return 0 ;;
     never) return 1 ;;
   esac
-  if ((!colored)) || [[ ! -t 1 ]]; then
+  if ((! colored)) || [[ ! -t 1 ]]; then
     return 1
   fi
 
