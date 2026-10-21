@@ -182,7 +182,7 @@ fi
 # region Session state
 
 if [[ -n "${ZSH_VERSION-}" ]]; then
-  typeset -g __cdl_ls_bin __cdl_ls_is_gnu __cdl_ls_color_flag __cdl_awk_bin \
+  typeset -g __cdl_ls_bin __cdl_is_gnu_ls __cdl_ls_color_flag __cdl_awk_bin \
     __cdl_setting_color __cdl_setting_hidden __cdl_setting_width \
     __cdl_setting_max_rows __cdl_setting_max_columns __cdl_setting_header \
     __cdl_setting_git __cdl_setting_links __cdl_setting_replace_cd
@@ -192,7 +192,7 @@ fi
 # cached for the shell session.
 # Sourcing the file again, e.g. after an update, starts fresh probes.
 __cdl_ls_bin=''
-__cdl_ls_is_gnu=0
+__cdl_is_gnu_ls=0
 __cdl_ls_color_flag=''
 __cdl_awk_bin=''
 
@@ -564,7 +564,7 @@ function __cdl_trim() {
 # Returns:
 #   0 if stdin is a pipe; 1 otherwise.
 #######################################
-function __cdl_stdin_is_pipe() {
+function __cdl_is_stdin_a_pipe() {
   [[ -p /dev/stdin ]]
 }
 
@@ -735,7 +735,7 @@ function __cdl_resolve_target() {
     return 0
   fi
 
-  if __cdl_stdin_is_pipe && __cdl_read_stdin_target; then
+  if __cdl_is_stdin_a_pipe && __cdl_read_stdin_target; then
     return 0
   fi
 
@@ -770,7 +770,7 @@ function __cdl_enter() {
     REPLY=''
     return 0
   fi
-  if ! __cdl_names_a_file "${target}"; then
+  if ! __cdl_is_file_target "${target}"; then
     __cdl_report_chdir_failure "${target}"
     return
   fi
@@ -796,7 +796,7 @@ function __cdl_enter() {
 # Returns:
 #   0 for such an entry; 1 otherwise, and always for '-'.
 #######################################
-function __cdl_names_a_file() {
+function __cdl_is_file_target() {
   local -r target="$1"
 
   if [[ "${target}" == '-' || -d "${target}" ]]; then
@@ -1156,7 +1156,7 @@ function __cdl_max_rows() {
 # Returns:
 #   0 for a UTF-8 locale; 1 otherwise.
 #######################################
-function __cdl_utf8_output() {
+function __cdl_can_print_utf8() {
   case "${LC_ALL:-${LC_CTYPE:-${LANG-}}}" in
     *[Uu][Tt][Ff]-8* | *[Uu][Tt][Ff]8*) return 0 ;;
     *) return 1 ;;
@@ -1203,13 +1203,13 @@ function __cdl_should_color() {
 #   0 to link the names; 1 otherwise.
 #######################################
 function __cdl_should_link() {
-  local -ir colored="$1"
+  local -ir is_colored="$1"
 
   case "${__cdl_setting_links}" in
     always) return 0 ;;
     never) return 1 ;;
   esac
-  if ((! colored)) || [[ ! -t 1 ]]; then
+  if ((! is_colored)) || [[ ! -t 1 ]]; then
     return 1
   fi
 
@@ -1368,7 +1368,7 @@ function __cdl_find_git_dir() {
 # and a fork per listing would be wasted on a known answer.
 #
 # Globals:
-#   __cdl_ls_bin (read+write), __cdl_ls_is_gnu (write),
+#   __cdl_ls_bin (read+write), __cdl_is_gnu_ls (write),
 #   __cdl_ls_color_flag (write).
 #######################################
 function __cdl_detect_ls() {
@@ -1381,11 +1381,11 @@ function __cdl_detect_ls() {
     __cdl_ls_bin='gls'
   fi
 
-  __cdl_ls_is_gnu=0
+  __cdl_is_gnu_ls=0
   __cdl_ls_color_flag=''
   if command "${__cdl_ls_bin}" --group-directories-first --version \
     >/dev/null 2>&1; then
-    __cdl_ls_is_gnu=1
+    __cdl_is_gnu_ls=1
   elif command "${__cdl_ls_bin}" -G -d / >/dev/null 2>&1; then
     __cdl_ls_color_flag='-G'
   fi
@@ -1468,7 +1468,7 @@ function __cdl_list_current_directory() {
   local -r mark="${1-}"
 
   __cdl_detect_ls
-  if ((__cdl_ls_is_gnu)); then
+  if ((__cdl_is_gnu_ls)); then
     __cdl_print_compact_listing "${mark}"
   else
     __cdl_print_plain_listing
@@ -1505,10 +1505,10 @@ function __cdl_print_listing() {
 #######################################
 function __cdl_print_compact_listing() {
   local -r mark="${1-}"
-  local -i color=0
+  local -i is_colored=0
   local color_mode='never'
   if __cdl_should_color; then
-    color=1
+    is_colored=1
     color_mode='always'
   fi
 
@@ -1564,13 +1564,13 @@ function __cdl_print_compact_listing() {
   fi
 
   local link_directory=''
-  if __cdl_should_link "${color}"; then
+  if __cdl_should_link "${is_colored}"; then
     link_directory="${PWD}"
   fi
 
   __cdl_max_rows "${header_lines}"
   __cdl_format_listing "${width}" "${REPLY}" "${__cdl_setting_max_columns}" \
-    "${color}" "${header_path}" "${header_branch}" "${mark}" "${link_directory}" \
+    "${is_colored}" "${header_path}" "${header_branch}" "${mark}" "${link_directory}" \
     <<<"${listing}"
 
   if ((ls_status != 0)); then
@@ -1659,15 +1659,15 @@ function __cdl_format_listing() {
   local -r width="$1"
   local -r max_rows="${2:-0}"
   local -r max_columns="${3:-0}"
-  local -r color="${4:-0}"
+  local -r is_colored="${4:-0}"
   local -r header_path="${5-}"
   local -r header_branch="${6-}"
   local -r mark_name="${7-}"
   local -r link_directory="${8-}"
 
-  local -i utf8_output=0
-  if __cdl_utf8_output; then
-    utf8_output=1
+  local -i is_utf8_output=0
+  if __cdl_can_print_utf8; then
+    is_utf8_output=1
   fi
 
   __cdl_detect_awk
@@ -1685,7 +1685,7 @@ function __cdl_format_listing() {
     CDL_MARK_NAME="${mark_name}" CDL_LINK_DIRECTORY="${link_directory}" \
     CDL_LINK_HOST="${HOSTNAME:-${HOST-}}" LC_ALL=C command "${__cdl_awk_bin}" \
     -v width="${width}" -v max_rows="${max_rows}" -v max_columns="${max_columns}" \
-    -v color="${color}" -v utf8_output="${utf8_output}" -f /dev/fd/3 3<<'AWK'
+    -v color="${is_colored}" -v utf8_output="${is_utf8_output}" -f /dev/fd/3 3<<'AWK'
     # region Layout
 
     BEGIN {

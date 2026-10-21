@@ -56,7 +56,7 @@ readonly READY_PROMPT='<completion-ready>'
 # shellcheck disable=SC2016 # zsh expands these, not bash
 readonly SESSION_SETUP='
 bindkey -e
-if (( CDL_COMPLETION_BEFORE_COMPINIT )); then
+if (( CDL_COMPLETION_SHOULD_SOURCE_BEFORE_COMPINIT )); then
   source "${CDL_COMPLETION_SCRIPT}"
   autoload -Uz compinit && compinit -u -D
 else
@@ -159,7 +159,7 @@ function print_completions() {
   printf '%s\n' "${SESSION_SETUP}" >"${work_dir}/setup.zsh"
   : >"${work_dir}/hits"
 
-  if ! CDL_COMPLETION_BEFORE_COMPINIT="$1" CDL_COMPLETION_SCRIPT="$2" \
+  if ! CDL_COMPLETION_SHOULD_SOURCE_BEFORE_COMPINIT="$1" CDL_COMPLETION_SCRIPT="$2" \
     CDL_COMPLETION_DIRECTORY="$3" CDL_COMPLETION_LINE="$4" \
     CDL_COMPLETION_SETUP="${work_dir}/setup.zsh" CDL_COMPLETION_HITS="${work_dir}/hits" \
     CDL_COMPLETION_DONE="${DONE_MARKER}" CDL_COMPLETION_READY="${READY_PROMPT}" \
@@ -178,9 +178,9 @@ function print_completions() {
 #   $@: [--before-compinit] SCRIPT DIRECTORY LINE.
 #######################################
 function main() {
-  local -i before_compinit=0
+  local -i should_source_before_compinit=0
   if [[ "${1-}" == '--before-compinit' ]]; then
-    before_compinit=1
+    should_source_before_compinit=1
     shift
   fi
 
@@ -189,7 +189,7 @@ function main() {
     return "${ZSH_COMPLETIONS_ERR_USAGE}"
   fi
 
-  print_completions "${before_compinit}" "$@"
+  print_completions "${should_source_before_compinit}" "$@"
 }
 
 main "$@"

@@ -50,7 +50,7 @@ function gnu_compatible_ls() {
 # Returns:
 #   0 if it does; 1 otherwise.
 #######################################
-function supported_busybox_awk() {
+function has_supported_busybox_awk() {
   local version
 
   command -v busybox >/dev/null || return 1
@@ -122,7 +122,7 @@ function available_awks() {
       printf '%s\n' "${name}"
     fi
   done
-  if supported_busybox_awk; then
+  if has_supported_busybox_awk; then
     printf 'busybox-awk\n'
   fi
   if command -v gawk >/dev/null && [[ "${SANDBOX_UTF8_LOCALE}" != 'C' ]]; then
