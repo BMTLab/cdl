@@ -114,14 +114,14 @@ function assert_columns_aligned() {
   local offsets
   offsets="$(entry_offsets <<<"${listing}" | sort -u)"
 
-  if [[ -z ${offsets} ]]; then
+  if [[ -z "${offsets}" ]]; then
     __assert_fail 'expected rows with more than one entry'
     return
   fi
 
   local misaligned
   misaligned="$(awk '{ seen[$1]++ } END { for (c in seen) if (seen[c] > 1) print c }' <<<"${offsets}")"
-  if [[ -n ${misaligned} ]]; then
+  if [[ -n "${misaligned}" ]]; then
     __assert_fail "column(s) ${misaligned//$'\n'/, } start at different cells: ${offsets//$'\n'/; }"
   fi
 }
@@ -135,7 +135,7 @@ function assert_columns_aligned() {
 function assert_one_column() {
   local -r listing="$1"
 
-  if [[ -n $(entry_offsets <<<"${listing}") ]]; then
+  if [[ -n "$(entry_offsets <<<"${listing}")" ]]; then
     __assert_fail 'expected one entry per row'
   fi
 }

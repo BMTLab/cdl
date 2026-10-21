@@ -31,7 +31,7 @@ function demo_make_home() {
   local -r home="$1"
 
   # The folder that may not be entered has to open up before it can go.
-  if [[ -d ${home} ]]; then
+  if [[ -d "${home}" ]]; then
     chmod -R u+rwx "${home}"
     rm -rf -- "${home}"
   fi

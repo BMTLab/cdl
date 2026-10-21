@@ -65,14 +65,14 @@ function time_per_call() {
     COLUMNS="${COLUMNS:-120}"
     source "$1" || exit
     function baseline() { builtin cd -- "$1" && command ls -Al; }
-    start="$EPOCHREALTIME"
+    start="${EPOCHREALTIME}"
     i=0
-    while [ "$i" -lt "$2" ]; do
+    while ((i < $2)); do
       '"${command}"' "$3" >/dev/null 2>&1
       i=$((i + 1))
     done
-    end="$EPOCHREALTIME"
-    awk -v start="$start" -v end="$end" -v calls="$2" \
+    end="${EPOCHREALTIME}"
+    awk -v start="${start}" -v end="${end}" -v calls="$2" \
       "BEGIN { printf \"%.2f\n\", (end - start) * 1000 / calls }"
   ' bench "${PROJECT_ROOT}/cdl.sh" "${calls}" "${directory}"
 }
@@ -134,7 +134,7 @@ function main() {
   local directory='/usr/bin'
 
   while (($# > 0)); do
-    case $1 in
+    case "$1" in
       -n)
         calls="${2:?-n needs a number of calls}"
         shift 2

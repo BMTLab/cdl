@@ -41,7 +41,7 @@ function setup() {
 
   # Act
   run --separate-stderr in_shell \
-    'cd "$1" && cdl >/dev/null && printf "%s\n" "$PWD"' "${elsewhere}"
+    'cd "$1" && cdl >/dev/null && printf "%s\n" "${PWD}"' "${elsewhere}"
 
   # Assert
   assert_success
@@ -56,7 +56,7 @@ function setup() {
 
   # Act
   run --separate-stderr in_shell \
-    'cd "$1" && cd "$2" && cdl - >/dev/null && printf "%s\n" "$PWD"' \
+    'cd "$1" && cd "$2" && cdl - >/dev/null && printf "%s\n" "${PWD}"' \
     "${first}" "${second}"
 
   # Assert
@@ -70,7 +70,7 @@ function setup() {
 
   # Act
   run --separate-stderr in_shell \
-    'cd "$1" && cdl -- >/dev/null && printf "%s\n" "$PWD"' "${elsewhere}"
+    'cd "$1" && cdl -- >/dev/null && printf "%s\n" "${PWD}"' "${elsewhere}"
 
   # Assert
   assert_success
@@ -82,7 +82,7 @@ function setup() {
 
   # Act
   run --separate-stderr in_shell \
-    'unset HOME; cdl >/dev/null; printf "%s\n" "$PWD"'
+    'unset HOME; cdl >/dev/null; printf "%s\n" "${PWD}"'
 
   # Assert
   assert_success
@@ -95,7 +95,7 @@ function setup() {
 
   # Act
   run --separate-stderr in_shell \
-    'cd "$1" && cdl -- "-dashed dir" >/dev/null && printf "%s\n" "$PWD"' \
+    'cd "$1" && cdl -- "-dashed dir" >/dev/null && printf "%s\n" "${PWD}"' \
     "${HOME}"
 
   # Assert
@@ -126,7 +126,7 @@ function setup() {
   # Act
   run --separate-stderr in_shell \
     'function cd() { echo "user cd called"; }
-     cdl "$1" >/dev/null && printf "%s\n" "$PWD"' "${target}"
+     cdl "$1" >/dev/null && printf "%s\n" "${PWD}"' "${target}"
 
   # Assert
   assert_success
@@ -141,7 +141,7 @@ function setup() {
   # Arrange: no fixtures needed.
 
   # Act
-  run --separate-stderr in_shell 'cdl -h && printf "PWD=%s\n" "$PWD"'
+  run --separate-stderr in_shell 'cdl -h && printf "PWD=%s\n" "${PWD}"'
 
   # Assert
   assert_success
@@ -154,7 +154,7 @@ function setup() {
 
   # Act
   run --separate-stderr in_shell \
-    'cdl -h somewhere else && printf "PWD=%s\n" "$PWD"'
+    'cdl -h somewhere else && printf "PWD=%s\n" "${PWD}"'
 
   # Assert
   assert_success
@@ -169,7 +169,7 @@ function setup() {
 
   # Act
   run --separate-stderr in_shell \
-    'cd "$1" && cdl ""; rc=$?; printf "%s\n" "$PWD"; exit "$rc"' "${elsewhere}"
+    'cd "$1" && cdl ""; rc=$?; printf "%s\n" "${PWD}"; exit "${rc}"' "${elsewhere}"
 
   # Assert
   assert_failure 10
@@ -239,7 +239,7 @@ function a_target_cdl_cannot_enter_fails_with_its_reason() {
   # Arrange:
   # a file, a broken symlink, a symlink loop,
   # and a directory that may not be entered, with another in it.
-  if [[ ${target} == locked* ]] && ((EUID == 0)); then
+  if [[ "${target}" == locked* ]] && ((EUID == 0)); then
     skip 'root enters any directory'
   fi
   make_entries "${HOME}" 'notes.md' 'gone -> nowhere' 'loop -> loop'
@@ -278,7 +278,7 @@ done
 
 @test "cdl - without a previous directory fails with CDL_ERR_NOT_FOUND" {
   # Arrange: sandbox_setup unsets OLDPWD.
-  if [[ ${CDL_SHELL_KIND} == 'zsh' ]]; then
+  if [[ "${CDL_SHELL_KIND}" == 'zsh' ]]; then
     skip 'zsh keeps its own record of the previous directory'
   fi
 
@@ -304,14 +304,14 @@ function cdl_back_to_no_directory_fails_with_its_reason() {
   local -r reason="$3"
 
   # Arrange
-  if [[ ${CDL_SHELL_KIND} == 'zsh' ]]; then
+  if [[ "${CDL_SHELL_KIND}" == 'zsh' ]]; then
     skip 'zsh keeps its own record of the previous directory'
   fi
   make_entries "${HOME}" 'file'
 
   # Act
   run --separate-stderr in_shell \
-    'OLDPWD="$1"; cdl - >/dev/null; rc=$?; printf "%s\n" "$PWD"; exit "$rc"' "${HOME}/${kind}"
+    'OLDPWD="$1"; cdl - >/dev/null; rc=$?; printf "%s\n" "${PWD}"; exit "${rc}"' "${HOME}/${kind}"
 
   # Assert
   assert_failure "${code}"

@@ -31,7 +31,7 @@ function setup() {
 # Skip the test unless the shell under test is zsh.
 #######################################
 function only_in_zsh() {
-  if [[ ${CDL_SHELL_KIND} != 'zsh' ]]; then
+  if [[ "${CDL_SHELL_KIND}" != 'zsh' ]]; then
     skip 'a form of the cd of zsh'
   fi
 }
@@ -42,7 +42,7 @@ function only_in_zsh() {
   # Arrange: no fixtures needed.
 
   # Act
-  run --separate-stderr in_terminal 'cd "$CDL_TEST_DIR" && printf "%s\n" "$PWD"'
+  run --separate-stderr in_terminal 'cd "${CDL_TEST_DIR}" && printf "%s\n" "${PWD}"'
 
   # Assert
   assert_success
@@ -54,7 +54,7 @@ function only_in_zsh() {
 
   # Act
   run --separate-stderr in_terminal \
-    'cd "$CDL_TEST_DIR/todo.txt" && printf "%s\n" "$PWD"'
+    'cd "${CDL_TEST_DIR}/todo.txt" && printf "%s\n" "${PWD}"'
 
   # Assert
   assert_success
@@ -78,7 +78,7 @@ function only_in_zsh() {
   unset CDL_REPLACE_CD
 
   # Act
-  run --separate-stderr in_terminal 'cd "$CDL_TEST_DIR" && printf "%s\n" "$PWD"'
+  run --separate-stderr in_terminal 'cd "${CDL_TEST_DIR}" && printf "%s\n" "${PWD}"'
 
   # Assert
   assert_success
@@ -90,7 +90,7 @@ function only_in_zsh() {
 
   # Act
   run --separate-stderr in_terminal \
-    'CDL_REPLACE_CD=0; cd "$CDL_TEST_DIR" && printf "%s\n" "$PWD"'
+    'CDL_REPLACE_CD=0; cd "${CDL_TEST_DIR}" && printf "%s\n" "${PWD}"'
 
   # Assert
   assert_success
@@ -120,7 +120,7 @@ function only_in_zsh() {
   local -r physical_dir="$(builtin cd -P "${NOTES_DIR}" && pwd)"
 
   # Act
-  run --separate-stderr in_terminal 'cd -LP "$CDL_TEST_DIR" && printf "%s\n" "$PWD"'
+  run --separate-stderr in_terminal 'cd -LP "${CDL_TEST_DIR}" && printf "%s\n" "${PWD}"'
 
   # Assert
   assert_success
@@ -135,7 +135,7 @@ function only_in_zsh() {
   # the stack holds the notes, then HOME, where the shell started;
   # -0 counts from the right, so it names HOME.
   run --separate-stderr in_terminal \
-    'pushd -q "$CDL_TEST_DIR" && cd -0 && printf "pwd=%s\n" "$PWD"'
+    'pushd -q "${CDL_TEST_DIR}" && cd -0 && printf "pwd=%s\n" "${PWD}"'
 
   # Assert
   assert_success
@@ -152,7 +152,7 @@ function only_in_zsh() {
 
   # Act
   run --separate-stderr in_terminal \
-    'builtin cd "$CDL_TEST_DIR" && cd alpha beta && printf "pwd=%s\n" "$PWD"'
+    'builtin cd "${CDL_TEST_DIR}" && cd alpha beta && printf "pwd=%s\n" "${PWD}"'
 
   # Assert
   assert_success

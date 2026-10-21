@@ -100,12 +100,12 @@ function check_tag() {
   local version
   version="$(script_version)"
 
-  if [[ ${tag} != "v${version}" ]]; then
+  if [[ "${tag}" != "v${version}" ]]; then
     ci_error "the tag is ${tag}, but cdl.sh says ${version}" \
       "${RELEASE_ERR_VERSION}" || return
   fi
 
-  if [[ -n ${GITHUB_ENV-} ]]; then
+  if [[ -n "${GITHUB_ENV-}" ]]; then
     printf 'VERSION=%s\n' "${version}" >>"${GITHUB_ENV}"
   fi
   printf '%s\n' "${version}"
@@ -252,7 +252,7 @@ function main() {
     shift
   fi
 
-  case ${step} in
+  case "${step}" in
     check)
       require_arguments "${step}" 1 "$#"
       check_tag "$@"

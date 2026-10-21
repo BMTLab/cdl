@@ -60,7 +60,7 @@ function make_entries() {
 
   local spec
   for spec in "$@"; do
-    case ${spec} in
+    case "${spec}" in
       *' -> '*) ln -s -- "${spec#* -> }" "${dir}/${spec%% -> *}" ;;
       */) mkdir -p -- "${dir}/${spec%/}" ;;
       *'*') __fixtures_make_executable "${dir}/${spec%'*'}" ;;
@@ -95,7 +95,7 @@ function __fixtures_stamp() {
   local entry
 
   for entry in "${dir}"/* "${dir}"/.[!.]*; do
-    if [[ -e ${entry} || -L ${entry} ]]; then
+    if [[ -e "${entry}" || -L "${entry}" ]]; then
       touch -h -t "${FIXTURE_STAMP}" -- "${entry}"
     fi
   done

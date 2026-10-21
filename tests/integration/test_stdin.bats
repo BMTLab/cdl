@@ -40,13 +40,13 @@ function setup() {
   # Arrange
   local -r target="$(make_dir 'target')"
   local expected="${HOME}"
-  if [[ ${CDL_SHELL_KIND} == 'zsh' ]]; then
+  if [[ "${CDL_SHELL_KIND}" == 'zsh' ]]; then
     expected="${target}"
   fi
 
   # Act
   run --separate-stderr in_shell \
-    'printf "%s\n" "$1" | cdl >/dev/null; printf "%s\n" "$PWD"' "${target}"
+    'printf "%s\n" "$1" | cdl >/dev/null; printf "%s\n" "${PWD}"' "${target}"
 
   # Assert
   assert_success
@@ -109,7 +109,7 @@ function setup() {
 
   # Act
   run --separate-stderr in_shell \
-    'cdl <"$1" >/dev/null; printf "%s\n" "$PWD"' "${BATS_TEST_TMPDIR}/paths.txt"
+    'cdl <"$1" >/dev/null; printf "%s\n" "${PWD}"' "${BATS_TEST_TMPDIR}/paths.txt"
 
   # Assert
   assert_success
@@ -122,7 +122,7 @@ function setup() {
 
   # Act
   run --separate-stderr in_shell \
-    'while IFS= read -r line; do cdl >/dev/null; printf "%s\n" "$line"; done <"$1"' \
+    'while IFS= read -r line; do cdl >/dev/null; printf "%s\n" "${line}"; done <"$1"' \
     "${BATS_TEST_TMPDIR}/lines.txt"
 
   # Assert

@@ -60,9 +60,9 @@ function setup() {
 
   # Act
   run --separate-stderr in_shell \
-    'printf "%s " "$CDL_ERR_USAGE" "$CDL_ERR_SETTING" "$CDL_ERR_CHDIR" \
-       "$CDL_ERR_NOT_FOUND" "$CDL_ERR_DENIED" "$CDL_ERR_NOT_DIRECTORY" \
-       "$CDL_ERR_LIST" "$CDL_ERR_NOT_SOURCED"'
+    'printf "%s " "${CDL_ERR_USAGE}" "${CDL_ERR_SETTING}" "${CDL_ERR_CHDIR}" \
+       "${CDL_ERR_NOT_FOUND}" "${CDL_ERR_DENIED}" "${CDL_ERR_NOT_DIRECTORY}" \
+       "${CDL_ERR_LIST}" "${CDL_ERR_NOT_SOURCED}"'
 
   # Assert
   assert_success
@@ -78,8 +78,8 @@ function setup() {
   # a script that compares the tens, as the header of cdl.sh advises.
   run --separate-stderr in_shell \
     'for target in missing notes.md/drafts gone/inner; do
-       cdl "$HOME/$target" 2>/dev/null
-       (( $? / 10 == CDL_ERR_CHDIR / 10 )) && printf "caught %s\n" "$target"
+       cdl "${HOME}/${target}" 2>/dev/null
+       (( $? / 10 == CDL_ERR_CHDIR / 10 )) && printf "caught %s\n" "${target}"
      done'
 
   # Assert
@@ -119,7 +119,7 @@ done
 
   # Act
   run --separate-stderr in_shell \
-    'source "$CDL_SCRIPT" && cdl "$1" >/dev/null && printf "%s\n" "$PWD"' "${target}"
+    'source "${CDL_SCRIPT}" && cdl "$1" >/dev/null && printf "%s\n" "${PWD}"' "${target}"
 
   # Assert
   assert_success
@@ -134,7 +134,7 @@ done
 
   # Act
   run --separate-stderr in_bare_shell \
-    'function load_plugin() { source "$CDL_SCRIPT"; }
+    'function load_plugin() { source "${CDL_SCRIPT}"; }
      load_plugin
      cdl "$1"
      printf "%s\n" "$?"' "${missing}"
@@ -147,7 +147,7 @@ done
 # bats test_tags=smoke
 @test "the zsh plugin file sources cdl.sh from its own directory" {
   # Arrange
-  if [[ ${CDL_SHELL_KIND} != 'zsh' ]]; then
+  if [[ "${CDL_SHELL_KIND}" != 'zsh' ]]; then
     skip 'cdl.plugin.zsh is for zsh plugin managers'
   fi
   local -r target="$(make_dir 'target')"
@@ -156,7 +156,7 @@ done
   # sourced from elsewhere, from inside a function, as managers do.
   run --separate-stderr in_bare_shell \
     'function load_plugin() { source "$1"; }
-     cd / && load_plugin "$1" && cdl "$2" >/dev/null && printf "%s\n" "$PWD"' \
+     cd / && load_plugin "$1" && cdl "$2" >/dev/null && printf "%s\n" "${PWD}"' \
     "${CDL_ROOT}/cdl.plugin.zsh" "${target}"
 
   # Assert
@@ -169,7 +169,7 @@ done
   # Arrange:
   # zsh warns about every global a function creates with this option,
   # and plugin managers load files from functions.
-  if [[ ${CDL_SHELL_KIND} != 'zsh' ]]; then
+  if [[ "${CDL_SHELL_KIND}" != 'zsh' ]]; then
     skip 'WARN_CREATE_GLOBAL is an option of zsh'
   fi
   local -r target="$(make_dir 'target')"
@@ -179,7 +179,7 @@ done
   # sourcing, a call of each function, cd, and the first prompt.
   run --separate-stderr in_bare_shell \
     'setopt warn_create_global
-     function load_plugin() { source "$CDL_SCRIPT"; }
+     function load_plugin() { source "${CDL_SCRIPT}"; }
      load_plugin
      cdl "$1" >/dev/null && cdl_list >/dev/null && cd / \
        && for hook in "${precmd_functions[@]}"; do "${hook}"; done >/dev/null' \
@@ -198,7 +198,7 @@ done
 
   # Act
   run --separate-stderr in_bare_shell \
-    'PATH="$1" source "$CDL_SCRIPT" && echo loaded' "${empty_path}"
+    'PATH="$1" source "${CDL_SCRIPT}" && echo loaded' "${empty_path}"
 
   # Assert
   assert_success
@@ -209,22 +209,22 @@ done
 @test "sourcing adds only cdl, cdl_list and __cdl_ functions" {
   # Arrange
   local list_functions='compgen -A function'
-  if [[ ${CDL_SHELL_KIND} == 'zsh' ]]; then
+  if [[ "${CDL_SHELL_KIND}" == 'zsh' ]]; then
     list_functions='print -l ${(k)functions}'
   fi
 
   # Act
   run --separate-stderr in_bare_shell "
     before=\"\$(${list_functions})\"
-    source \"\$CDL_SCRIPT\"
+    source \"\${CDL_SCRIPT}\"
     after=\"\$(${list_functions})\"
-    printf '%s\n' \"\$after\" | grep -vxF \"\$before\""
+    printf '%s\n' \"\${after}\" | grep -vxF \"\${before}\""
 
   # Assert
   assert_success
   local name
   while IFS= read -r name; do
-    case ${name} in
+    case "${name}" in
       cdl | cdl_list | __cdl_*) ;;
       *) __assert_fail "unexpected function: ${name}" ;;
     esac
@@ -247,7 +247,7 @@ done
   run --separate-stderr in_bare_shell \
     'set -eu
      unset COLUMNS TERM
-     source "$CDL_SCRIPT"
+     source "${CDL_SCRIPT}"
      cdl "$1"
      echo survived' "${target}"
 
@@ -269,7 +269,7 @@ done
     'if [ -n "${BASH_VERSION-}" ]; then shopt -s expand_aliases; fi
      alias ls="echo hijacked"
      alias awk="echo hijacked"
-     source "$CDL_SCRIPT"
+     source "${CDL_SCRIPT}"
      function ls() { echo hijacked; }
      function awk() { echo hijacked; }
      function tput() { echo hijacked; }
@@ -283,7 +283,7 @@ done
 
 @test "zsh options that change word splitting and arrays do not break cdl" {
   # Arrange
-  if [[ ${CDL_SHELL_KIND} != 'zsh' ]]; then
+  if [[ "${CDL_SHELL_KIND}" != 'zsh' ]]; then
     skip 'zsh only'
   fi
   require_gnu_compatible_ls
@@ -308,7 +308,7 @@ done
 
   # Act
   run --separate-stderr in_shell \
-    'REPLY=mine; cdl "$1" >/dev/null; printf "%s\n" "$REPLY"' "${target}"
+    'REPLY=mine; cdl "$1" >/dev/null; printf "%s\n" "${REPLY}"' "${target}"
 
   # Assert
   assert_success
@@ -328,7 +328,7 @@ done
 
   # Act
   run --separate-stderr in_shell \
-    'cd "$1" && cd "$2" && cdl_list && printf "%s\n" "$OLDPWD"' "${first}" "${second}"
+    'cd "$1" && cd "$2" && cdl_list && printf "%s\n" "${OLDPWD}"' "${first}" "${second}"
 
   # Assert
   assert_success

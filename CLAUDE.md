@@ -103,6 +103,11 @@ The regions of `cdl.sh` read top to bottom:
   ShellCheck enforces both through `.shellcheckrc`
   (`require-variable-braces`, `quote-safe-variables`);
   `shellcheck -f diff FILE | patch -p1` applies its own fixes.
+- The same holds where ShellCheck cannot see:
+  inside `[[ ]]`, in the subject of `case`,
+  and in the code strings that tests and tools hand to a shell.
+  The right side of `==`, `!=` or `=~` stays unquoted
+  only when it is a pattern on purpose.
 - A name says what the thing is:
   `entry_size`, `__cdl_terminal_width`, `assert_two_columns_aligned`.
 

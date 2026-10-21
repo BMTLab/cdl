@@ -59,7 +59,7 @@ function invalid_setting_fails_before_moving() {
 
   # Act
   run --separate-stderr in_shell \
-    'export "$1=$2"; cdl "$3"; rc=$?; printf "%s\n" "$PWD"; exit "$rc"' \
+    'export "$1=$2"; cdl "$3"; rc=$?; printf "%s\n" "${PWD}"; exit "${rc}"' \
     "${variable}" "${value}" "${LISTED_DIR}"
 
   # Assert
@@ -125,7 +125,7 @@ done
   # Arrange: no fixtures needed.
 
   # Act
-  run --separate-stderr in_shell 'cdl -V somewhere else && printf "PWD=%s\n" "$PWD"'
+  run --separate-stderr in_shell 'cdl -V somewhere else && printf "PWD=%s\n" "${PWD}"'
 
   # Assert
   assert_success
@@ -258,7 +258,7 @@ done
 
   # Act
   run --separate-stderr in_shell \
-    'cdl -L -P "$1" >/dev/null && printf "%s\n" "$PWD" && cdl -P -L "$1" >/dev/null && printf "%s\n" "$PWD"' \
+    'cdl -L -P "$1" >/dev/null && printf "%s\n" "${PWD}" && cdl -P -L "$1" >/dev/null && printf "%s\n" "${PWD}"' \
     "${HOME}/link"
 
   # Assert
@@ -273,7 +273,7 @@ done
 
   # Act
   run --separate-stderr in_shell \
-    'cdl -L "$1" >/dev/null && printf "%s\n" "$PWD" && cdl "$1" >/dev/null && printf "%s\n" "$PWD"' \
+    'cdl -L "$1" >/dev/null && printf "%s\n" "${PWD}" && cdl "$1" >/dev/null && printf "%s\n" "${PWD}"' \
     "${HOME}/link"
 
   # Assert

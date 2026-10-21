@@ -54,7 +54,7 @@ function in_shell_with_stdin() {
   shift
 
   # shellcheck disable=SC2016 # expanded by the shell under test
-  in_bare_shell 'source "$CDL_SCRIPT" || exit; '"${snippet}" "$@"
+  in_bare_shell 'source "${CDL_SCRIPT}" || exit; '"${snippet}" "$@"
 }
 
 #######################################
@@ -73,7 +73,7 @@ function in_bare_shell() {
   local -r snippet="$1"
   shift
 
-  if [[ ${CDL_SHELL_KIND} == 'zsh' ]]; then
+  if [[ "${CDL_SHELL_KIND}" == 'zsh' ]]; then
     "${CDL_SHELL_PATH}" -f -c "${snippet}" cdl-test "$@"
   else
     "${CDL_SHELL_PATH}" --noprofile --norc -c "${snippet}" cdl-test "$@"
@@ -103,15 +103,15 @@ function in_terminal() {
   local -r script_file="${BATS_TEST_TMPDIR}/terminal-snippet"
 
   # shellcheck disable=SC2016 # expanded by the shell under test
-  printf 'source "$CDL_SCRIPT" || exit\n%s\n' "${snippet}" >"${script_file}"
+  printf 'source "${CDL_SCRIPT}" || exit\n%s\n' "${snippet}" >"${script_file}"
 
   local -a command=("${CDL_SHELL_PATH}" --noprofile --norc "${script_file}")
-  if [[ ${CDL_SHELL_KIND} == 'zsh' ]]; then
+  if [[ "${CDL_SHELL_KIND}" == 'zsh' ]]; then
     command=("${CDL_SHELL_PATH}" -f "${script_file}")
   fi
 
   local transcript rc=0
-  if [[ $(uname -s) == 'Darwin' ]]; then
+  if [[ "$(uname -s)" == 'Darwin' ]]; then
     transcript="$(script -q /dev/null "${command[@]}" </dev/null)" || rc=$?
   else
     # The command string goes through sh, so each word is quoted.
@@ -147,7 +147,7 @@ function in_terminal() {
 #   cdl's return code.
 #######################################
 function cdl_then_pwd() {
-  in_shell 'cdl "$@" >/dev/null; rc=$?; printf "%s\n" "$PWD"; exit "$rc"' "$@"
+  in_shell 'cdl "$@" >/dev/null; rc=$?; printf "%s\n" "${PWD}"; exit "${rc}"' "$@"
 }
 
 #######################################

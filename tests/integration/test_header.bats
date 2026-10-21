@@ -263,7 +263,7 @@ function a_worktree_shows_its_own_branch() {
   local -r git_dir="${HOME}/repo.git/worktrees/app"
   mkdir -p -- "${git_dir}"
   printf 'ref: refs/heads/topic\n' >"${git_dir}/HEAD"
-  if [[ ${spelling} == 'absolute' ]]; then
+  if [[ "${spelling}" == 'absolute' ]]; then
     printf 'gitdir: %s\n' "${git_dir}" >"${LISTED_DIR}/.git"
   else
     printf 'gitdir: ../../repo.git/worktrees/app\n' >"${LISTED_DIR}/.git"

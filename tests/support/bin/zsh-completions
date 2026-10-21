@@ -57,18 +57,18 @@ readonly READY_PROMPT='<completion-ready>'
 readonly SESSION_SETUP='
 bindkey -e
 if (( CDL_COMPLETION_BEFORE_COMPINIT )); then
-  source "$CDL_COMPLETION_SCRIPT"
+  source "${CDL_COMPLETION_SCRIPT}"
   autoload -Uz compinit && compinit -u -D
 else
   autoload -Uz compinit && compinit -u -D
-  source "$CDL_COMPLETION_SCRIPT"
+  source "${CDL_COMPLETION_SCRIPT}"
 fi
-cd "$CDL_COMPLETION_DIRECTORY"
+cd "${CDL_COMPLETION_DIRECTORY}"
 
 # Write down the candidates of each compadd call that adds them;
 # the calls that only test words (-O, -A, -D) pass straight through.
 function compadd() {
-  if [[ ${@[1,(i)(-|--)]} == *-(O|A|D)\ * ]]; then
+  if [[ "${@[1,(i)(-|--)]}" == *-(O|A|D)\ * ]]; then
     builtin compadd "$@"
     return
   fi
@@ -76,18 +76,18 @@ function compadd() {
   local -a found
   builtin compadd -O found "$@"
   if (( ${#found} )); then
-    print -rl -- "${found[@]}" >>| "$CDL_COMPLETION_HITS"
+    print -rl -- "${found[@]}" >>| "${CDL_COMPLETION_HITS}"
   fi
   builtin compadd "$@"
 }
 
 function __completion_done() {
-  print -r -- "$CDL_COMPLETION_DONE" >>| "$CDL_COMPLETION_HITS"
+  print -r -- "${CDL_COMPLETION_DONE}" >>| "${CDL_COMPLETION_HITS}"
 }
 zle -N __completion_done
 bindkey "^X^G" __completion_done
 
-PS1="$CDL_COMPLETION_READY"
+PS1="${CDL_COMPLETION_READY}"
 '
 
 # Run by `zsh -f`: start the session, wait for its prompt,
@@ -104,7 +104,7 @@ integer tries
 function drain() {
   local chunk
   while zpty -r -t session chunk; do
-    screen+=$chunk
+    screen+="${chunk}"
   done
 }
 
@@ -112,14 +112,16 @@ zpty session "${CDL_ZSH:-zsh}" -f -i
 zpty -w session "source ${(q)CDL_COMPLETION_SETUP}"
 for (( tries = 0; tries < 100; tries++ )); do
   drain
-  [[ $screen == *$CDL_COMPLETION_READY* ]] && break
+  if [[ "${screen}" == *"${CDL_COMPLETION_READY}"* ]]; then
+    break
+  fi
   zselect -t 5
 done
 
 zpty -w -n session "${CDL_COMPLETION_LINE}"$'"'"'\t\x18\x07'"'"'
 for (( tries = 0; tries < 100; tries++ )); do
   drain
-  if [[ $(<$CDL_COMPLETION_HITS) == *$CDL_COMPLETION_DONE* ]]; then
+  if [[ "$(<"${CDL_COMPLETION_HITS}")" == *"${CDL_COMPLETION_DONE}"* ]]; then
     zpty -d session
     exit 0
   fi
@@ -177,12 +179,12 @@ function print_completions() {
 #######################################
 function main() {
   local -i before_compinit=0
-  if [[ ${1-} == '--before-compinit' ]]; then
+  if [[ "${1-}" == '--before-compinit' ]]; then
     before_compinit=1
     shift
   fi
 
-  if (($# != 3)) || [[ $1 == -* ]]; then
+  if (($# != 3)) || [[ "$1" == -* ]]; then
     printf 'Usage: zsh-completions [--before-compinit] SCRIPT DIRECTORY LINE\n' >&2
     return "${ZSH_COMPLETIONS_ERR_USAGE}"
   fi

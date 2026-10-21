@@ -33,7 +33,7 @@ function setup() {
   # Assert
   assert_success
   assert_output "$(listing_row '0' 'entry')"
-  if [[ ! -s ${GLS_LOG} ]]; then
+  if [[ ! -s "${GLS_LOG}" ]]; then
     __assert_fail 'gls was never called'
   fi
 }
@@ -58,7 +58,7 @@ function setup() {
 
   # Act
   run --separate-stderr in_shell \
-    'cdl_list && source "$CDL_SCRIPT" && cdl_list' "${LISTED_DIR}"
+    'cdl_list && source "${CDL_SCRIPT}" && cdl_list' "${LISTED_DIR}"
 
   # Assert
   assert_success
@@ -88,7 +88,7 @@ function setup() {
   export CDL_TEST_DIR="${LISTED_DIR}"
 
   # Act
-  run --separate-stderr in_terminal 'cdl "$CDL_TEST_DIR"'
+  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIR}"'
 
   # Assert
   assert_success
@@ -102,7 +102,7 @@ function setup() {
   export CDL_TEST_DIR="${LISTED_DIR}"
 
   # Act
-  run --separate-stderr in_terminal 'cdl "$CDL_TEST_DIR"'
+  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIR}"'
 
   # Assert
   assert_success
@@ -129,7 +129,7 @@ function setup() {
   export NO_COLOR=1
 
   # Act
-  run --separate-stderr in_terminal 'cdl "$CDL_TEST_DIR"'
+  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIR}"'
 
   # Assert
   assert_success

@@ -123,7 +123,7 @@ function download_verified() {
   local -r expected="$2"
   local -r file="${CACHE_DIR}/downloads/${url##*/}"
 
-  if [[ -f ${file} && $(sha256_of "${file}") == "${expected}" ]]; then
+  if [[ -f "${file}" && "$(sha256_of "${file}")" == "${expected}" ]]; then
     printf '%s\n' "${file}"
     return 0
   fi
@@ -136,7 +136,7 @@ function download_verified() {
 
   local actual
   actual="$(sha256_of "${file}")"
-  if [[ ${actual} != "${expected}" ]]; then
+  if [[ "${actual}" != "${expected}" ]]; then
     rm -f "${file}"
     ci_error "digest mismatch for ${url}: got ${actual}" "${INSTALL_ERR_DOWNLOAD}" || return
   fi
@@ -158,11 +158,11 @@ function asset_arch() {
   local -r x86_64_name="$1"
   local -r arm64_name="$2"
 
-  if [[ $(uname -s) != 'Linux' ]]; then
+  if [[ "$(uname -s)" != 'Linux' ]]; then
     ci_error 'pinned binaries are for Linux only' "${INSTALL_ERR_PLATFORM}" || return
   fi
 
-  case $(uname -m) in
+  case "$(uname -m)" in
     x86_64) printf '%s\n' "${x86_64_name}" ;;
     aarch64 | arm64) printf '%s\n' "${arm64_name}" ;;
     *) ci_error "no pinned binary for $(uname -m)" "${INSTALL_ERR_PLATFORM}" ;;
@@ -184,7 +184,7 @@ function digest_for() {
   local -r x86_64_digest="$3"
   local -r arm64_digest="$4"
 
-  if [[ ${arch} == "${x86_64_name}" ]]; then
+  if [[ "${arch}" == "${x86_64_name}" ]]; then
     printf '%s\n' "${x86_64_digest}"
   else
     printf '%s\n' "${arm64_digest}"
@@ -259,7 +259,7 @@ function install_bats() {
 
   local commit
   commit="$(git -C "${checkout}" rev-parse HEAD)"
-  if [[ ${commit} != "${BATS_COMMIT}" ]]; then
+  if [[ "${commit}" != "${BATS_COMMIT}" ]]; then
     ci_error "bats v${BATS_VERSION} is ${commit}, not ${BATS_COMMIT}" \
       "${INSTALL_ERR_DOWNLOAD}" || return
   fi
@@ -278,7 +278,7 @@ function install_packages() {
     return 0
   fi
 
-  if [[ $(uname -s) == 'Darwin' ]]; then
+  if [[ "$(uname -s)" == 'Darwin' ]]; then
     install_brew_packages "$@"
   else
     install_apt_packages "$@"
@@ -361,7 +361,7 @@ function install_debs() {
   local -r debs="$1"
   local -a files=("${debs}"/*.deb)
 
-  if [[ ! -f ${files[0]} ]]; then
+  if [[ ! -f "${files[0]}" ]]; then
     return 1
   fi
 
@@ -435,14 +435,14 @@ function main() {
   fi
 
   mkdir -p "${TOOLS_BIN}"
-  if [[ -n ${GITHUB_PATH-} ]]; then
+  if [[ -n "${GITHUB_PATH-}" ]]; then
     printf '%s\n' "${TOOLS_BIN}" >>"${GITHUB_PATH}"
   fi
 
   local tool
   local -a packages=()
   for tool in "$@"; do
-    case ${tool} in
+    case "${tool}" in
       shellcheck) install_shellcheck ;;
       shfmt) install_shfmt ;;
       actionlint) install_actionlint ;;

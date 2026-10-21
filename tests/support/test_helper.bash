@@ -30,7 +30,7 @@ CDL_SHELL_PATH="$(command -v "${CDL_TEST_SHELL:-bash}")" || {
   printf 'Shell under test not found: %s\n' "${CDL_TEST_SHELL:-bash}" >&2
   exit 1
 }
-case ${CDL_SHELL_PATH##*/} in
+case "${CDL_SHELL_PATH##*/}" in
   zsh*) CDL_SHELL_KIND='zsh' ;;
   *) CDL_SHELL_KIND='bash' ;;
 esac

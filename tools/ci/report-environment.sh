@@ -95,7 +95,7 @@ function main() {
   )"
 
   printf '%s\n' "${report}"
-  if [[ -n ${GITHUB_STEP_SUMMARY-} ]]; then
+  if [[ -n "${GITHUB_STEP_SUMMARY-}" ]]; then
     printf '### Environment\n\n%s\n\n' "${report}" >>"${GITHUB_STEP_SUMMARY}"
   fi
 }

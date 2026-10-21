@@ -98,10 +98,10 @@ function report_violations() {
   local -r date="$(script_header 'Date')"
 
   # Assert
-  if [[ ! ${version} =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  if [[ ! "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     __assert_fail "not a semantic version: '${version}'"
   fi
-  if [[ ! ${date} =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+  if [[ ! "${date}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
     __assert_fail "not an ISO date: '${date}'"
   fi
 }
@@ -157,7 +157,7 @@ function report_violations() {
   done < <(sed -n 's/^: "\${\(CDL_ERR_[A-Z_]*\):=\([0-9]*\)}"$/\1=\2/p' "${CDL_SCRIPT}")
 
   # Assert
-  if ((${#violations[@]} == 0)) && [[ -z ${help_text} ]]; then
+  if ((${#violations[@]} == 0)) && [[ -z "${help_text}" ]]; then
     __assert_fail 'cdl --help printed nothing'
   fi
   report_violations 'return codes' "${violations[@]}"
@@ -213,7 +213,7 @@ function named_exit_codes() {
     }' <<<"${codes}")
 
   # Assert
-  if [[ -z ${codes} ]]; then
+  if [[ -z "${codes}" ]]; then
     __assert_fail 'no return codes found in cdl.sh'
   fi
   report_violations 'return codes of cdl' "${violations[@]}"
@@ -247,7 +247,7 @@ function named_exit_codes() {
     }' <<<"${codes}")
 
   # Assert
-  if [[ -z ${codes} ]]; then
+  if [[ -z "${codes}" ]]; then
     __assert_fail 'no named exit codes found'
   fi
   report_violations 'exit codes' "${violations[@]}"
@@ -272,7 +272,7 @@ function named_exit_codes() {
     if ! grep -qE "^  ${name} " <<<"${help_text}"; then
       violations+=("${name}: missing from cdl --help")
     fi
-    if [[ ${readme} != *"| \`${name}\`"* ]]; then
+    if [[ "${readme}" != *"| \`${name}\`"* ]]; then
       violations+=("${name}: missing from the table of settings in README.md")
     fi
   done < <(list_cdl_settings)

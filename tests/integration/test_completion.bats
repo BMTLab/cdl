@@ -38,7 +38,7 @@ function setup() {
 #   1: 'bash' or 'zsh'.
 #######################################
 function only_in() {
-  if [[ ${CDL_SHELL_KIND} != "$1" ]]; then
+  if [[ "${CDL_SHELL_KIND}" != "$1" ]]; then
     skip "a test of the $1 completion"
   fi
 }
@@ -70,7 +70,7 @@ function bash_completions() {
 #######################################
 function zsh_completions() {
   local -a options=()
-  if [[ $1 == '--before-compinit' ]]; then
+  if [[ "$1" == '--before-compinit' ]]; then
     options=("$1")
     shift
   fi
@@ -125,7 +125,7 @@ function zsh_completions() {
   run --separate-stderr in_bare_shell \
     'after_complete=()
      function blehook/eval-after-load() { after_complete+=("$2"); }
-     source "$CDL_SCRIPT"
+     source "${CDL_SCRIPT}"
      function ble/cmdinfo/complete:cd() { COMPREPLY=(-e -@); }
      for hook in "${after_complete[@]}"; do eval "${hook}"; done
      COMP_WORDS=(cd -) && COMP_CWORD=1
@@ -153,9 +153,9 @@ function zsh_completions() {
   # the last spec of cd is the one ble.sh goes by.
   run --separate-stderr in_bare_shell \
     'after_cmdspec=()
-     function ble-import() { if [[ $1 == -C ]]; then after_cmdspec+=("$2"); fi; }
+     function ble-import() { if [[ "$1" == -C ]]; then after_cmdspec+=("$2"); fi; }
      function ble/cmdspec/opts() { cd_spec="$1"; }
-     source "$CDL_SCRIPT"
+     source "${CDL_SCRIPT}"
      ble/cmdspec/opts "mandb-help=%help cd" cd
      for callback in "${after_cmdspec[@]}"; do eval "${callback}"; done
      printf "%s\n" "${cd_spec}"'
@@ -333,7 +333,7 @@ function zsh_completions() {
   only_in zsh
 
   # Act
-  run --separate-stderr in_bare_shell 'source "$CDL_SCRIPT"'
+  run --separate-stderr in_bare_shell 'source "${CDL_SCRIPT}"'
 
   # Assert
   assert_success

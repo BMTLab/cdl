@@ -36,7 +36,7 @@ function setup() {
 
   # Act
   run --separate-stderr in_shell \
-    'cdl "$1" && printf "PWD=%s\n" "$PWD"' "${DOCS_DIR}/notes.md"
+    'cdl "$1" && printf "PWD=%s\n" "${PWD}"' "${DOCS_DIR}/notes.md"
 
   # Assert
   assert_success
@@ -58,7 +58,7 @@ function a_file_here_is_marked_without_moving() {
 
   # Act
   run --separate-stderr in_shell \
-    'cd "$1" && cdl "$2" >/dev/null && printf "%s\n" "$PWD" "$OLDPWD"' "${DOCS_DIR}" "${name}"
+    'cd "$1" && cdl "$2" >/dev/null && printf "%s\n" "${PWD}" "${OLDPWD}"' "${DOCS_DIR}" "${name}"
 
   # Assert:
   # docs, and HOME before it, for cdl - to go back to.
@@ -80,7 +80,7 @@ done
 
   # Act
   run --separate-stderr in_shell \
-    'CDPATH="$1" cdl docs/notes.md >/dev/null && printf "%s\n" "$PWD"' "${elsewhere}"
+    'CDPATH="$1" cdl docs/notes.md >/dev/null && printf "%s\n" "${PWD}"' "${elsewhere}"
 
   # Assert
   assert_success
@@ -94,7 +94,7 @@ done
 
   # Act
   run --separate-stderr in_shell \
-    'cd "$1" && CDPATH="$2" cdl report.pdf >/dev/null && printf "%s\n" "$PWD"' \
+    'cd "$1" && CDPATH="$2" cdl report.pdf >/dev/null && printf "%s\n" "${PWD}"' \
     "${DOCS_DIR}" "${elsewhere}"
 
   # Assert
@@ -108,7 +108,7 @@ done
 
   # Act
   run --separate-stderr in_shell \
-    'cdl "$1" && printf "PWD=%s\n" "$PWD"' "${HOME}/latest"
+    'cdl "$1" && printf "PWD=%s\n" "${PWD}"' "${HOME}/latest"
 
   # Assert
   assert_success
@@ -287,7 +287,7 @@ function a_leading_tilde_means_home() {
 
   # Act
   run --separate-stderr in_shell \
-    "cd / && ${snippet} >/dev/null && printf '%s\n' \"\$PWD\"" "${path}"
+    "cd / && ${snippet} >/dev/null && printf '%s\n' \"\${PWD}\"" "${path}"
 
   # Assert
   assert_success
@@ -319,7 +319,7 @@ bats_test_function \
 
   # Act
   run --separate-stderr in_shell \
-    'cd "$1" && cdl "~" >/dev/null && printf "%s\n" "$PWD"' "${HOME}/here"
+    'cd "$1" && cdl "~" >/dev/null && printf "%s\n" "${PWD}"' "${HOME}/here"
 
   # Assert
   assert_success

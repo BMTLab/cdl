@@ -65,7 +65,7 @@ function section_of() {
 #######################################
 function main() {
   local version="${1-}"
-  if [[ -z ${version} ]]; then
+  if [[ -z "${version}" ]]; then
     version="$(sed -n 's/^# Version: *//p' "${PROJECT_ROOT}/cdl.sh")"
   fi
 

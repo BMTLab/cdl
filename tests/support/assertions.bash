@@ -51,7 +51,7 @@ function assert_failure() {
 function assert_output() {
   local -r expected="$1"
 
-  if [[ ${output} != "${expected}" ]]; then
+  if [[ "${output}" != "${expected}" ]]; then
     __assert_fail 'output differs' "${expected}" "${output}"
   fi
 }
@@ -65,7 +65,7 @@ function assert_output() {
 function assert_output_contains() {
   local -r fragment="$1"
 
-  if [[ ${output} != *"${fragment}"* ]]; then
+  if [[ "${output}" != *"${fragment}"* ]]; then
     __assert_fail "output lacks: ${fragment}"
   fi
 }
@@ -79,7 +79,7 @@ function assert_output_contains() {
 function refute_output_contains() {
   local -r fragment="$1"
 
-  if [[ ${output} == *"${fragment}"* ]]; then
+  if [[ "${output}" == *"${fragment}"* ]]; then
     __assert_fail "output must not contain: ${fragment}"
   fi
 }
@@ -93,7 +93,7 @@ function refute_output_contains() {
 function assert_stderr_contains() {
   local -r fragment="$1"
 
-  if [[ ${stderr-} != *"${fragment}"* ]]; then
+  if [[ "${stderr-}" != *"${fragment}"* ]]; then
     __assert_fail "stderr lacks: ${fragment}"
   fi
 }
@@ -102,7 +102,7 @@ function assert_stderr_contains() {
 # Assert the last run printed nothing on stderr.
 #######################################
 function assert_no_stderr() {
-  if [[ -n ${stderr-} ]]; then
+  if [[ -n "${stderr-}" ]]; then
     __assert_fail 'expected an empty stderr'
   fi
 }
@@ -120,7 +120,7 @@ function assert_equal() {
   local -r expected="$2"
   local -r subject="$3"
 
-  if [[ ${actual} != "${expected}" ]]; then
+  if [[ "${actual}" != "${expected}" ]]; then
     __assert_fail "${subject} differs" "${expected}" "${actual}"
   fi
 }

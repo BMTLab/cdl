@@ -125,7 +125,7 @@ function available_awks() {
   if supported_busybox_awk; then
     printf 'busybox-awk\n'
   fi
-  if command -v gawk >/dev/null && [[ ${SANDBOX_UTF8_LOCALE} != 'C' ]]; then
+  if command -v gawk >/dev/null && [[ "${SANDBOX_UTF8_LOCALE}" != 'C' ]]; then
     printf 'gawk-utf8\n'
   fi
 }
@@ -147,7 +147,7 @@ function use_awk() {
   local -r name="$1"
   local command
 
-  case ${name} in
+  case "${name}" in
     busybox-awk) command='exec busybox awk "$@"' ;;
     gawk-utf8) command="LC_ALL='${SANDBOX_UTF8_LOCALE}' exec gawk \"\$@\"" ;;
     *)
@@ -181,14 +181,14 @@ function fake_bsd_ls() {
   local -r colors="$1"
   local -ir listing_status="${2:-0}"
   local accepts_g='yes'
-  if [[ ${colors} == 'without-color' ]]; then
+  if [[ "${colors}" == 'without-color' ]]; then
     accepts_g='no'
   fi
 
   __fakes_install ls "
 for arg in \"\$@\"; do
-  case \$arg in
-    --*) echo \"ls: unrecognized option: \$arg\" >&2; exit 2 ;;
+  case \${arg} in
+    --*) echo \"ls: unrecognized option: \${arg}\" >&2; exit 2 ;;
     -*G*) [ '${accepts_g}' = 'yes' ] || { echo 'ls: unknown option -- G' >&2; exit 1; } ;;
   esac
 done

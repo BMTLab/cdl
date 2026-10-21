@@ -127,7 +127,7 @@ function setup() {
   assert_success
   local -r device_row='^ *[0-9]+, *[0-9]+  [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}  null$'
   local -r null_row="$(grep ' null$' <<<"${output}")"
-  if [[ ! ${null_row} =~ ${device_row} ]]; then
+  if [[ ! "${null_row}" =~ ${device_row} ]]; then
     __assert_fail "unexpected /dev/null row: ${null_row}"
   fi
 }
@@ -282,7 +282,7 @@ done
   export CDL_TEST_DIR="${LISTED_DIR}"
 
   # Act
-  run --separate-stderr in_terminal 'cdl "$CDL_TEST_DIR"'
+  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIR}"'
 
   # Assert
   assert_success
@@ -297,7 +297,7 @@ done
   export NO_COLOR=''
 
   # Act
-  run --separate-stderr in_terminal 'cdl "$CDL_TEST_DIR"'
+  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIR}"'
 
   # Assert
   assert_success
@@ -311,7 +311,7 @@ done
   export NO_COLOR=1
 
   # Act
-  run --separate-stderr in_terminal 'cdl "$CDL_TEST_DIR"'
+  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIR}"'
 
   # Assert
   assert_success
@@ -329,7 +329,7 @@ done
   export CDL_TEST_DIR="${LISTED_DIR}" HOSTNAME='box'
 
   # Act
-  run --separate-stderr in_terminal 'cdl "$CDL_TEST_DIR"'
+  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIR}"'
 
   # Assert
   assert_success
@@ -342,7 +342,7 @@ done
   export CDL_TEST_DIR="${LISTED_DIR}" TERM='linux'
 
   # Act
-  run --separate-stderr in_terminal 'cdl "$CDL_TEST_DIR"'
+  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIR}"'
 
   # Assert
   assert_success
@@ -356,7 +356,7 @@ done
   export CDL_TEST_DIR="${LISTED_DIR}" CDL_LINKS='never'
 
   # Act
-  run --separate-stderr in_terminal 'cdl "$CDL_TEST_DIR"'
+  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIR}"'
 
   # Assert
   assert_success
