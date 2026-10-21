@@ -1,42 +1,39 @@
 #!/usr/bin/env bash
 
-# Name: tools/ci/release.sh
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Run one step of a release: check, notes, assets, publish or verify.
 #
-# Description:
-#   The steps of a release, one command each,
-#   for the release workflow and for a dry run on a laptop:
-#     - check TAG: the tag names the version in the header of cdl.sh;
-#     - notes VERSION FILE: the CHANGELOG section of the version, into FILE;
-#     - assets TAG DIR: cdl.sh, a source tarball and their SHA-256 files;
-#     - publish TAG DIR FILE: the GitHub release, through gh;
-#     - verify DIR: the signed build provenance of cdl.sh, through gh.
-#   Under GitHub Actions, `check` also exports VERSION to the next steps.
-#
-# Usage:
+# Usage: tools/ci/release.sh STEP ARGUMENT...
 #   tools/ci/release.sh check v2.0.0
 #   tools/ci/release.sh notes 2.0.0 release-notes.md
 #   tools/ci/release.sh assets v2.0.0 release-assets
 #   GH_TOKEN=... tools/ci/release.sh publish v2.0.0 release-assets release-notes.md
 #   GH_TOKEN=... tools/ci/release.sh verify release-assets
+# Effects: notes writes its FILE, assets fills its DIR,
+#   and publish makes the GitHub release of the tag, through gh;
+#   under GitHub Actions, check writes VERSION into GITHUB_ENV.
+#   check, notes and assets make a dry run on a laptop.
+# Dependencies: gh, git, sed, tar.
+# Settings: GH_TOKEN, which gh reads for publish and verify.
+# Exit codes: 0 success,
+#   20 RELEASE_ERR_USAGE: an unknown step, or a missing argument,
+#   21 RELEASE_ERR_VERSION: the tag does not name the version in cdl.sh,
+#   22 RELEASE_ERR_NOTES: CHANGELOG.md has no notes for the version,
+#   23 RELEASE_ERR_ASSETS: an asset could not be built,
+#   24 RELEASE_ERR_PUBLISH: gh could not publish the release,
+#   25 RELEASE_ERR_PROVENANCE: the build provenance of cdl.sh does not verify,
+#   29 RELEASE_ERR_INTERNAL: a bug in this script.
+# See: CLAUDE.md (Versions, changelog, release), .github/workflows/ci-release.yml.
 #
-# Exit Codes:
-#   0: Success.
-#   20: RELEASE_ERR_USAGE
-#      Unknown step, or a missing argument.
-#   21: RELEASE_ERR_VERSION
-#      The tag does not name the version in cdl.sh.
-#   22: RELEASE_ERR_NOTES
-#      CHANGELOG.md has no notes for the version.
-#   23: RELEASE_ERR_ASSETS
-#      An asset could not be built.
-#   24: RELEASE_ERR_PUBLISH
-#      gh could not publish the release.
-#   25: RELEASE_ERR_PROVENANCE
-#      The build provenance of cdl.sh does not verify.
-
-set -o errexit -o nounset -o pipefail
+# How it works:
+#   Each step is one command, for the release workflow
+#   and for a dry run on a laptop:
+#   check makes sure that the tag names the version in the header of cdl.sh,
+#   notes takes the CHANGELOG section of the version,
+#   assets builds cdl.sh, a source tarball and their SHA-256 files,
+#   publish makes the GitHub release,
+#   and verify checks the signed build provenance of cdl.sh.
+#
+# Version: 1.0.0
 
 readonly RELEASE_ERR_USAGE=20
 readonly RELEASE_ERR_VERSION=21
@@ -44,6 +41,7 @@ readonly RELEASE_ERR_NOTES=22
 readonly RELEASE_ERR_ASSETS=23
 readonly RELEASE_ERR_PUBLISH=24
 readonly RELEASE_ERR_PROVENANCE=25
+readonly RELEASE_ERR_INTERNAL=29
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 readonly PROJECT_ROOT
@@ -53,6 +51,26 @@ readonly CI_SCRIPT_NAME='Release'
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 # region Helpers
+
+#######################################
+# End a run that failed where no code planned it: the ERR trap calls it.
+# It passes on unchanged a code that main returns, the 141 of a closed pipe,
+# and every code of the block of this tool, which a helper has reported.
+#
+# Arguments:
+#   1: The status of the failed command.
+#   2: Its line.
+#   3: The command.
+#######################################
+function __internal_error() {
+  # In the guard, FUNCNAME holds only this function and the top level:
+  # the command that failed there is main, which returned its code.
+  if ((${#FUNCNAME[@]} == 2 || $1 == 141 || $1 / 10 == RELEASE_ERR_INTERNAL / 10)); then
+    exit "$1"
+  fi
+
+  ci_error "internal error at line $2 (status $1): $3" "${RELEASE_ERR_INTERNAL}" || exit
+}
 
 #######################################
 # Print the version in the header of cdl.sh.
@@ -76,7 +94,7 @@ function write_checksums() {
   done
 }
 
-# endregion
+# endregion Helpers
 
 # region Steps
 
@@ -100,12 +118,12 @@ function check_tag() {
   local version
   version="$(script_version)"
 
-  if [[ ${tag} != "v${version}" ]]; then
+  if [[ "${tag}" != "v${version}" ]]; then
     ci_error "the tag is ${tag}, but cdl.sh says ${version}" \
       "${RELEASE_ERR_VERSION}" || return
   fi
 
-  if [[ -n ${GITHUB_ENV-} ]]; then
+  if [[ -n "${GITHUB_ENV-}" ]]; then
     printf 'VERSION=%s\n' "${version}" >>"${GITHUB_ENV}"
   fi
   printf '%s\n' "${version}"
@@ -213,7 +231,7 @@ function verify_provenance() {
   fi
 }
 
-# endregion
+# endregion Steps
 
 # region Entry point
 
@@ -252,7 +270,7 @@ function main() {
     shift
   fi
 
-  case ${step} in
+  case "${step}" in
     check)
       require_arguments "${step}" 1 "$#"
       check_tag "$@"
@@ -280,8 +298,23 @@ function main() {
   esac
 }
 
-# endregion
+# endregion Entry point
 
-main "$@"
+# region Execution guard
+
+# Tests may source this file for its functions; run as a program, it runs main.
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  set -o errexit -o nounset -o pipefail -o errtrace
+  # The bash 3.2 of macOS has no inherit_errexit,
+  # and install-tools.sh runs on it before Homebrew brings another.
+  shopt -s inherit_errexit 2>/dev/null || true
+  trap '__internal_error "$?" "${LINENO}" "${BASH_COMMAND}"' ERR
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
+
+  main "$@"
+fi
+
+# endregion Execution guard
 
 ### End

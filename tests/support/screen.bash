@@ -1,21 +1,15 @@
 #!/usr/bin/env bash
 
-# Name: tests/support/screen.bash
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Look at a listing the way a terminal shows it.
 #
-# Description:
-#   Look at a listing the way a terminal shows it:
-#   strip escape sequences, count screen cells,
-#   and check how rows line up in columns.
-#
-#   Cells are counted by tests/support/bin/screen-cells,
-#   a separate process and a separate implementation
-#   from the width table inside cdl.sh.
-#
-#   Loaded by tests/support/test_helper.bash.
+# It strips escape sequences, counts screen cells,
+# and checks how rows line up in columns.
+# tests/support/bin/screen-cells counts the cells,
+# a separate process and a separate implementation
+# from the width table inside cdl.sh.
+# test_helper.bash loads it.
 
-SCREEN_CELLS="${__CDL_SUPPORT_DIR}/bin/screen-cells"
+SCREEN_CELLS="${__CDL_SUPPORT_DIRECTORY}/bin/screen-cells"
 
 # region Text
 
@@ -45,7 +39,7 @@ function screen_cells() {
   printf '%s\n' "$1" | "${SCREEN_CELLS}"
 }
 
-# endregion
+# endregion Text
 
 # region Columns
 
@@ -112,17 +106,18 @@ function grid_columns() {
 function assert_columns_aligned() {
   local -r listing="$1"
   local offsets
+  local misaligned
+
   offsets="$(entry_offsets <<<"${listing}" | sort -u)"
 
-  if [[ -z ${offsets} ]]; then
-    __assert_fail 'expected rows with more than one entry'
+  if [[ -z "${offsets}" ]]; then
+    fail_with_report 'expected rows with more than one entry'
     return
   fi
 
-  local misaligned
   misaligned="$(awk '{ seen[$1]++ } END { for (c in seen) if (seen[c] > 1) print c }' <<<"${offsets}")"
-  if [[ -n ${misaligned} ]]; then
-    __assert_fail "column(s) ${misaligned//$'\n'/, } start at different cells: ${offsets//$'\n'/; }"
+  if [[ -n "${misaligned}" ]]; then
+    fail_with_report "column(s) ${misaligned//$'\n'/, } start at different cells: ${offsets//$'\n'/; }"
   fi
 }
 
@@ -135,8 +130,8 @@ function assert_columns_aligned() {
 function assert_one_column() {
   local -r listing="$1"
 
-  if [[ -n $(entry_offsets <<<"${listing}") ]]; then
-    __assert_fail 'expected one entry per row'
+  if [[ -n "$(entry_offsets <<<"${listing}")" ]]; then
+    fail_with_report 'expected one entry per row'
   fi
 }
 
@@ -157,10 +152,10 @@ function assert_fits_width() {
 
   widest="$("${SCREEN_CELLS}" <<<"${listing}" | sort -n | tail -n 1)"
   if ((widest >= width)); then
-    __assert_fail "the widest row takes ${widest} cells of ${width}"
+    fail_with_report "the widest row takes ${widest} cells of ${width}"
   fi
 }
 
-# endregion
+# endregion Columns
 
 ### End

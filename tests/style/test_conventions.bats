@@ -1,18 +1,11 @@
 #!/usr/bin/env bats
 
-# Name: tests/style/test_conventions.bats
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Test the rules of the code style that ShellCheck and shfmt cannot see.
 #
-# Description:
-#   The conventions of the BMTLab ScriptsLib code style
-#   that shellcheck and shfmt cannot see,
-#   and the facts that several files must agree on:
-#   the version, the date and the return codes.
-#
-#   Each test collects every violation first and then reports them all,
-#   so one run shows the whole list.
-#   Each test follows the Arrange-Act-Assert pattern.
+# The rules include the facts that several files must agree on:
+# the version and the return codes.
+# Each test collects every violation first and then reports them all,
+# so one run shows the whole list.
 
 bats_require_minimum_version 1.11.0
 
@@ -33,6 +26,17 @@ function shell_files() {
       \( -name '*.sh' -o -name '*.bash' -o -name '*.bats' -o -path './tests/support/bin/*' \) \
       -print | sed 's#^\./##' | sort
   )
+}
+
+#######################################
+# List the scripts of the project, which open with a card.
+#
+# Outputs:
+#   One path per line, relative to the project root:
+#   the shell files without the tests and their support modules.
+#######################################
+function script_files() {
+  shell_files | grep -v -E '\.bats$|^tests/support/[^/]+\.bash$'
 }
 
 #######################################
@@ -57,62 +61,112 @@ function report_violations() {
   shift
 
   if (($# > 0)); then
-    __assert_fail "${rule}:$(printf '\n  - %s' "$@")"
+    fail_with_report "${rule}:$(printf '\n  - %s' "$@")"
   fi
 }
 
-# endregion
+# endregion Helpers
 
 # region Headers
 
-@test "every shell file starts with a header naming itself, its author and license" {
-  # Arrange
-  local file
+@test "every script opens with a card, its keys in order and its version last" {
+  local file verdict
   local -a violations=()
 
-  # Act
+  # Arrange: the scripts of the repository are the input.
+
+  # Act:
+  # the card runs from the line after the shebang
+  # to the first line that is no comment:
+  # a summary, then the keys of the style in their order, and the version.
   while IFS= read -r file; do
-    local header
-    header="$(head -n 12 "${CDL_ROOT}/${file}")"
-    if ! grep -qxF "# Name: ${file##*/}" <<<"${header}" \
-      && ! grep -qxF "# Name: ${file}" <<<"${header}"; then
-      violations+=("${file}: no '# Name:' line naming the file")
+    verdict="$(awk '
+      FNR <= 2 && (/^#!/ || /^$/) { next }
+      !/^#/ { exit }
+      { card[++count] = $0 }
+      END {
+        split("Usage Effects Dependencies Settings Exit-codes See How-it-works Version", names, " ")
+        for (i in names) { name = names[i]; gsub(/-/, " ", name); rank[name] = i }
+        if (card[1] !~ /^# [A-Z].*[.]$/) { print "no summary sentence opens the card"; exit }
+        for (i = 2; i <= count; i++) {
+          if (match(card[i], /^# (Name|Author|License|Date|Description):/)) {
+            print "line " i " of the card is " substr(card[i], 3, RLENGTH - 3) ", which git or LICENSE keeps"
+            exit
+          }
+          if (!match(card[i], /^# [A-Z][a-z]+( [a-z]+)*:/)) continue
+          key = substr(card[i], 3, RLENGTH - 3)
+          if (!(key in rank)) continue
+          if (rank[key] <= last_rank) { print key " comes out of order"; exit }
+          last_rank = rank[key]
+        }
+        if (card[count] !~ /^# Version: [0-9]+\.[0-9]+\.[0-9]+$/) print "the card does not end with its version"
+      }
+    ' "${CDL_ROOT}/${file}")"
+    if [[ -n "${verdict}" ]]; then
+      violations+=("${file}: ${verdict}")
     fi
-    if ! grep -qx '# Author: Nikita Neverov (BMTLab)' <<<"${header}"; then
-      violations+=("${file}: no '# Author:' line")
-    fi
-    if ! grep -qx '# License: MIT' <<<"${header}"; then
-      violations+=("${file}: no '# License: MIT' line")
-    fi
-  done < <(shell_files)
+  done < <(script_files)
 
   # Assert
-  report_violations 'headers' "${violations[@]}"
+  report_violations 'cards' "${violations[@]}"
 }
 
-@test "cdl.sh declares a semantic version and an ISO date" {
-  # Arrange: the header of cdl.sh is the input.
+@test "every test file and support module opens with a sentence, without keys" {
+  local file verdict
+  local -a violations=()
+
+  # Arrange: the test files and the support modules are the input.
+
+  # Act:
+  # the header runs from the line after the shebang
+  # to the first line that is no comment.
+  while IFS= read -r file; do
+    verdict="$(awk '
+      FNR <= 2 && (/^#!/ || /^$/) { next }
+      !/^#/ { exit }
+      { header[++count] = $0 }
+      END {
+        if (header[1] !~ /^# [A-Z]/) { print "no sentence opens the header"; exit }
+        for (i = 1; i <= count; i++) {
+          if (match(header[i], /^# (Name|Author|License|Date|Description|Usage|Effects|Dependencies|Settings|Exit codes|See|How it works|Version):/)) {
+            print "line " i " of the header is a key: " substr(header[i], 3, RLENGTH - 3)
+            exit
+          }
+        }
+      }
+    ' "${CDL_ROOT}/${file}")"
+    if [[ -n "${verdict}" ]]; then
+      violations+=("${file}: ${verdict}")
+    fi
+  done < <(shell_files | grep -E '\.bats$|^tests/support/[^/]+\.bash$')
+
+  # Assert
+  report_violations 'headers of the tests' "${violations[@]}"
+}
+
+@test "cdl.sh declares a semantic version" {
+  local version
+
+  # Arrange: the card of cdl.sh is the input.
 
   # Act
-  local -r version="$(script_header 'Version')"
-  local -r date="$(script_header 'Date')"
+  version="$(script_header 'Version')"
 
   # Assert
-  if [[ ! ${version} =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    __assert_fail "not a semantic version: '${version}'"
-  fi
-  if [[ ! ${date} =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
-    __assert_fail "not an ISO date: '${date}'"
+  if [[ ! "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    fail_with_report "not a semantic version: '${version}'"
   fi
 }
 
-# endregion
+# endregion Headers
 
 # region Facts several files share
 
 @test "cdl --version reports the version in the header of cdl.sh" {
+  local version
+
   # Arrange
-  local -r version="$(script_header 'Version')"
+  version="$(script_header 'Version')"
 
   # Act
   run grep -cx "CDL_VERSION='${version}'" "${CDL_SCRIPT}"
@@ -122,13 +176,14 @@ function report_violations() {
   assert_output '1'
 }
 
-@test "the CHANGELOG has a section for the version and date of cdl.sh" {
+@test "the CHANGELOG has a dated section for the version of cdl.sh" {
+  local version
+
   # Arrange
-  local -r version="$(script_header 'Version')"
-  local -r date="$(script_header 'Date')"
+  version="$(script_header 'Version')"
 
   # Act
-  run grep -cxF "## [${version}] - ${date}" "${CDL_ROOT}/CHANGELOG.md"
+  run grep -cxE "## \[${version}\] - [0-9]{4}-[0-9]{2}-[0-9]{2}" "${CDL_ROOT}/CHANGELOG.md"
 
   # Assert
   assert_success
@@ -136,16 +191,22 @@ function report_violations() {
 }
 
 @test "every return code is documented in the header, the help and the README" {
-  # Arrange
-  local -r help_text="$(in_shell 'cdl --help')"
-  local -r readme="$(<"${CDL_ROOT}/README.md")"
+  local help_text
+  local readme
+  local card
   local name value
   local -a violations=()
 
+  # Arrange
+  help_text="$(in_shell 'cdl --help')"
+  readme="$(<"${CDL_ROOT}/README.md")"
+  card="$(awk 'FNR > 2 && !/^#/ { exit } FNR > 2 { print }' "${CDL_SCRIPT}")"
+
   # Act
   while IFS='=' read -r name value; do
-    if ! grep -qxF "#   ${value}: ${name}" "${CDL_SCRIPT}"; then
-      violations+=("${name}=${value}: missing from the header of cdl.sh")
+    # The card lists the codes as "30 CDL_ERR_CHDIR, 31 CDL_ERR_NOT_FOUND,".
+    if ! grep -qE "(^#|,) +${value} ${name}[,.]" <<<"${card}"; then
+      violations+=("${name}=${value}: missing from the card of cdl.sh")
     fi
     if ! grep -qE "^  ${value}  ${name} " <<<"${help_text}"; then
       violations+=("${name}=${value}: missing from cdl --help")
@@ -157,8 +218,8 @@ function report_violations() {
   done < <(sed -n 's/^: "\${\(CDL_ERR_[A-Z_]*\):=\([0-9]*\)}"$/\1=\2/p' "${CDL_SCRIPT}")
 
   # Assert
-  if ((${#violations[@]} == 0)) && [[ -z ${help_text} ]]; then
-    __assert_fail 'cdl --help printed nothing'
+  if ((${#violations[@]} == 0)) && [[ -z "${help_text}" ]]; then
+    fail_with_report 'cdl --help printed nothing'
   fi
   report_violations 'return codes' "${violations[@]}"
 }
@@ -175,29 +236,36 @@ function report_violations() {
 #   One line per code, paths relative to the project root.
 #######################################
 function named_exit_codes() {
+  local file
+
   (
     cd "${CDL_ROOT}" || exit
-    for file in $(shell_files) tools/*.py Makefile; do
+    while IFS= read -r file; do
       sed -n -E \
         -e "s/^readonly ([A-Z_]+_ERR_[A-Z_]+)=([0-9]+)$/${file//\//\\/} \\2 \\1/p" \
         -e "s/^([A-Z_]+_ERR_[A-Z_]+) *:= *([0-9]+)$/${file//\//\\/} \\2 \\1/p" \
         -e "s/^(EXIT_[A-Z_]+) = ([0-9]+)$/${file//\//\\/} \\2 \\1/p" \
         "${file}"
-    done
+    done < <(
+      shell_files
+      printf '%s\n' tools/*.py Makefile
+    )
   ) | awk '$2 != 0'
 }
 
 @test "every return code of cdl is a category of ten, or a reason inside one" {
+  local codes
+  local -a violations=()
+  local line
+
   # Arrange:
   # the codes of cdl.sh, a public API of their own,
   # apart from the blocks of the tools (see "Exit codes" in CLAUDE.md).
-  local -r codes="$(sed -n 's/^: "\${\(CDL_ERR_[A-Z_]*\):=\([0-9]*\)}"$/\2 \1/p' "${CDL_SCRIPT}")"
-  local -a violations=()
+  codes="$(sed -n 's/^: "\${\(CDL_ERR_[A-Z_]*\):=\([0-9]*\)}"$/\2 \1/p' "${CDL_SCRIPT}")"
 
   # Act:
   # a code out of range, a code named twice,
   # and a reason whose category has no code of its own.
-  local line
   while IFS= read -r line; do
     violations+=("${line}")
   done < <(awk '
@@ -213,26 +281,28 @@ function named_exit_codes() {
     }' <<<"${codes}")
 
   # Assert
-  if [[ -z ${codes} ]]; then
-    __assert_fail 'no return codes found in cdl.sh'
+  if [[ -z "${codes}" ]]; then
+    fail_with_report 'no return codes found in cdl.sh'
   fi
   report_violations 'return codes of cdl' "${violations[@]}"
 }
 
 @test "every tool owns a block of ten exit codes, which no other tool uses" {
-  # Arrange
-  local -r codes="$(named_exit_codes)"
+  local codes
   local -a violations=()
+  local duplicate
+  local line
+
+  # Arrange
+  codes="$(named_exit_codes)"
 
   # Act:
   # a code named twice; a file whose codes span two blocks;
   # a block that two files share.
-  local duplicate
   while IFS= read -r duplicate; do
     violations+=("code ${duplicate} is named more than once: $(awk -v code="${duplicate}" '$2 == code { printf "%s %s; ", $1, $3 }' <<<"${codes}")")
   done < <(awk '{ print $2 }' <<<"${codes}" | sort -n | uniq -d)
 
-  local line
   while IFS= read -r line; do
     violations+=("${line}")
   done < <(awk '
@@ -247,51 +317,57 @@ function named_exit_codes() {
     }' <<<"${codes}")
 
   # Assert
-  if [[ -z ${codes} ]]; then
-    __assert_fail 'no named exit codes found'
+  if [[ -z "${codes}" ]]; then
+    fail_with_report 'no named exit codes found'
   fi
   report_violations 'exit codes' "${violations[@]}"
 }
 
 @test "every setting is documented in cdl.sh, the help and the README" {
-  # Arrange
-  local -r help_text="$(in_shell 'cdl --help')"
-  local -r readme="$(<"${CDL_ROOT}/README.md")"
+  local help_text
+  local readme
   local name
-  local -i settings=0
+  local -i setting_count=0
   local -a violations=()
+
+  # Arrange
+  help_text="$(in_shell 'cdl --help')"
+  readme="$(<"${CDL_ROOT}/README.md")"
 
   # Act:
   # the settings are the variables that __cdl_read_settings reads,
   # as list_cdl_settings finds them for the sandbox too.
   while IFS= read -r name; do
-    settings+=1
+    setting_count+=1
     if ! grep -qE "^#   ${name} " "${CDL_SCRIPT}"; then
       violations+=("${name}: missing from the table of settings in cdl.sh")
     fi
     if ! grep -qE "^  ${name} " <<<"${help_text}"; then
       violations+=("${name}: missing from cdl --help")
     fi
-    if [[ ${readme} != *"| \`${name}\`"* ]]; then
+    if [[ "${readme}" != *"| \`${name}\`"* ]]; then
       violations+=("${name}: missing from the table of settings in README.md")
     fi
   done < <(list_cdl_settings)
 
   # Assert
-  if ((settings == 0)); then
-    __assert_fail 'no settings found in __cdl_read_settings'
+  if ((setting_count == 0)); then
+    fail_with_report 'no settings found in __cdl_read_settings'
   fi
   report_violations 'settings' "${violations[@]}"
 }
 
 @test "the map in CLAUDE.md names the regions of cdl.sh in order" {
+  local regions
+  local mapped
+
   # Arrange
-  local -r regions="$(sed -n 's/^# region //p' "${CDL_SCRIPT}" | paste -sd ',' - | sed 's/,/, /g')"
+  regions="$(sed -n 's/^# region //p' "${CDL_SCRIPT}" | paste -sd ',' - | sed 's/,/, /g')"
 
   # Act:
   # the numbered list under the map, each item up to its first comma,
   # which leaves out the regions of the awk program.
-  local -r mapped="$(
+  mapped="$(
     awk '
       /^The regions of `cdl.sh` read top to bottom:$/ { inside = 1; next }
       inside && /^[0-9]+\. / { sub(/^[0-9]+\. /, ""); sub(/,.*/, ""); print; listed = 1; next }
@@ -303,19 +379,20 @@ function named_exit_codes() {
   assert_equal "${mapped}" "${regions}" 'regions'
 }
 
-# endregion
+# endregion Facts several files share
 
 # region Code style
 
 @test "every shell file is formatted as the workspace rule shfmt -i 2 -ci -bn says" {
+  local -a files=()
+  local file
+
   # Arrange:
   # `make format` takes its options from .editorconfig;
   # this keeps that file in step with the flags of the workspace style.
   if ! command -v shfmt >/dev/null; then
     skip 'shfmt is not installed'
   fi
-  local -a files=()
-  local file
   while IFS= read -r file; do
     files+=("${CDL_ROOT}/${file}")
   done < <(shell_files)
@@ -343,9 +420,10 @@ function named_exit_codes() {
 }
 
 @test "shell functions are declared with the function keyword" {
-  # Arrange
-  local file
+  local file match
   local -a violations=()
+
+  # Arrange: the shell files of the repository are the input.
 
   # Act
   while IFS= read -r file; do
@@ -374,32 +452,52 @@ function named_exit_codes() {
   assert_output ''
 }
 
-@test "region markers are balanced in every shell file" {
-  # Arrange
-  local file
+@test "every endregion closes the open region it names" {
+  local file verdict
   local -a violations=()
 
-  # Act
+  # Arrange: the shell files and the Python tools are the input.
+
+  # Act:
+  # a stack of the open regions, which each endregion must name in turn,
+  # in the shell files and in the Python tools alike.
   while IFS= read -r file; do
-    local verdict
     verdict="$(awk '
-      /^[[:space:]]*# region / { depth++ }
-      /^[[:space:]]*# endregion/ { if (--depth < 0) { print "endregion without region at line " FNR; exit } }
+      /^[[:space:]]*# region / {
+        name = $0
+        sub(/^[[:space:]]*# region /, "", name)
+        open_names[++depth] = name
+        next
+      }
+      /^[[:space:]]*# endregion/ {
+        name = $0
+        sub(/^[[:space:]]*# endregion ?/, "", name)
+        if (depth == 0) { print "endregion without region at line " FNR; exit }
+        if (name != open_names[depth]) {
+          print "line " FNR " closes \"" open_names[depth] "\" as \"" name "\""
+          exit
+        }
+        depth--
+      }
       END { if (depth > 0) print depth " region(s) left open" }
     ' "${CDL_ROOT}/${file}")"
-    if [[ -n ${verdict} ]]; then
+    if [[ -n "${verdict}" ]]; then
       violations+=("${file}: ${verdict}")
     fi
-  done < <(shell_files)
+  done < <(
+    shell_files
+    cd "${CDL_ROOT}" && printf '%s\n' tools/*.py
+  )
 
   # Assert
   report_violations 'regions' "${violations[@]}"
 }
 
 @test "every test follows Arrange-Act-Assert" {
-  # Arrange
   local file
   local -a violations=()
+
+  # Arrange: the test files of the repository are the input.
 
   # Act:
   # inside each @test block, and inside each function
@@ -436,6 +534,6 @@ function named_exit_codes() {
   report_violations 'tests without Arrange, Act and Assert in order' "${violations[@]}"
 }
 
-# endregion
+# endregion Code style
 
 ### End

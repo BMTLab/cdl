@@ -1,15 +1,9 @@
 #!/usr/bin/env bats
 
-# Name: tests/unit/test_formatter.bats
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Test the formatter that turns ls -l lines into the compact listing.
 #
-# Description:
-#   The formatter that turns `ls -l` lines into the compact listing,
-#   fed with canned lines, so every rule is checked
-#   independently of the files and the ls on this machine.
-#
-#   Each test follows the Arrange-Act-Assert pattern.
+# It gets canned lines, so every rule is checked
+# apart from the files and the ls of this machine.
 
 bats_require_minimum_version 1.11.0
 
@@ -22,8 +16,10 @@ function setup() {
 # region Parsing
 
 @test "a row shows the size, the date and time, and the name" {
+  local input
+
   # Arrange
-  local -r input="$(ls_file 'README.md' '6')"
+  input="$(ls_file 'README.md' '6')"
 
   # Act
   run --separate-stderr format_listing 120 <<<"${input}"
@@ -34,8 +30,10 @@ function setup() {
 }
 
 @test "the total line of ls is left out, in any language" {
+  local input
+
   # Arrange
-  local -r input="$(
+  input="$(
     printf 'total 12K\n'
     printf 'итого 12K\n'
     ls_file 'notes.md'
@@ -50,8 +48,10 @@ function setup() {
 }
 
 @test "a device file keeps its major and minor numbers as the size" {
+  local input
+
   # Arrange
-  local -r input="$(ls_line 'crw-rw-rw-' '1, 3' 'null')"
+  input="$(ls_line 'crw-rw-rw-' '1, 3' 'null')"
 
   # Act
   run --separate-stderr format_listing 120 <<<"${input}"
@@ -62,10 +62,10 @@ function setup() {
 }
 
 @test "an owner or group name with spaces does not shift the columns" {
-  # Arrange:
-  # directory services can name a group "domain users".
   local -r input="-rw-r--r-- 1 john domain users 12 ${FIXTURE_DATE} report.pdf"
 
+  # Arrange:
+  # directory services can name a group "domain users".
   # Act
   run --separate-stderr format_listing 120 <<<"${input}"
 
@@ -75,8 +75,10 @@ function setup() {
 }
 
 @test "a name keeps its runs of spaces and its leading space" {
+  local input
+
   # Arrange
-  local -r input="$(ls_file '  two  spaces  inside')"
+  input="$(ls_file '  two  spaces  inside')"
 
   # Act
   run --separate-stderr format_listing 120 <<<"${input}"
@@ -87,8 +89,10 @@ function setup() {
 }
 
 @test "a symlink keeps its arrow and target" {
+  local input
+
   # Arrange
-  local -r input="$(ls_line 'lrwxrwxrwx' '9' 'latest -> v2.0/build')"
+  input="$(ls_line 'lrwxrwxrwx' '9' 'latest -> v2.0/build')"
 
   # Act
   run --separate-stderr format_listing 120 <<<"${input}"
@@ -99,10 +103,12 @@ function setup() {
 }
 
 @test "colors around a name pass through unchanged" {
+  local -r name=$'\033[0m\033[01;34msrc\033[0m\033[K'
+  local input
+
   # Arrange:
   # uutils ls also emits a leading reset and a trailing erase-in-line.
-  local -r name=$'\033[0m\033[01;34msrc\033[0m\033[K'
-  local -r input="$(ls_dir "${name}")"
+  input="$(ls_directory "${name}")"
 
   # Act
   run --separate-stderr format_listing 120 <<<"${input}"
@@ -113,9 +119,11 @@ function setup() {
 }
 
 @test "a name that looks like the date column stays whole" {
-  # Arrange
   local -r name="${FIXTURE_DATE} notes.txt"
-  local -r input="$(ls_file "${name}")"
+  local input
+
+  # Arrange
+  input="$(ls_file "${name}")"
 
   # Act
   run --separate-stderr format_listing 120 <<<"${input}"
@@ -126,8 +134,10 @@ function setup() {
 }
 
 @test "DEL in a name shows as a question mark" {
+  local input
+
   # Arrange
-  local -r input="$(ls_file $'before\177after')"
+  input="$(ls_file $'before\177after')"
 
   # Act
   run --separate-stderr format_listing 120 <<<"${input}"
@@ -138,10 +148,12 @@ function setup() {
 }
 
 @test "control characters in a name show as question marks" {
+  local input
+
   # Arrange:
   # a name that would set the window title, ring the bell,
   # and open a C1 control sequence (U+009B) on the terminal.
-  local -r input="$(ls_file $'evil\033]0;pwned\a\302\23331m.txt')"
+  input="$(ls_file $'evil\033]0;pwned\a\302\23331m.txt')"
 
   # Act
   run --separate-stderr format_listing 120 <<<"${input}"
@@ -152,9 +164,11 @@ function setup() {
 }
 
 @test "a name holding a newline stays on one row, the newline as a question mark" {
+  local input
+
   # Arrange:
   # ls prints such a name raw, so it arrives split over two lines.
-  local -r input="$(
+  input="$(
     ls_file $'first line\nsecond line.txt'
     ls_file 'next.txt'
   )"
@@ -172,8 +186,9 @@ function setup() {
 }
 
 @test "an input without entries prints nothing" {
-  # Arrange
   local -r input='total 0'
+
+  # Arrange: the input above is a listing without entries.
 
   # Act
   run --separate-stderr format_listing 120 <<<"${input}"
@@ -183,14 +198,16 @@ function setup() {
   assert_output ''
 }
 
-# endregion
+# endregion Parsing
 
 # region Layout
 
 @test "a wide terminal puts the entries side by side" {
+  local input
+
   # Arrange
-  local -r input="$(
-    ls_dir 'src'
+  input="$(
+    ls_directory 'src'
     ls_file 'a.txt'
     ls_file 'b.txt'
     ls_file 'c.txt'
@@ -206,8 +223,10 @@ function setup() {
 }
 
 @test "a single entry on a wide terminal is one row without trailing spaces" {
+  local input
+
   # Arrange
-  local -r input="$(ls_file 'alone.txt')"
+  input="$(ls_file 'alone.txt')"
 
   # Act
   run --separate-stderr format_listing 200 <<<"${input}"
@@ -218,12 +237,15 @@ function setup() {
 }
 
 @test "rows that would fill the terminal exactly stay in one column" {
+  local name
+  local input
+
   # Arrange:
   # each row takes 69 cells (8 + 2 + 16 + 2 + a 41-letter name),
   # so two rows side by side take 69 + 4 + 69 = 142 cells;
   # a row as wide as the terminal would wrap on some terminals.
-  local -r name="$(printf 'x%.0s' {1..41})"
-  local -r input="$(
+  name="$(printf 'x%.0s' {1..41})"
+  input="$(
     ls_file "${name}"
     ls_file "${name}"
   )"
@@ -237,9 +259,12 @@ function setup() {
 }
 
 @test "rows with one cell to spare sit side by side" {
+  local name
+  local input
+
   # Arrange: the same 142 cells of rows as above.
-  local -r name="$(printf 'x%.0s' {1..41})"
-  local -r input="$(
+  name="$(printf 'x%.0s' {1..41})"
+  input="$(
     ls_file "${name}"
     ls_file "${name}"
   )"
@@ -253,9 +278,12 @@ function setup() {
 }
 
 @test "rows too wide to sit side by side stay in one column" {
+  local long_name
+  local input
+
   # Arrange
-  local -r long_name="$(printf 'very-long-name-%.0s' {1..6})"
-  local -r input="$(
+  long_name="$(printf 'very-long-name-%.0s' {1..6})"
+  input="$(
     ls_file 'a.txt'
     ls_file "${long_name}"
   )"
@@ -269,9 +297,11 @@ function setup() {
 }
 
 @test "a terminal narrower than a row still lists every entry, one per row" {
+  local input
+
   # Arrange:
   # no row of 29 cells fits 20 columns; the terminal wraps each one.
-  local -r input="$(for name in a b c; do ls_file "${name}"; done)"
+  input="$(for name in a b c; do ls_file "${name}"; done)"
 
   # Act
   run --separate-stderr format_listing 20 <<<"${input}"
@@ -282,10 +312,13 @@ function setup() {
 }
 
 @test "entries fill the columns top to bottom, like ls" {
+  local input
+  local expected
+
   # Arrange:
   # five rows of 29 cells fit three columns in 120 cells.
-  local -r input="$(for name in 1 2 3 4 5; do ls_file "${name}"; done)"
-  local -r expected="$(
+  input="$(for name in 1 2 3 4 5; do ls_file "${name}"; done)"
+  expected="$(
     printf '%s    %s    %s\n' "$(listing_row 12 1)" "$(listing_row 12 3)" "$(listing_row 12 5)"
     printf '%s    %s\n' "$(listing_row 12 2)" "$(listing_row 12 4)"
   )"
@@ -300,14 +333,17 @@ function setup() {
 }
 
 @test "the second column starts four spaces after the widest left row" {
+  local input
+  local expected
+
   # Arrange
-  local -r input="$(
+  input="$(
     ls_file 'longest-left.txt'
     ls_file 'a'
     ls_file 'right-1'
     ls_file 'right-2'
   )"
-  local -r expected="$(
+  expected="$(
     printf '%s    %s\n' "$(listing_row 12 'longest-left.txt')" "$(listing_row 12 'right-1')"
     printf '%s%19s%s\n' "$(listing_row 12 'a')" '' "$(listing_row 12 'right-2')"
   )"
@@ -321,9 +357,11 @@ function setup() {
 }
 
 @test "escape sequences take no room in the layout" {
+  local input
+
   # Arrange
-  local -r input="$(
-    ls_dir "$(paint '01;34' 'src')"
+  input="$(
+    ls_directory "$(paint '01;34' 'src')"
     ls_file 'plain-name.txt'
     ls_file "$(paint '01;32' 'run.sh')"
     ls_file 'other.txt'
@@ -347,10 +385,11 @@ function setup() {
 function the_grid_takes_as_many_columns_as_fit() {
   local -r width="$1"
   local -r expected="$2"
+  local input
 
   # Arrange:
   # every row takes 29 cells, and the gutter 4.
-  local -r input="$(for name in a b c d e f g h i j k l; do ls_file "${name}"; done)"
+  input="$(for name in a b c d e f g h i j k l; do ls_file "${name}"; done)"
 
   # Act
   run --separate-stderr format_listing "${width}" <<<"${input}"
@@ -368,10 +407,12 @@ for __layout in '60|1' '70|2' '120|3' '140|4'; do
 done
 
 @test "the grid never leaves its last column empty" {
+  local input
+
   # Arrange:
   # nine entries would take three rows in four columns,
   # which would leave the fourth column empty; three columns fill.
-  local -r input="$(for name in a b c d e f g h i; do ls_file "${name}"; done)"
+  input="$(for name in a b c d e f g h i; do ls_file "${name}"; done)"
 
   # Act
   run --separate-stderr format_listing 140 <<<"${input}"
@@ -382,8 +423,10 @@ done
 }
 
 @test "a column limit keeps the grid narrower" {
+  local input
+
   # Arrange
-  local -r input="$(for name in a b c d e f g h i j k l; do ls_file "${name}"; done)"
+  input="$(for name in a b c d e f g h i j k l; do ls_file "${name}"; done)"
 
   # Act
   run --separate-stderr format_listing 140 0 2 <<<"${input}"
@@ -394,9 +437,11 @@ done
 }
 
 @test "a column limit wider than the terminal takes only the columns that fit" {
+  local input
+
   # Arrange:
   # 120 columns fit three columns of these entries.
-  local -r input="$(for name in a b c d e f g h i j k l; do ls_file "${name}"; done)"
+  input="$(for name in a b c d e f g h i j k l; do ls_file "${name}"; done)"
 
   # Act
   run --separate-stderr format_listing 120 0 9 <<<"${input}"
@@ -408,9 +453,11 @@ done
 }
 
 @test "a row limit cuts the grid and says how many entries are left" {
+  local input
+
   # Arrange:
   # two rows of four columns show eight of the twelve entries.
-  local -r input="$(for name in a b c d e f g h i j k l; do ls_file "${name}"; done)"
+  input="$(for name in a b c d e f g h i j k l; do ls_file "${name}"; done)"
 
   # Act
   run --separate-stderr format_listing 140 2 <<<"${input}"
@@ -422,8 +469,10 @@ done
 }
 
 @test "the cut note falls back to three dots without UTF-8" {
+  local input
+
   # Arrange
-  local -r input="$(for name in a b c; do ls_file "${name}"; done)"
+  input="$(for name in a b c; do ls_file "${name}"; done)"
 
   # Act
   LANG=C run --separate-stderr format_listing 40 1 <<<"${input}"
@@ -433,7 +482,7 @@ done
   assert_output_contains '... 2 more; -a shows all'
 }
 
-# endregion
+# endregion Layout
 
 # region Sizes
 
@@ -447,9 +496,10 @@ done
 function sizes_read_like_ls_h() {
   local -r bytes="$1"
   local -r expected="$2"
+  local input
 
   # Arrange
-  local -r input="$(ls_file 'file' "${bytes}")"
+  input="$(ls_file 'file' "${bytes}")"
 
   # Act
   run --separate-stderr format_listing 120 <<<"${input}"
@@ -483,15 +533,17 @@ for __sample in "${__SIZE_SAMPLES[@]}"; do
     -- sizes_read_like_ls_h "${__sample%%|*}" "${__sample#*|}"
 done
 
-# endregion
+# endregion Sizes
 
 # region Header
 
 @test "the header names the directory, its branch, and what it holds" {
+  local input
+
   # Arrange
-  local -r input="$(
+  input="$(
     printf 'total 8\n'
-    ls_dir 'src'
+    ls_directory 'src'
     ls_file 'a.txt' 1000
     ls_file 'b.txt' 1048
   )"
@@ -506,8 +558,10 @@ done
 }
 
 @test "the header leaves out the branch outside a repository" {
+  local input
+
   # Arrange
-  local -r input="$(ls_file 'a.txt' 12)"
+  input="$(ls_file 'a.txt' 12)"
 
   # Act
   run --separate-stderr format_listing 120 0 0 0 '/tmp' '' <<<"${input}"
@@ -518,9 +572,11 @@ done
 }
 
 @test "the header counts the entries a cut leaves out" {
+  local input
+
   # Arrange:
   # two rows of four columns show eight of the twelve entries.
-  local -r input="$(for name in a b c d e f g h i j k l; do ls_file "${name}"; done)"
+  input="$(for name in a b c d e f g h i j k l; do ls_file "${name}"; done)"
 
   # Act
   run --separate-stderr format_listing 140 2 0 0 '/srv' '' <<<"${input}"
@@ -532,8 +588,9 @@ done
 }
 
 @test "an empty directory still gets its header" {
-  # Arrange
   local -r input='total 0'
+
+  # Arrange: the input above lists an empty directory.
 
   # Act
   run --separate-stderr format_listing 120 0 0 0 '/srv/empty' '' <<<"${input}"
@@ -544,9 +601,11 @@ done
 }
 
 @test "a long path in the header is shortened from the left to fit" {
-  # Arrange
-  local -r input="$(ls_file 'a' 1)"
+  local input
   local -r path='/one/two/three/four/five/six'
+
+  # Arrange
+  input="$(ls_file 'a' 1)"
 
   # Act
   run --separate-stderr format_listing 40 0 0 0 "${path}" '' <<<"${input}"
@@ -558,8 +617,10 @@ done
 }
 
 @test "control characters in the directory name show as question marks in the header" {
+  local input
+
   # Arrange
-  local -r input="$(ls_file 'a' 1)"
+  input="$(ls_file 'a' 1)"
 
   # Act
   run --separate-stderr format_listing 120 0 0 0 $'/tmp/evil\033]0;x\a' '' <<<"${input}"
@@ -581,9 +642,10 @@ function a_crafted_header_text_cannot_color_the_header() {
   local -r path="$1"
   local -r branch="$2"
   local -r expected="$3"
+  local input
 
   # Arrange
-  local -r input="$(ls_file 'a' 1)"
+  input="$(ls_file 'a' 1)"
 
   # Act
   run --separate-stderr format_listing 120 0 0 0 "${path}" "${branch}" <<<"${input}"
@@ -603,8 +665,10 @@ bats_test_function \
   '/tmp' $'br\033[31manch' '/tmp · br?[31manch · 0 dirs, 1 file, 1B'
 
 @test "the header separators fall back to bars without UTF-8" {
+  local input
+
   # Arrange
-  local -r input="$(ls_file 'a' 1)"
+  input="$(ls_file 'a' 1)"
 
   # Act
   LANG=C run --separate-stderr format_listing 120 0 0 0 '/tmp' 'main' <<<"${input}"
@@ -614,13 +678,15 @@ bats_test_function \
   assert_equal "${lines[0]}" '/tmp | main | 0 dirs, 1 file, 1B' 'the header'
 }
 
-# endregion
+# endregion Header
 
 # region Mark
 
 @test "the marked entry has the mark in place of the space before its name" {
+  local input
+
   # Arrange
-  local -r input="$(
+  input="$(
     ls_file 'a.txt'
     ls_file 'b.txt'
   )"
@@ -634,8 +700,10 @@ bats_test_function \
 }
 
 @test "a marked symlink is found by its own name, before the arrow" {
+  local input
+
   # Arrange
-  local -r input="$(ls_line 'lrwxrwxrwx' 10 'latest -> report.pdf')"
+  input="$(ls_line 'lrwxrwxrwx' 10 'latest -> report.pdf')"
 
   # Act
   run --separate-stderr format_listing 60 0 0 0 '' '' 'latest' <<<"${input}"
@@ -646,9 +714,12 @@ bats_test_function \
 }
 
 @test "a colored entry is found by its plain name" {
+  local painted
+  local input
+
   # Arrange
-  local -r painted="$(paint '01;32' 'run.sh')"
-  local -r input="$(ls_file "${painted}")"
+  painted="$(paint '01;32' 'run.sh')"
+  input="$(ls_file "${painted}")"
 
   # Act
   run --separate-stderr format_listing 60 0 0 0 '' '' 'run.sh' <<<"${input}"
@@ -659,9 +730,11 @@ bats_test_function \
 }
 
 @test "only the entry of exactly that name is marked" {
+  local input
+
   # Arrange:
   # both names hold the marked one.
-  local -r input="$(
+  input="$(
     ls_file 'notes.md'
     ls_file 'notes.md.bak'
     ls_file 'old-notes.md'
@@ -677,8 +750,10 @@ bats_test_function \
 }
 
 @test "the mark falls back to > without UTF-8" {
+  local input
+
   # Arrange
-  local -r input="$(ls_file 'b.txt')"
+  input="$(ls_file 'b.txt')"
 
   # Act
   LANG=C run --separate-stderr format_listing 40 0 0 0 '' '' 'b.txt' <<<"${input}"
@@ -700,9 +775,10 @@ bats_test_function \
 function a_cut_listing_shows_the_rows_around_the_mark() {
   local -r mark="$1"
   local -r expected="$2"
+  local input
 
   # Arrange
-  local -r input="$(for name in a b c d e f g h i j k l; do ls_file "${name}"; done)"
+  input="$(for name in a b c d e f g h i j k l; do ls_file "${name}"; done)"
 
   # Act
   run --separate-stderr format_listing 40 4 0 0 '' '' "${mark}" <<<"${input}"
@@ -728,15 +804,17 @@ for __sample in "${__MARK_WINDOWS[@]}"; do
 done
 
 @test "the window around a mark puts it in the middle row of the middle column" {
+  local -a names=()
+  local -i number
+  local input
+
   # Arrange:
   # thirty entries of 31 cells take three columns in 110 cells;
   # five rows leave four for entries under the line about those before.
-  local -a names=()
-  local -i number
   for ((number = 10; number < 40; number++)); do
     names+=("n${number}")
   done
-  local -r input="$(for name in "${names[@]}"; do ls_file "${name}"; done)"
+  input="$(for name in "${names[@]}"; do ls_file "${name}"; done)"
 
   # Act
   run --separate-stderr format_listing 110 5 0 0 '' '' 'n29' <<<"${input}"
@@ -751,8 +829,10 @@ done
 }
 
 @test "a mark the listing does not hold changes nothing" {
+  local input
+
   # Arrange
-  local -r input="$(for name in a b c; do ls_file "${name}"; done)"
+  input="$(for name in a b c; do ls_file "${name}"; done)"
 
   # Act
   run --separate-stderr format_listing 40 2 0 0 '' '' 'missing' <<<"${input}"
@@ -762,15 +842,18 @@ done
   assert_output "$(listing_row 12 'a')"$'\n'"$(listing_row 12 'b')"$'\n''… 1 more; -a shows all'
 }
 
-# endregion
+# endregion Mark
 
 # region Links
 
 @test "with a link directory, each name links to its file" {
+  local input
+  local head
+
   # Arrange
   export HOSTNAME='box'
-  local -r input="$(ls_file 'notes.md')"
-  local -r head="$(printf '%8s  %s  ' 12 "${FIXTURE_DATE}")"
+  input="$(ls_file 'notes.md')"
+  head="$(printf '%8s  %s  ' 12 "${FIXTURE_DATE}")"
 
   # Act
   run --separate-stderr format_listing 60 0 0 0 '' '' '' '/srv/app' <<<"${input}"
@@ -781,9 +864,11 @@ done
 }
 
 @test "a symlink links by its own name, its target shown inside the link" {
+  local input
+
   # Arrange
   export HOSTNAME='box'
-  local -r input="$(ls_line 'lrwxrwxrwx' 9 'latest -> plain.txt')"
+  input="$(ls_line 'lrwxrwxrwx' 9 'latest -> plain.txt')"
 
   # Act
   run --separate-stderr format_listing 60 0 0 0 '' '' '' '/srv' <<<"${input}"
@@ -794,9 +879,11 @@ done
 }
 
 @test "names in the root directory link without a double slash" {
+  local input
+
   # Arrange
   export HOSTNAME='box'
-  local -r input="$(ls_dir 'etc')"
+  input="$(ls_directory 'etc')"
 
   # Act
   run --separate-stderr format_listing 60 0 0 0 '' '' '' '/' <<<"${input}"
@@ -807,10 +894,12 @@ done
 }
 
 @test "a name that holds a newline links to its whole name" {
+  local input
+
   # Arrange:
   # ls prints the newline raw, so the name spans two lines.
   export HOSTNAME='box'
-  local -r input="$(
+  input="$(
     ls_file $'two\nlines.txt'
     ls_file 'after.txt'
   )"
@@ -825,10 +914,12 @@ done
 }
 
 @test "a name holding an escape sequence links to itself" {
+  local input
+
   # Arrange:
   # the colors of ls around a name that holds an OSC sequence of its own.
   export HOSTNAME='box'
-  local -r input="$(ls_file "$(paint '01;32' $'bad\033]8;;x\ay.txt')")"
+  input="$(ls_file "$(paint '01;32' $'bad\033]8;;x\ay.txt')")"
 
   # Act
   run --separate-stderr format_listing 60 0 0 0 '' '' '' '/srv' <<<"${input}"
@@ -841,9 +932,11 @@ done
 }
 
 @test "the header path links to the directory itself" {
+  local input
+
   # Arrange
   export HOSTNAME='box'
-  local -r input="$(ls_file 'a' 1)"
+  input="$(ls_file 'a' 1)"
 
   # Act
   run --separate-stderr format_listing 60 0 0 0 '/srv/app' '' '' '/srv/app' <<<"${input}"
@@ -855,10 +948,13 @@ done
 }
 
 @test "the mark stays outside the link" {
+  local input
+  local head
+
   # Arrange
   export HOSTNAME='box'
-  local -r input="$(ls_file 'b.txt')"
-  local -r head="$(printf '%8s  %s ❯' 12 "${FIXTURE_DATE}")"
+  input="$(ls_file 'b.txt')"
+  head="$(printf '%8s  %s ❯' 12 "${FIXTURE_DATE}")"
 
   # Act
   run --separate-stderr format_listing 60 0 0 0 '' '' 'b.txt' '/srv' <<<"${input}"
@@ -869,9 +965,11 @@ done
 }
 
 @test "links take no room in the layout" {
+  local input
+
   # Arrange
-  local -r input="$(
-    ls_dir 'src'
+  input="$(
+    ls_directory 'src'
     ls_file 'plain-name.txt'
     ls_file 'run.sh'
     ls_file 'other.txt'
@@ -895,13 +993,14 @@ done
 #######################################
 function a_link_percent_encodes_what_a_uri_cannot_hold() {
   local -r awk_name="$1"
+  local input
 
   # Arrange:
   # a space, a Cyrillic letter, a CJK character, a percent sign
   # and a control character, which the listing shows as "?".
   use_awk "${awk_name}"
   export HOSTNAME='box'
-  local -r input="$(ls_file $'Д 日%\001.txt')"
+  input="$(ls_file $'Д 日%\001.txt')"
 
   # Act
   run --separate-stderr format_listing 60 0 0 0 '' '' '' '/srv/Дир' <<<"${input}"
@@ -918,7 +1017,7 @@ while IFS= read -r __awk; do
     -- a_link_percent_encodes_what_a_uri_cannot_hold "${__awk}"
 done < <(available_awks)
 
-# endregion
+# endregion Links
 
 # region Screen width of names
 
@@ -932,10 +1031,11 @@ done < <(available_awks)
 function names_keep_columns_aligned() {
   local -r awk_name="$1"
   local -r name="$2"
+  local input
 
   # Arrange
   use_awk "${awk_name}"
-  local -r input="$(
+  input="$(
     ls_file "${name}"
     ls_file 'a'
     ls_file 'b'
@@ -971,6 +1071,6 @@ while IFS= read -r __awk_name; do
   done
 done < <(available_awks)
 
-# endregion
+# endregion Screen width of names
 
 ### End

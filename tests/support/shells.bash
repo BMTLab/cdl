@@ -1,19 +1,13 @@
 #!/usr/bin/env bash
 
-# Name: tests/support/shells.bash
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Run cdl inside the shell under test, bash or zsh.
 #
-# Description:
-#   Run cdl inside the shell under test (bash or zsh),
-#   always in a fresh process with no rc files,
-#   so every test starts from the same clean shell.
-#
-#   Snippets run in bash and in zsh alike,
-#   so they avoid names that zsh reserves,
-#   such as `status`, `path` and `argv`.
-#
-#   Loaded by tests/support/test_helper.bash.
+# Each run is a fresh process with no rc files,
+# so every test starts from the same clean shell.
+# Snippets run in bash and in zsh alike,
+# so they avoid the names that zsh reserves,
+# such as `status`, `path` and `argv`.
+# test_helper.bash loads it.
 
 # region Runners
 
@@ -54,7 +48,7 @@ function in_shell_with_stdin() {
   shift
 
   # shellcheck disable=SC2016 # expanded by the shell under test
-  in_bare_shell 'source "$CDL_SCRIPT" || exit; '"${snippet}" "$@"
+  in_bare_shell 'source "${CDL_SCRIPT}" || exit; '"${snippet}" "$@"
 }
 
 #######################################
@@ -73,7 +67,7 @@ function in_bare_shell() {
   local -r snippet="$1"
   shift
 
-  if [[ ${CDL_SHELL_KIND} == 'zsh' ]]; then
+  if [[ "${CDL_SHELL_KIND}" == 'zsh' ]]; then
     "${CDL_SHELL_PATH}" -f -c "${snippet}" cdl-test "$@"
   else
     "${CDL_SHELL_PATH}" --noprofile --norc -c "${snippet}" cdl-test "$@"
@@ -101,23 +95,24 @@ function in_bare_shell() {
 function in_terminal() {
   local -r snippet="$1"
   local -r script_file="${BATS_TEST_TMPDIR}/terminal-snippet"
+  local -a command
+  local transcript exit_code=0
+  local quoted
 
   # shellcheck disable=SC2016 # expanded by the shell under test
-  printf 'source "$CDL_SCRIPT" || exit\n%s\n' "${snippet}" >"${script_file}"
+  printf 'source "${CDL_SCRIPT}" || exit\n%s\n' "${snippet}" >"${script_file}"
 
-  local -a command=("${CDL_SHELL_PATH}" --noprofile --norc "${script_file}")
-  if [[ ${CDL_SHELL_KIND} == 'zsh' ]]; then
+  command=("${CDL_SHELL_PATH}" --noprofile --norc "${script_file}")
+  if [[ "${CDL_SHELL_KIND}" == 'zsh' ]]; then
     command=("${CDL_SHELL_PATH}" -f "${script_file}")
   fi
 
-  local transcript rc=0
-  if [[ $(uname -s) == 'Darwin' ]]; then
-    transcript="$(script -q /dev/null "${command[@]}" </dev/null)" || rc=$?
+  if [[ "$(uname -s)" == 'Darwin' ]]; then
+    transcript="$(script -q /dev/null "${command[@]}" </dev/null)" || exit_code=$?
   else
     # The command string goes through sh, so each word is quoted.
-    local quoted
     printf -v quoted '%q ' "${command[@]}"
-    transcript="$(script -qec "${quoted}" /dev/null </dev/null)" || rc=$?
+    transcript="$(script -qec "${quoted}" /dev/null </dev/null)" || exit_code=$?
   fi
 
   # The pty turns LF into CR LF, and the BSD script of macOS echoes
@@ -125,10 +120,10 @@ function in_terminal() {
   # and two backspaces over them.
   transcript="${transcript//$'\r'/}"
   printf '%s\n' "${transcript//$'^D\b\b'/}"
-  return "${rc}"
+  return "${exit_code}"
 }
 
-# endregion
+# endregion Runners
 
 # region Shortcuts
 
@@ -147,7 +142,7 @@ function in_terminal() {
 #   cdl's return code.
 #######################################
 function cdl_then_pwd() {
-  in_shell 'cdl "$@" >/dev/null; rc=$?; printf "%s\n" "$PWD"; exit "$rc"' "$@"
+  in_shell 'cdl "$@" >/dev/null; exit_code=$?; printf "%s\n" "${PWD}"; exit "${exit_code}"' "$@"
 }
 
 #######################################
@@ -173,6 +168,6 @@ function format_listing() {
   in_shell_with_stdin '__cdl_format_listing "$@"' "$@"
 }
 
-# endregion
+# endregion Shortcuts
 
 ### End

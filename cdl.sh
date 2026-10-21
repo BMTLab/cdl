@@ -1,116 +1,37 @@
 #!/usr/bin/env bash
 
-# Name: cdl.sh
-# Author: Nikita Neverov (BMTLab)
-# Version: 2.0.0
-# Date: 2026-10-07
-# License: MIT
+# Change into a directory and list it: cd and a compact ls in one step.
 #
-# Description:
-#   Interactive helper that combines `cd` and a compact, colored `ls`:
-#   it changes the current directory
-#   and immediately prints a readable listing of the new one.
+# Usage: sourced by ~/.bashrc or ~/.zshrc, or by cdl.plugin.zsh;
+#   then cdl [-a] [-1] [-L | -P] [--] [DIRECTORY], or cdl_list [-a] [-1].
+# Effects: defines cdl, cdl_list and their Tab completion
+#   in the shell that sources it, and with CDL_REPLACE_CD=1 a cd that runs cdl;
+#   cdl changes the directory of that shell and prints a listing.
+#   It needs no root and no network; cdl --help changes nothing.
+# Dependencies: awk; tput only without COLUMNS;
+#   a GNU, uutils or Homebrew ls (gls) for the compact listing,
+#   which falls back to a plain ls -Alh with a BSD ls.
+# Settings: CDL_COLOR (auto), CDL_HIDDEN (1), CDL_WIDTH, CDL_MAX_ROWS,
+#   CDL_MAX_COLUMNS, CDL_HEADER (auto), CDL_GIT (1), CDL_LINKS (auto),
+#   CDL_REPLACE_CD (0), and NO_COLOR.
+# Exit codes: 0 success,
+#   10 CDL_ERR_USAGE,
+#   20 CDL_ERR_SETTING,
+#   30 CDL_ERR_CHDIR, 31 CDL_ERR_NOT_FOUND, 32 CDL_ERR_DENIED, 33 CDL_ERR_NOT_DIRECTORY,
+#   40 CDL_ERR_LIST,
+#   50 CDL_ERR_NOT_SOURCED.
+# See: cdl --help, README.md, CLAUDE.md, tests/.
 #
-#   Compatibility:
-#     - Source it into bash 3.2+ or zsh 5.0+, on Linux or macOS.
-#     - The compact listing needs an ls that speaks GNU options:
-#       GNU ls, uutils ls, or Homebrew's gls.
-#       With BSD ls (the macOS default) cdl prints `ls -Alh` as is.
-#     - Any POSIX awk will do: gawk, mawk, BSD awk or busybox awk 1.34+.
+# How it works:
+#   The file runs in bash 3.2+ and zsh 5.0+, on Linux and macOS,
+#   and sourcing it runs no external command.
+#   A listing runs ls once and awk once: the awk program in this file
+#   lays out the columns and counts names in screen cells,
+#   so CJK and emoji take two cells and escape sequences none.
+#   The tens digit of a return code names what failed, and the units why,
+#   so `(( $? / 10 == 3 ))` holds whenever a directory could not be entered.
 #
-#   Listing format (GNU-compatible ls):
-#     - On a terminal, a header line first:
-#       the directory, its git branch, read without running git,
-#       and how many directories, files and bytes it holds.
-#     - One row per entry: SIZE  DATE TIME  NAME,
-#       directories first, symlinks with their targets.
-#       Sizes read like those of GNU `ls -h`, whatever ls lists them.
-#     - Names sort by bytes (uppercase first), whatever the locale:
-#       the one order every ls implementation agrees on.
-#     - As many columns as fit the terminal, filled top to bottom like ls.
-#       Widths are measured in screen cells:
-#       escape sequences take none, CJK and emoji take two.
-#     - On a terminal, a long listing is cut at its height,
-#       with a last line that says how many entries it left out.
-#     - A file given to cdl is marked with ❯ (> without UTF-8),
-#       and a cut listing moves to show it.
-#     - Control characters in names show as '?', like `ls -q`,
-#       so a crafted file name cannot drive the terminal.
-#     - Colors only on a terminal, and never when NO_COLOR is set.
-#     - With colors, names are hyperlinks (OSC 8) to their files,
-#       and the header path to the directory.
-#
-# Usage:
-#   # In ~/.bashrc or ~/.zshrc:
-#   source /path/to/cdl.sh
-#
-#   # Then, interactively:
-#   cdl [<directory>]
-#   cdl "$(xclip -o)"       # Change into the path from the clipboard
-#   echo '/some/path' | cdl # Read the directory from a pipe (see Notes)
-#
-#   # Or make cd itself run cdl, with its options and completion
-#   # (set it before sourcing):
-#   export CDL_REPLACE_CD=1
-#
-#   Tab completion for cdl and cdl_list, and for cd when cdl replaces it,
-#   comes with sourcing, in bash, and in zsh once compinit has run.
-#   zsh plugin managers can load cdl.plugin.zsh instead.
-#
-#   Notes:
-#     - cdl reads the directory from stdin only when stdin is a pipe;
-#       a redirected file or a terminal is never read.
-#     - In bash, a pipeline runs cdl in a subshell:
-#       `echo /path | cdl` prints the listing,
-#       but your shell stays where it was.
-#       zsh runs the last command of a pipeline in the current shell,
-#       so there the directory does change.
-#       `cdl "$(command)"` changes directory in both shells.
-#     - An explicit operand wins over stdin.
-#       From stdin, the first non-blank line is used, trimmed.
-#     - With neither, cdl goes to $HOME, like cd.
-#     - A file takes cdl to the directory that holds it.
-#     - A file:// URI and a leading ~ work too,
-#       as they come from a clipboard or a pipe.
-#
-# Exit Codes / Return Codes:
-#   The tens digit names what failed, and the units digit why.
-#   A code keeps its value within a major version,
-#   and a new reason takes the next free code of its ten,
-#   so a script that compares the tens keeps working:
-#   `(( $? / 10 == CDL_ERR_CHDIR / 10 ))` holds for every reason
-#   a directory could not be entered.
-#   0: Success.
-#   10: CDL_ERR_USAGE
-#       Unknown option, empty directory name,
-#       or more than one directory operand.
-#   20: CDL_ERR_SETTING
-#       A CDL_* setting holds an invalid value.
-#   30: CDL_ERR_CHDIR
-#       The directory could not be entered,
-#       for a reason none of the codes below names.
-#   31: CDL_ERR_NOT_FOUND
-#       The directory does not exist,
-#       or `cdl -` has no previous directory to go back to.
-#   32: CDL_ERR_DENIED
-#       The directory, or a directory on the way to it,
-#       may not be entered.
-#   33: CDL_ERR_NOT_DIRECTORY
-#       A file stands where the path needs a directory,
-#       as in 'notes.md/' or 'notes.md/drafts'.
-#   40: CDL_ERR_LIST
-#       The directory was entered, but ls could not list it in full
-#       (e.g., it is searchable but not readable).
-#   50: CDL_ERR_NOT_SOURCED
-#       This script was executed instead of being sourced,
-#       or sourced into a shell other than bash or zsh.
-#
-# Disclaimer:
-#   This script is provided "as is",
-#   without any warranty or guarantee of correctness, performance,
-#   or fitness for a particular purpose.
-#   Always verify that the resolved target path is what you expect
-#   before relying on it in automation or critical workflows.
+# Version: 2.0.1
 
 # region Version and error codes
 
@@ -128,7 +49,7 @@ fi
 # The version, for `cdl --version`.
 # A plain assignment, unlike the codes below:
 # sourcing a newer cdl.sh in the same shell must replace it.
-CDL_VERSION='2.0.0'
+CDL_VERSION='2.0.1'
 
 # Each code is assigned only when unset,
 # so sourcing the file again (e.g. reloading ~/.bashrc)
@@ -146,7 +67,7 @@ CDL_VERSION='2.0.0'
 : "${CDL_ERR_LIST:=40}"
 : "${CDL_ERR_NOT_SOURCED:=50}"
 
-# endregion
+# endregion Version and error codes
 
 # region Shell check
 
@@ -167,7 +88,7 @@ esac
 
 # zsh needs `-g`: plugin managers source files from inside functions,
 # where a bare `readonly` would create a local instead.
-if [[ -n ${ZSH_VERSION-} ]]; then
+if [[ -n "${ZSH_VERSION-}" ]]; then
   typeset -gr CDL_ERR_USAGE CDL_ERR_SETTING CDL_ERR_CHDIR \
     CDL_ERR_NOT_FOUND CDL_ERR_DENIED CDL_ERR_NOT_DIRECTORY \
     CDL_ERR_LIST CDL_ERR_NOT_SOURCED
@@ -177,12 +98,12 @@ else
     CDL_ERR_LIST CDL_ERR_NOT_SOURCED
 fi
 
-# endregion
+# endregion Shell check
 
 # region Session state
 
-if [[ -n ${ZSH_VERSION-} ]]; then
-  typeset -g __cdl_ls_bin __cdl_ls_is_gnu __cdl_ls_color_flag __cdl_awk_bin \
+if [[ -n "${ZSH_VERSION-}" ]]; then
+  typeset -g __cdl_ls_command __cdl_is_gnu_ls __cdl_ls_color_flag __cdl_awk_command \
     __cdl_setting_color __cdl_setting_hidden __cdl_setting_width \
     __cdl_setting_max_rows __cdl_setting_max_columns __cdl_setting_header \
     __cdl_setting_git __cdl_setting_links __cdl_setting_replace_cd
@@ -191,10 +112,10 @@ fi
 # What the probes in "Tool detection" learned about ls and awk,
 # cached for the shell session.
 # Sourcing the file again, e.g. after an update, starts fresh probes.
-__cdl_ls_bin=''
-__cdl_ls_is_gnu=0
+__cdl_ls_command=''
+__cdl_is_gnu_ls=0
 __cdl_ls_color_flag=''
-__cdl_awk_bin=''
+__cdl_awk_command=''
 
 # The settings of the call in progress,
 # which __cdl_read_settings fills on every call (see "Settings").
@@ -208,7 +129,7 @@ __cdl_setting_git=''
 __cdl_setting_links=''
 __cdl_setting_replace_cd=''
 
-# endregion
+# endregion Session state
 
 # region Messages
 
@@ -329,7 +250,7 @@ function __cdl_error() {
   return "${code}"
 }
 
-# endregion
+# endregion Messages
 
 # region Settings
 
@@ -393,31 +314,31 @@ function __cdl_read_settings() {
   __cdl_setting_links="${CDL_LINKS:-auto}"
   __cdl_setting_replace_cd="${CDL_REPLACE_CD:-0}"
 
-  if [[ -n ${CDL_COLOR-} ]]; then
+  if [[ -n "${CDL_COLOR-}" ]]; then
     __cdl_check_choice 'CDL_COLOR' "${CDL_COLOR}" 'auto' 'always' 'never' || return
   fi
-  if [[ -n ${CDL_HIDDEN-} ]]; then
+  if [[ -n "${CDL_HIDDEN-}" ]]; then
     __cdl_check_choice 'CDL_HIDDEN' "${CDL_HIDDEN}" 0 1 || return
   fi
-  if [[ -n ${CDL_WIDTH-} ]]; then
+  if [[ -n "${CDL_WIDTH-}" ]]; then
     __cdl_check_number 'CDL_WIDTH' "${CDL_WIDTH}" 1 || return
   fi
-  if [[ -n ${CDL_MAX_ROWS-} ]]; then
+  if [[ -n "${CDL_MAX_ROWS-}" ]]; then
     __cdl_check_number 'CDL_MAX_ROWS' "${CDL_MAX_ROWS}" 0 || return
   fi
-  if [[ -n ${CDL_MAX_COLUMNS-} ]]; then
+  if [[ -n "${CDL_MAX_COLUMNS-}" ]]; then
     __cdl_check_number 'CDL_MAX_COLUMNS' "${CDL_MAX_COLUMNS}" 0 || return
   fi
-  if [[ -n ${CDL_HEADER-} ]]; then
+  if [[ -n "${CDL_HEADER-}" ]]; then
     __cdl_check_choice 'CDL_HEADER' "${CDL_HEADER}" 'auto' 'always' 'never' || return
   fi
-  if [[ -n ${CDL_GIT-} ]]; then
+  if [[ -n "${CDL_GIT-}" ]]; then
     __cdl_check_choice 'CDL_GIT' "${CDL_GIT}" 0 1 || return
   fi
-  if [[ -n ${CDL_LINKS-} ]]; then
+  if [[ -n "${CDL_LINKS-}" ]]; then
     __cdl_check_choice 'CDL_LINKS' "${CDL_LINKS}" 'auto' 'always' 'never' || return
   fi
-  if [[ -n ${CDL_REPLACE_CD-} ]]; then
+  if [[ -n "${CDL_REPLACE_CD-}" ]]; then
     __cdl_check_choice 'CDL_REPLACE_CD' "${CDL_REPLACE_CD}" 0 1 || return
   fi
 }
@@ -438,7 +359,7 @@ function __cdl_apply_listing_options() {
   local option
 
   for option in "$@"; do
-    case ${option} in
+    case "${option}" in
       -a | --all) __cdl_setting_max_rows=0 ;;
       -1 | --one-column) __cdl_setting_max_columns=1 ;;
       -?*)
@@ -467,11 +388,11 @@ function __cdl_apply_listing_options() {
 function __cdl_check_choice() {
   local -r name="$1"
   local -r value="$2"
+  local choice
   shift 2
 
-  local choice
   for choice in "$@"; do
-    if [[ ${value} == "${choice}" ]]; then
+    if [[ "${value}" == "${choice}" ]]; then
       return 0
     fi
   done
@@ -499,7 +420,7 @@ function __cdl_check_number() {
   if __cdl_is_positive_integer "${value}"; then
     return 0
   fi
-  if ((minimum == 0)) && [[ ${value} == 0 ]]; then
+  if ((minimum == 0)) && [[ "${value}" == 0 ]]; then
     return 0
   fi
 
@@ -532,7 +453,7 @@ function __cdl_join_choices() {
   fi
 }
 
-# endregion
+# endregion Settings
 
 # region Input
 
@@ -564,7 +485,7 @@ function __cdl_trim() {
 # Returns:
 #   0 if stdin is a pipe; 1 otherwise.
 #######################################
-function __cdl_stdin_is_pipe() {
+function __cdl_is_stdin_a_pipe() {
   [[ -p /dev/stdin ]]
 }
 
@@ -583,9 +504,9 @@ function __cdl_stdin_is_pipe() {
 function __cdl_read_stdin_target() {
   local line
 
-  while IFS= read -r line || [[ -n ${line} ]]; do
+  while IFS= read -r line || [[ -n "${line}" ]]; do
     __cdl_trim "${line}"
-    if [[ -n ${REPLY} ]]; then
+    if [[ -n "${REPLY}" ]]; then
       return 0
     fi
   done
@@ -604,24 +525,24 @@ function __cdl_read_stdin_target() {
 #   CDL_ERR_USAGE for more than one, or for an empty one.
 #######################################
 function __cdl_check_operands() {
-  if (($# > 1)) && [[ $2 == -?* ]]; then
+  if (($# > 1)) && [[ "$2" == -?* ]]; then
     __cdl_error "Options go before the directory: '$2'" "${CDL_ERR_USAGE}" \
-      || return "$?"
+      || return
   fi
   if (($# > 1)); then
     __cdl_error "Too many arguments: expected one directory, got $#" \
-      "${CDL_ERR_USAGE}" || return "$?"
+      "${CDL_ERR_USAGE}" || return
   fi
 
   # An empty operand mostly comes from an empty substitution,
   # such as `cdl "$(xclip -o)"` with nothing in the clipboard,
   # where a jump to HOME would surprise.
-  if (($# == 1)) && [[ -z $1 ]]; then
-    __cdl_error 'Empty directory name' "${CDL_ERR_USAGE}" || return "$?"
+  if (($# == 1)) && [[ -z "$1" ]]; then
+    __cdl_error 'Empty directory name' "${CDL_ERR_USAGE}" || return
   fi
 }
 
-# endregion
+# endregion Input
 
 # region Paths
 
@@ -642,7 +563,7 @@ function __cdl_check_operands() {
 function __cdl_expand_target() {
   local target="$1"
 
-  case ${target} in
+  case "${target}" in
     'file:///'* | 'file://localhost/'*)
       __cdl_file_uri_path "${target}"
       target="${REPLY}"
@@ -651,8 +572,8 @@ function __cdl_expand_target() {
 
   REPLY="${target}"
   # shellcheck disable=SC2088 # the ~ the shell left alone is the point
-  if [[ ${target} == '~' || ${target} == '~/'* ]] \
-    && [[ -n ${HOME-} && ! -e ${target} ]]; then
+  if [[ "${target}" == '~' || "${target}" == '~/'* ]] \
+    && [[ -n "${HOME-}" && ! -e "${target}" ]]; then
     REPLY="${HOME}${target#'~'}"
   fi
 }
@@ -691,18 +612,19 @@ function __cdl_percent_decode() {
   local rest="$1"
   local decoded='' hex byte
 
-  while [[ ${rest} == *%* ]]; do
+  while [[ "${rest}" == *%* ]]; do
     decoded="${decoded}${rest%%\%*}"
     rest="${rest#*%}"
     hex="${rest:0:2}"
-    if [[ ${hex} != [0-9A-Fa-f][0-9A-Fa-f] || ${hex} == 00 ]]; then
+    if [[ "${hex}" != [0-9A-Fa-f][0-9A-Fa-f] || "${hex}" == 00 ]]; then
       decoded="${decoded}%"
       continue
     fi
 
-    # $'\xHH' makes a byte of hex digits without a fork
-    # in bash 3.2 and zsh 5.0 alike, which lack `printf -v`;
-    # eval sees nothing else, as the two digits are checked above.
+    # $'\xHH' makes a byte of hex digits without a fork,
+    # in bash 3.2 and zsh 5.0 alike;
+    # `printf -v` would need zsh 5.2, so eval builds the byte,
+    # and sees nothing else, as the two digits are checked above.
     eval "byte=\$'\\x${hex}'"
     decoded="${decoded}${byte}"
     rest="${rest:2}"
@@ -711,7 +633,7 @@ function __cdl_percent_decode() {
   REPLY="${decoded}${rest}"
 }
 
-# endregion
+# endregion Paths
 
 # region Navigation
 
@@ -730,12 +652,12 @@ function __cdl_percent_decode() {
 function __cdl_resolve_target() {
   local -r operand="$1"
 
-  if [[ -n ${operand} ]]; then
+  if [[ -n "${operand}" ]]; then
     REPLY="${operand}"
     return 0
   fi
 
-  if __cdl_stdin_is_pipe && __cdl_read_stdin_target; then
+  if __cdl_is_stdin_a_pipe && __cdl_read_stdin_target; then
     return 0
   fi
 
@@ -765,19 +687,20 @@ function __cdl_resolve_target() {
 function __cdl_enter() {
   local -r target="$1"
   local -r option="$2"
+  local directory
 
   if __cdl_change_directory "${target}" "${option}"; then
     REPLY=''
     return 0
   fi
-  if ! __cdl_names_a_file "${target}"; then
+  if ! __cdl_is_file_target "${target}"; then
     __cdl_report_chdir_failure "${target}"
     return
   fi
 
   __cdl_holding_directory "${target}"
-  local -r directory="${REPLY}"
-  if [[ -n ${directory} ]] && ! __cdl_change_directory "${directory}" "${option}"; then
+  directory="${REPLY}"
+  if [[ -n "${directory}" ]] && ! __cdl_change_directory "${directory}" "${option}"; then
     __cdl_report_chdir_failure "${directory}"
     return
   fi
@@ -796,14 +719,14 @@ function __cdl_enter() {
 # Returns:
 #   0 for such an entry; 1 otherwise, and always for '-'.
 #######################################
-function __cdl_names_a_file() {
+function __cdl_is_file_target() {
   local -r target="$1"
 
-  if [[ ${target} == '-' || -d ${target} ]]; then
+  if [[ "${target}" == '-' || -d "${target}" ]]; then
     return 1
   fi
 
-  [[ -e ${target} || -L ${target} ]]
+  [[ -e "${target}" || -L "${target}" ]]
 }
 
 #######################################
@@ -822,13 +745,13 @@ function __cdl_names_a_file() {
 function __cdl_holding_directory() {
   local -r entry_path="$1"
 
-  if [[ ${entry_path} != */* ]]; then
+  if [[ "${entry_path}" != */* ]]; then
     REPLY=''
     return 0
   fi
 
   REPLY="${entry_path%/*}"
-  case ${REPLY} in
+  case "${REPLY}" in
     '') REPLY='/' ;;
     '.') REPLY='' ;;
     /* | ./* | .. | ../*) ;;
@@ -870,41 +793,44 @@ function __cdl_holding_directory() {
 #######################################
 function __cdl_diagnose_chdir_failure() {
   local target="$1"
+  local bare
+  local part
+  local below
 
-  if [[ ${target} == '-' && -z ${OLDPWD-} ]]; then
+  if [[ "${target}" == '-' && -z "${OLDPWD-}" ]]; then
     REPLY='No previous directory: OLDPWD is not set'
     return "${CDL_ERR_NOT_FOUND}"
   fi
-  if [[ ${target} == '-' ]]; then
+  if [[ "${target}" == '-' ]]; then
     target="${OLDPWD}"
   fi
 
   # Trailing slashes come off first: they hide a file from the tests,
   # where cd sees the file and calls it not a directory.
-  local bare="${target%"${target##*[!/]}"}"
+  bare="${target%"${target##*[!/]}"}"
   bare="${bare:-/}"
   __cdl_nearest_existing_part "${bare}"
-  local -r part="${REPLY}"
+  part="${REPLY}"
 
-  if [[ ! -d ${part} ]]; then
+  if [[ ! -d "${part}" ]]; then
     REPLY="Not a directory: '${target}'"
     __cdl_blame_part "${part}" "${bare}" 'is a file'
     return "${CDL_ERR_NOT_DIRECTORY}"
   fi
-  if [[ ! -x ${part} ]]; then
+  if [[ ! -x "${part}" ]]; then
     REPLY="Permission denied: '${target}'"
     __cdl_blame_part "${part}" "${bare}" 'may not be entered'
     return "${CDL_ERR_DENIED}"
   fi
-  if [[ ${part} == "${bare}" ]]; then
+  if [[ "${part}" == "${bare}" ]]; then
     REPLY="Cannot change directory: '${target}'"
     return "${CDL_ERR_CHDIR}"
   fi
 
   __cdl_part_below "${part}" "${bare}"
-  local -r below="${REPLY}"
+  below="${REPLY}"
   REPLY="No such file or directory: '${target}'"
-  if [[ -L ${below} ]]; then
+  if [[ -L "${below}" ]]; then
     __cdl_blame_part "${below}" "${bare}" 'is a broken symlink'
   fi
   return "${CDL_ERR_NOT_FOUND}"
@@ -923,8 +849,8 @@ function __cdl_diagnose_chdir_failure() {
 function __cdl_nearest_existing_part() {
   REPLY="$1"
 
-  while [[ ! -e ${REPLY} && ${REPLY} != '/' && ${REPLY} != '.' ]]; do
-    case ${REPLY} in
+  while [[ ! -e "${REPLY}" && "${REPLY}" != '/' && "${REPLY}" != '.' ]]; do
+    case "${REPLY}" in
       */*) REPLY="${REPLY%/*}" ;;
       *) REPLY='.' ;;
     esac
@@ -946,15 +872,16 @@ function __cdl_nearest_existing_part() {
 function __cdl_part_below() {
   local -r part="$1"
   local -r whole="$2"
+  local rest
 
-  local rest="${whole}"
-  if [[ ${part} == '/' ]]; then
+  rest="${whole}"
+  if [[ "${part}" == '/' ]]; then
     rest="${whole#/}"
-  elif [[ ${part} != '.' ]]; then
+  elif [[ "${part}" != '.' ]]; then
     rest="${whole#"${part}"/}"
   fi
 
-  case ${part} in
+  case "${part}" in
     '.') REPLY="${rest%%/*}" ;;
     '/') REPLY="/${rest%%/*}" ;;
     *) REPLY="${part}/${rest%%/*}" ;;
@@ -978,7 +905,7 @@ function __cdl_blame_part() {
   local -r whole="$2"
   local -r words="$3"
 
-  if [[ ${part} != "${whole}" ]]; then
+  if [[ "${part}" != "${whole}" ]]; then
     REPLY="${REPLY} ('${part}' ${words})"
   fi
 }
@@ -1025,7 +952,7 @@ function __cdl_report_chdir_failure() {
   __cdl_error "${REPLY}" "${code}"
 }
 
-# endregion
+# endregion Navigation
 
 # region Terminal
 
@@ -1039,7 +966,7 @@ function __cdl_report_chdir_failure() {
 #   0 for "1", "80", "120"; 1 for "", "0", "080", "12a".
 #######################################
 function __cdl_is_positive_integer() {
-  case $1 in
+  case "$1" in
     '' | 0* | *[!0-9]*) return 1 ;;
     *) return 0 ;;
   esac
@@ -1060,7 +987,7 @@ function __cdl_is_positive_integer() {
 #######################################
 function __cdl_terminal_width() {
   REPLY="${__cdl_setting_width}"
-  if [[ -n ${REPLY} ]]; then
+  if [[ -n "${REPLY}" ]]; then
     return 0
   fi
 
@@ -1132,7 +1059,7 @@ function __cdl_max_rows() {
   local -ir fewest_rows=5
 
   REPLY="${__cdl_setting_max_rows}"
-  if [[ -n ${REPLY} ]]; then
+  if [[ -n "${REPLY}" ]]; then
     return 0
   fi
   if [[ ! -t 1 ]]; then
@@ -1156,8 +1083,8 @@ function __cdl_max_rows() {
 # Returns:
 #   0 for a UTF-8 locale; 1 otherwise.
 #######################################
-function __cdl_utf8_output() {
-  case ${LC_ALL:-${LC_CTYPE:-${LANG-}}} in
+function __cdl_can_print_utf8() {
+  case "${LC_ALL:-${LC_CTYPE:-${LANG-}}}" in
     *[Uu][Tt][Ff]-8* | *[Uu][Tt][Ff]8*) return 0 ;;
     *) return 1 ;;
   esac
@@ -1178,10 +1105,10 @@ function __cdl_utf8_output() {
 #   0 to use colors; 1 otherwise.
 #######################################
 function __cdl_should_color() {
-  case ${__cdl_setting_color} in
+  case "${__cdl_setting_color}" in
     always) return 0 ;;
     never) return 1 ;;
-    *) [[ -z ${NO_COLOR-} && -t 1 ]] ;;
+    *) [[ -z "${NO_COLOR-}" && -t 1 ]] ;;
   esac
 }
 
@@ -1203,23 +1130,23 @@ function __cdl_should_color() {
 #   0 to link the names; 1 otherwise.
 #######################################
 function __cdl_should_link() {
-  local -ir colored="$1"
+  local -ir is_colored="$1"
 
-  case ${__cdl_setting_links} in
+  case "${__cdl_setting_links}" in
     always) return 0 ;;
     never) return 1 ;;
   esac
-  if ((! colored)) || [[ ! -t 1 ]]; then
+  if ((! is_colored)) || [[ ! -t 1 ]]; then
     return 1
   fi
 
-  case ${TERM-} in
+  case "${TERM-}" in
     linux | dumb | '') return 1 ;;
     *) return 0 ;;
   esac
 }
 
-# endregion
+# endregion Terminal
 
 # region Header
 
@@ -1238,7 +1165,7 @@ function __cdl_should_link() {
 #   0 to print the header; 1 otherwise.
 #######################################
 function __cdl_should_show_header() {
-  case ${__cdl_setting_header} in
+  case "${__cdl_setting_header}" in
     always) return 0 ;;
     never) return 1 ;;
     *) [[ -t 1 ]] ;;
@@ -1260,13 +1187,13 @@ function __cdl_pretty_path() {
   home="${home%/}"
 
   # Without a HOME, or with HOME at the root, every path stays whole.
-  if [[ -z ${home} ]]; then
+  if [[ -z "${home}" ]]; then
     REPLY="${directory}"
     return 0
   fi
 
   # shellcheck disable=SC2088 # the header shows a literal ~, as the prompt does
-  case ${directory} in
+  case "${directory}" in
     "${home}") REPLY='~' ;;
     "${home}"/*) REPLY="~/${directory#"${home}"/}" ;;
     *) REPLY="${directory}" ;;
@@ -1290,20 +1217,21 @@ function __cdl_pretty_path() {
 function __cdl_git_branch() {
   # Seven digits, as git shortens a commit hash by default.
   local -ir short_hash_length=7
+  local git_directory
+  local head=''
 
-  __cdl_find_git_dir
-  local -r git_dir="${REPLY}"
+  __cdl_find_git_directory
+  git_directory="${REPLY}"
   REPLY=''
-  if [[ -z ${git_dir} ]]; then
+  if [[ -z "${git_directory}" ]]; then
     return 0
   fi
 
   # The braces catch the error of a missing file,
   # which zsh prints even with `2>/dev/null` on the command itself.
-  local head=''
-  { read -r head <"${git_dir}/HEAD"; } 2>/dev/null || true
+  { read -r head <"${git_directory}/HEAD"; } 2>/dev/null || true
 
-  case ${head} in
+  case "${head}" in
     'ref: refs/heads/.invalid') ;;
     'ref: refs/heads/'*) REPLY="${head#ref: refs/heads/}" ;;
     '' | *[!0-9a-f]*) ;;
@@ -1325,11 +1253,12 @@ function __cdl_git_branch() {
 # Outputs:
 #   Sets REPLY to the git directory, or to '' outside a repository.
 #######################################
-function __cdl_find_git_dir() {
+function __cdl_find_git_directory() {
   local directory="${PWD}"
+  local line=''
 
-  while [[ ! -e ${directory}/.git ]]; do
-    if [[ -z ${directory} ]]; then
+  while [[ ! -e "${directory}/.git" ]]; do
+    if [[ -z "${directory}" ]]; then
       REPLY=''
       return 0
     fi
@@ -1337,21 +1266,20 @@ function __cdl_find_git_dir() {
   done
 
   REPLY="${directory}/.git"
-  if [[ -d ${REPLY} ]]; then
+  if [[ -d "${REPLY}" ]]; then
     return 0
   fi
 
-  local line=''
   { read -r line <"${REPLY}"; } 2>/dev/null || true
 
-  case ${line} in
+  case "${line}" in
     'gitdir: /'*) REPLY="${line#gitdir: }" ;;
     'gitdir: '?*) REPLY="${directory}/${line#gitdir: }" ;;
     *) REPLY='' ;;
   esac
 }
 
-# endregion
+# endregion Header
 
 # region Tool detection
 
@@ -1368,25 +1296,25 @@ function __cdl_find_git_dir() {
 # and a fork per listing would be wasted on a known answer.
 #
 # Globals:
-#   __cdl_ls_bin (read+write), __cdl_ls_is_gnu (write),
+#   __cdl_ls_command (read+write), __cdl_is_gnu_ls (write),
 #   __cdl_ls_color_flag (write).
 #######################################
 function __cdl_detect_ls() {
-  if [[ -n ${__cdl_ls_bin} ]]; then
+  if [[ -n "${__cdl_ls_command}" ]]; then
     return 0
   fi
 
-  __cdl_ls_bin='ls'
+  __cdl_ls_command='ls'
   if command -v gls >/dev/null 2>&1; then
-    __cdl_ls_bin='gls'
+    __cdl_ls_command='gls'
   fi
 
-  __cdl_ls_is_gnu=0
+  __cdl_is_gnu_ls=0
   __cdl_ls_color_flag=''
-  if command "${__cdl_ls_bin}" --group-directories-first --version \
+  if command "${__cdl_ls_command}" --group-directories-first --version \
     >/dev/null 2>&1; then
-    __cdl_ls_is_gnu=1
-  elif command "${__cdl_ls_bin}" -G -d / >/dev/null 2>&1; then
+    __cdl_is_gnu_ls=1
+  elif command "${__cdl_ls_command}" -G -d / >/dev/null 2>&1; then
     __cdl_ls_color_flag='-G'
   fi
 }
@@ -1399,20 +1327,20 @@ function __cdl_detect_ls() {
 # The choice is cached for the shell session.
 #
 # Globals:
-#   __cdl_awk_bin (read+write).
+#   __cdl_awk_command (read+write).
 #######################################
 function __cdl_detect_awk() {
-  if [[ -n ${__cdl_awk_bin} ]]; then
+  if [[ -n "${__cdl_awk_command}" ]]; then
     return 0
   fi
 
-  __cdl_awk_bin='awk'
+  __cdl_awk_command='awk'
   if command -v mawk >/dev/null 2>&1; then
-    __cdl_awk_bin='mawk'
+    __cdl_awk_command='mawk'
   fi
 }
 
-# endregion
+# endregion Tool detection
 
 # region Listing
 
@@ -1438,15 +1366,15 @@ function __cdl_detect_awk() {
 function cdl_list() {
   # Run with zsh's default options whatever the user has set
   # (KSH_ARRAYS, SH_WORD_SPLIT, ...); they come back on return.
-  if [[ -n ${ZSH_VERSION-} ]]; then
+  if [[ -n "${ZSH_VERSION-}" ]]; then
     emulate -L zsh
   fi
 
   local REPLY
 
-  __cdl_read_settings || return "$?"
+  __cdl_read_settings || return
   if (($# > 0)); then
-    __cdl_apply_listing_options "$@" || return "$?"
+    __cdl_apply_listing_options "$@" || return
   fi
 
   __cdl_list_current_directory
@@ -1468,7 +1396,7 @@ function __cdl_list_current_directory() {
   local -r mark="${1-}"
 
   __cdl_detect_ls
-  if ((__cdl_ls_is_gnu)); then
+  if ((__cdl_is_gnu_ls)); then
     __cdl_print_compact_listing "${mark}"
   else
     __cdl_print_plain_listing
@@ -1494,7 +1422,7 @@ function __cdl_print_listing() {
 #   1: Name of an entry to mark (optional).
 #
 # Globals:
-#   __cdl_ls_bin, __cdl_setting_hidden, __cdl_setting_max_columns,
+#   __cdl_ls_command, __cdl_setting_hidden, __cdl_setting_max_columns,
 #   __cdl_setting_git, PWD (read).
 #
 # Outputs:
@@ -1505,22 +1433,29 @@ function __cdl_print_listing() {
 #######################################
 function __cdl_print_compact_listing() {
   local -r mark="${1-}"
-  local -i color=0
+  local -i is_colored=0
   local color_mode='never'
+  local width
+  local short_options='-l'
+  local listing
+  local -i ls_status=0
+  local header_path='' header_branch=''
+  local -i header_lines=0
+  local link_directory=''
+
   if __cdl_should_color; then
-    color=1
+    is_colored=1
     color_mode='always'
   fi
 
   __cdl_terminal_width
-  local -r width="${REPLY}"
+  width="${REPLY}"
 
   # `-A` lists hidden entries, but never `.` and `..`;
   # a hidden entry to mark brings them in.
   # Sizes come in bytes: the formatter writes them like `ls -h`,
   # and adds them up for the header.
-  local short_options='-l'
-  if ((__cdl_setting_hidden)) || [[ ${mark} == .* ]]; then
+  if ((__cdl_setting_hidden)) || [[ "${mark}" == .* ]]; then
     short_options='-Al'
   fi
 
@@ -1539,10 +1474,8 @@ function __cdl_print_compact_listing() {
   # `$(...)` drops the trailing newlines of the output, so the last name,
   # when it ends in a newline, shows without its final '?':
   # a sentinel line would fix that for a fork on every listing.
-  local listing
-  local -i ls_status=0
   listing="$(
-    COLUMNS="${width}" LC_ALL=C command "${__cdl_ls_bin}" "${short_options}" \
+    COLUMNS="${width}" LC_ALL=C command "${__cdl_ls_command}" "${short_options}" \
       --group-directories-first \
       --block-size=1 \
       --quoting-style=literal \
@@ -1551,8 +1484,6 @@ function __cdl_print_compact_listing() {
   )" || ls_status=$?
 
   # A header only over a listing in full, so its counts never mislead.
-  local header_path='' header_branch=''
-  local -i header_lines=0
   if ((ls_status == 0)) && __cdl_should_show_header; then
     header_lines=1
     __cdl_pretty_path "${PWD}"
@@ -1563,14 +1494,13 @@ function __cdl_print_compact_listing() {
     fi
   fi
 
-  local link_directory=''
-  if __cdl_should_link "${color}"; then
+  if __cdl_should_link "${is_colored}"; then
     link_directory="${PWD}"
   fi
 
   __cdl_max_rows "${header_lines}"
   __cdl_format_listing "${width}" "${REPLY}" "${__cdl_setting_max_columns}" \
-    "${color}" "${header_path}" "${header_branch}" "${mark}" "${link_directory}" \
+    "${is_colored}" "${header_path}" "${header_branch}" "${mark}" "${link_directory}" \
     <<<"${listing}"
 
   if ((ls_status != 0)); then
@@ -1586,7 +1516,7 @@ function __cdl_print_compact_listing() {
 # so its output is shown as is instead of being reformatted.
 #
 # Globals:
-#   __cdl_ls_bin, __cdl_ls_color_flag, __cdl_setting_hidden (read).
+#   __cdl_ls_command, __cdl_ls_color_flag, __cdl_setting_hidden (read).
 #
 # Outputs:
 #   The listing to stdout.
@@ -1599,16 +1529,16 @@ function __cdl_print_plain_listing() {
   if ((__cdl_setting_hidden)); then
     options=(-Alh)
   fi
-  if [[ -n ${__cdl_ls_color_flag} ]] && __cdl_should_color; then
+  if [[ -n "${__cdl_ls_color_flag}" ]] && __cdl_should_color; then
     options+=("${__cdl_ls_color_flag}")
   fi
 
-  if ! command "${__cdl_ls_bin}" "${options[@]}"; then
+  if ! command "${__cdl_ls_command}" "${options[@]}"; then
     return "${CDL_ERR_LIST}"
   fi
 }
 
-# endregion
+# endregion Listing
 
 # region Formatter
 
@@ -1647,7 +1577,7 @@ function __cdl_print_plain_listing() {
 #   8: Directory the names link into; empty or none: no links.
 #
 # Globals:
-#   __cdl_awk_bin, HOSTNAME or HOST (read).
+#   __cdl_awk_command, HOSTNAME or HOST (read).
 #
 # Inputs:
 #   `ls -l` lines on stdin.
@@ -1659,15 +1589,15 @@ function __cdl_format_listing() {
   local -r width="$1"
   local -r max_rows="${2:-0}"
   local -r max_columns="${3:-0}"
-  local -r color="${4:-0}"
+  local -r is_colored="${4:-0}"
   local -r header_path="${5-}"
   local -r header_branch="${6-}"
   local -r mark_name="${7-}"
   local -r link_directory="${8-}"
 
-  local -i utf8_output=0
-  if __cdl_utf8_output; then
-    utf8_output=1
+  local -i is_utf8_output=0
+  if __cdl_can_print_utf8; then
+    is_utf8_output=1
   fi
 
   __cdl_detect_awk
@@ -1683,9 +1613,9 @@ function __cdl_format_listing() {
   # for about 0.3 ms more.
   CDL_HEADER_PATH="${header_path}" CDL_HEADER_BRANCH="${header_branch}" \
     CDL_MARK_NAME="${mark_name}" CDL_LINK_DIRECTORY="${link_directory}" \
-    CDL_LINK_HOST="${HOSTNAME:-${HOST-}}" LC_ALL=C command "${__cdl_awk_bin}" \
+    CDL_LINK_HOST="${HOSTNAME:-${HOST-}}" LC_ALL=C command "${__cdl_awk_command}" \
     -v width="${width}" -v max_rows="${max_rows}" -v max_columns="${max_columns}" \
-    -v color="${color}" -v utf8_output="${utf8_output}" -f /dev/fd/3 3<<'AWK'
+    -v color="${is_colored}" -v utf8_output="${is_utf8_output}" -f /dev/fd/3 3<<'AWK'
     # region Layout
 
     BEGIN {
@@ -1967,7 +1897,7 @@ function __cdl_format_listing() {
       return n > 0 ? sprintf("%" n "s", "") : ""
     }
 
-    # endregion
+    # endregion Layout
 
     # region Parsing
 
@@ -2077,7 +2007,7 @@ function __cdl_format_listing() {
       return text
     }
 
-    # endregion
+    # endregion Parsing
 
     # region Links
 
@@ -2133,7 +2063,7 @@ function __cdl_format_listing() {
       return low
     }
 
-    # endregion
+    # endregion Links
 
     # region Text measurement
 
@@ -2232,7 +2162,7 @@ function __cdl_format_listing() {
         128 + int(code / 4096) % 64, 128 + int(code / 64) % 64, 128 + code % 64)
     }
 
-    # endregion
+    # endregion Text measurement
 
     # region Width table
 
@@ -2309,11 +2239,11 @@ function __cdl_format_listing() {
       return t
     }
 
-    # endregion
+    # endregion Width table
 AWK
 }
 
-# endregion
+# endregion Formatter
 
 # region Public API
 
@@ -2344,7 +2274,7 @@ AWK
 function cdl() {
   # Run with zsh's default options whatever the user has set
   # (KSH_ARRAYS, SH_WORD_SPLIT, ...); they come back on return.
-  if [[ -n ${ZSH_VERSION-} ]]; then
+  if [[ -n "${ZSH_VERSION-}" ]]; then
     emulate -L zsh
   fi
 
@@ -2353,7 +2283,7 @@ function cdl() {
   local -a listing_options=()
 
   while (($# > 0)); do
-    case $1 in
+    case "$1" in
       -h | --help)
         __cdl_usage
         return 0
@@ -2370,26 +2300,26 @@ function cdl() {
         ;;
       -?*)
         __cdl_error "Unknown option: '$1' (see 'cdl --help')" "${CDL_ERR_USAGE}" \
-          || return "$?"
+          || return
         ;;
       *) break ;;
     esac
     shift
   done
 
-  __cdl_check_operands "$@" || return "$?"
-  __cdl_read_settings || return "$?"
+  __cdl_check_operands "$@" || return
+  __cdl_read_settings || return
   if ((${#listing_options[@]} > 0)); then
-    __cdl_apply_listing_options "${listing_options[@]}" || return "$?"
+    __cdl_apply_listing_options "${listing_options[@]}" || return
   fi
 
   __cdl_resolve_target "${1-}"
   __cdl_expand_target "${REPLY}"
-  __cdl_enter "${REPLY}" "${cd_option}" || return "$?"
+  __cdl_enter "${REPLY}" "${cd_option}" || return
   __cdl_list_current_directory "${REPLY}"
 }
 
-# endregion
+# endregion Public API
 
 # region Completion
 
@@ -2411,9 +2341,12 @@ function cdl() {
 function __cdl_complete_bash() {
   local -r option_words='-a --all -1 --one-column -L -P -h --help -V --version --'
   local -r word="${COMP_WORDS[COMP_CWORD]}"
+  local base
+  local -a bases=()
+
   COMPREPLY=()
 
-  case ${word} in
+  case "${word}" in
     -*)
       if ((BASH_VERSINFO[0] >= 4)); then
         compopt +o filenames 2>/dev/null
@@ -2425,16 +2358,14 @@ function __cdl_complete_bash() {
   esac
 
   __cdl_add_completions '' -f -- "${word}"
-  if [[ -z ${CDPATH-} || ${word} == [/.]* ]]; then
+  if [[ -z "${CDPATH-}" || "${word}" == [/.]* ]]; then
     return 0
   fi
 
-  local base
-  local -a bases=()
   IFS=':' read -r -a bases <<<"${CDPATH}"
   for base in ${bases[@]+"${bases[@]}"}; do
     base="${base%/}"
-    if [[ -n ${base} && ${base} != '.' ]]; then
+    if [[ -n "${base}" && "${base}" != '.' ]]; then
       __cdl_add_completions "${base}/" -d -- "${base}/${word}"
     fi
   done
@@ -2455,9 +2386,9 @@ function __cdl_complete_bash() {
 #######################################
 function __cdl_add_completions() {
   local -r prefix="$1"
+  local candidate
   shift
 
-  local candidate
   while IFS= read -r candidate; do
     COMPREPLY+=("${candidate#"${prefix}"}")
   done < <(compgen "$@")
@@ -2488,7 +2419,7 @@ function __cdl_complete_zsh_target() {
   local -a alternatives=('files:file:_files')
 
   # shellcheck disable=SC2153,SC2154 # PREFIX belongs to the completion system of zsh
-  if [[ -n ${CDPATH-} && ${PREFIX} != [/.~]* ]]; then
+  if [[ -n "${CDPATH-}" && "${PREFIX}" != [/.~]* ]]; then
     alternatives+=('cdpath-directories:directory in CDPATH:_path_files -W cdpath -/')
   fi
 
@@ -2524,7 +2455,7 @@ function __cdl_register_zsh_completion() {
 
   compdef __cdl_complete_zsh cdl
   compdef __cdl_complete_zsh_list cdl_list
-  if [[ ${CDL_REPLACE_CD-} == 1 ]]; then
+  if [[ "${CDL_REPLACE_CD-}" == 1 ]]; then
     compdef __cdl_complete_zsh cd
   fi
 }
@@ -2536,7 +2467,7 @@ function __cdl_register_zsh_completion() {
 #   CDL_REPLACE_CD (read).
 #######################################
 function __cdl_register_bash_cd_completion() {
-  if [[ ${CDL_REPLACE_CD-} != 1 ]]; then
+  if [[ "${CDL_REPLACE_CD-}" != 1 ]]; then
     return 0
   fi
 
@@ -2575,14 +2506,14 @@ function __cdl_hand_ble_cd_completion() {
 #######################################
 function __cdl_add_precmd_function() {
   local -r function_name="$1"
+  local hook
 
   # Declared as a global array first, which it is,
   # so that WARN_CREATE_GLOBAL stays quiet.
   typeset -ga precmd_functions
 
-  local hook
   for hook in ${precmd_functions[@]+"${precmd_functions[@]}"}; do
-    if [[ ${hook} == "${function_name}" ]]; then
+    if [[ "${hook}" == "${function_name}" ]]; then
       return 0
     fi
   done
@@ -2604,8 +2535,9 @@ function __cdl_register_zsh_completion_at_prompt() {
 
   local hook
   local -a kept=()
+
   for hook in "${precmd_functions[@]}"; do
-    if [[ ${hook} != '__cdl_register_zsh_completion_at_prompt' ]]; then
+    if [[ "${hook}" != '__cdl_register_zsh_completion_at_prompt' ]]; then
       kept+=("${hook}")
     fi
   done
@@ -2620,7 +2552,7 @@ function __cdl_register_zsh_completion_at_prompt() {
 # In bash, `-o default` hands readline the words compgen cannot take,
 # a ~ or an escaped space ("My\ D"), and it completes them itself.
 # A cd that cdl replaces completes as cdl does.
-if [[ -n ${ZSH_VERSION-} ]]; then
+if [[ -n "${ZSH_VERSION-}" ]]; then
   if ! __cdl_register_zsh_completion; then
     __cdl_add_precmd_function __cdl_register_zsh_completion_at_prompt
   fi
@@ -2629,7 +2561,7 @@ elif complete -o filenames -o default -F __cdl_complete_bash cdl 2>/dev/null; th
   __cdl_register_bash_cd_completion
 fi
 
-# endregion
+# endregion Completion
 
 # region Replacing cd
 
@@ -2659,7 +2591,7 @@ fi
 #   The status of cdl, or of the shell's own cd.
 #######################################
 function __cdl_cd() {
-  if [[ ${CDL_REPLACE_CD-} != 1 ]]; then
+  if [[ "${CDL_REPLACE_CD-}" != 1 ]]; then
     builtin cd "$@" || return
     return 0
   fi
@@ -2694,7 +2626,7 @@ function __cdl_cd() {
 function __cdl_has_cdl_option() {
   local word
   for word in "$@"; do
-    case ${word} in
+    case "${word}" in
       --) return 1 ;;
       -a | --all | -1 | --one-column | -h | --help | -V | --version) return 0 ;;
     esac
@@ -2721,7 +2653,7 @@ function __cdl_has_cdl_option() {
 function __cdl_has_shell_option() {
   local word
   for word in "$@"; do
-    case ${word} in
+    case "${word}" in
       --) return 1 ;;
       - | -a | --all | -1 | --one-column | -h | --help | -V | --version | -L | -P) ;;
       -*) return 0 ;;
@@ -2743,7 +2675,7 @@ function __cdl_has_shell_option() {
 #   0 for that form in zsh; 1 otherwise.
 #######################################
 function __cdl_is_zsh_two_word_cd() {
-  [[ -n ${ZSH_VERSION-} ]] && (($# == 2)) && [[ $1 != -* && $2 != -* ]]
+  [[ -n "${ZSH_VERSION-}" ]] && (($# == 2)) && [[ "$1" != -* && "$2" != -* ]]
 }
 
 #######################################
@@ -2758,11 +2690,11 @@ function __cdl_define_cd() {
   }
 }
 
-if [[ ${CDL_REPLACE_CD-} == 1 ]]; then
+if [[ "${CDL_REPLACE_CD-}" == 1 ]]; then
   __cdl_define_cd
 fi
 
-# endregion
+# endregion Replacing cd
 
 # region Execution guard
 
@@ -2779,10 +2711,10 @@ fi
 #   0 if the file was executed; 1 if it was sourced.
 #######################################
 function __cdl_is_executed() {
-  if [[ -n ${ZSH_VERSION-} ]]; then
-    [[ ${ZSH_EVAL_CONTEXT-} != *:file* ]]
+  if [[ -n "${ZSH_VERSION-}" ]]; then
+    [[ "${ZSH_EVAL_CONTEXT-}" != *:file* ]]
   else
-    [[ ${BASH_SOURCE[0]} == "$0" ]]
+    [[ "${BASH_SOURCE[0]}" == "$0" ]]
   fi
 }
 
@@ -2793,6 +2725,6 @@ fi
 
 unset -f __cdl_is_executed
 
-# endregion
+# endregion Execution guard
 
 ### End

@@ -1,16 +1,9 @@
 #!/usr/bin/env bats
 
-# Name: tests/integration/test_navigation.bats
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Test how cdl picks the target directory, enters it, and reports a failure.
 #
-# Description:
-#   How cdl picks the target directory, enters it,
-#   and what it reports when it cannot.
-#   The pipe as a source of the target lives in test_stdin.bats,
-#   files, URIs and a leading ~ in test_paths.bats.
-#
-#   Each test follows the Arrange-Act-Assert pattern.
+# The pipe as a source of the target lives in test_stdin.bats,
+# files, URIs and a leading ~ in test_paths.bats.
 
 bats_require_minimum_version 1.11.0
 
@@ -24,8 +17,10 @@ function setup() {
 
 # bats test_tags=smoke
 @test "cdl changes into the directory given as its operand" {
+  local target
+
   # Arrange
-  local -r target="$(make_dir 'projects/app')"
+  target="$(make_directory 'projects/app')"
 
   # Act
   run --separate-stderr cdl_then_pwd "${target}"
@@ -36,12 +31,14 @@ function setup() {
 }
 
 @test "cdl without an operand goes to HOME, like cd" {
+  local elsewhere
+
   # Arrange
-  local -r elsewhere="$(make_dir 'elsewhere')"
+  elsewhere="$(make_directory 'elsewhere')"
 
   # Act
   run --separate-stderr in_shell \
-    'cd "$1" && cdl >/dev/null && printf "%s\n" "$PWD"' "${elsewhere}"
+    'cd "$1" && cdl >/dev/null && printf "%s\n" "${PWD}"' "${elsewhere}"
 
   # Assert
   assert_success
@@ -50,13 +47,16 @@ function setup() {
 
 # bats test_tags=smoke
 @test "cdl - returns to the previous directory" {
+  local first
+  local second
+
   # Arrange
-  local -r first="$(make_dir 'first')"
-  local -r second="$(make_dir 'second')"
+  first="$(make_directory 'first')"
+  second="$(make_directory 'second')"
 
   # Act
   run --separate-stderr in_shell \
-    'cd "$1" && cd "$2" && cdl - >/dev/null && printf "%s\n" "$PWD"' \
+    'cd "$1" && cd "$2" && cdl - >/dev/null && printf "%s\n" "${PWD}"' \
     "${first}" "${second}"
 
   # Assert
@@ -65,12 +65,14 @@ function setup() {
 }
 
 @test "-- alone goes to HOME, like no operand at all" {
+  local elsewhere
+
   # Arrange
-  local -r elsewhere="$(make_dir 'elsewhere')"
+  elsewhere="$(make_directory 'elsewhere')"
 
   # Act
   run --separate-stderr in_shell \
-    'cd "$1" && cdl -- >/dev/null && printf "%s\n" "$PWD"' "${elsewhere}"
+    'cd "$1" && cdl -- >/dev/null && printf "%s\n" "${PWD}"' "${elsewhere}"
 
   # Assert
   assert_success
@@ -82,7 +84,7 @@ function setup() {
 
   # Act
   run --separate-stderr in_shell \
-    'unset HOME; cdl >/dev/null; printf "%s\n" "$PWD"'
+    'unset HOME; cdl >/dev/null; printf "%s\n" "${PWD}"'
 
   # Assert
   assert_success
@@ -90,12 +92,14 @@ function setup() {
 }
 
 @test "-- makes the next word a directory even when it starts with a dash" {
+  local target
+
   # Arrange
-  local -r target="$(make_dir '-dashed dir')"
+  target="$(make_directory '-dashed dir')"
 
   # Act
   run --separate-stderr in_shell \
-    'cd "$1" && cdl -- "-dashed dir" >/dev/null && printf "%s\n" "$PWD"' \
+    'cd "$1" && cdl -- "-dashed dir" >/dev/null && printf "%s\n" "${PWD}"' \
     "${HOME}"
 
   # Assert
@@ -104,12 +108,14 @@ function setup() {
 }
 
 @test "a CDPATH match is entered without echoing its path" {
+  local base
+
   # Arrange:
   # cd prints the directory it found through CDPATH;
   # the listing must be all that cdl prints.
   require_gnu_compatible_ls
-  local -r base="$(make_dir 'base')"
-  make_entries "$(make_dir 'base/target')" 'only-file'
+  base="$(make_directory 'base')"
+  make_entries "$(make_directory 'base/target')" 'only-file'
 
   # Act
   run --separate-stderr in_shell 'CDPATH="$1" cdl target' "${base}"
@@ -120,20 +126,22 @@ function setup() {
 }
 
 @test "cdl enters the directory itself, bypassing a user cd function" {
+  local target
+
   # Arrange
-  local -r target="$(make_dir 'target')"
+  target="$(make_directory 'target')"
 
   # Act
   run --separate-stderr in_shell \
-    'function cd() { echo "user cd called"; }
-     cdl "$1" >/dev/null && printf "%s\n" "$PWD"' "${target}"
+    'function cd() { printf "%s\n" "user cd called"; }
+     cdl "$1" >/dev/null && printf "%s\n" "${PWD}"' "${target}"
 
   # Assert
   assert_success
   assert_output "${target}"
 }
 
-# endregion
+# endregion Target selection
 
 # region Usage errors
 
@@ -141,7 +149,7 @@ function setup() {
   # Arrange: no fixtures needed.
 
   # Act
-  run --separate-stderr in_shell 'cdl -h && printf "PWD=%s\n" "$PWD"'
+  run --separate-stderr in_shell 'cdl -h && printf "PWD=%s\n" "${PWD}"'
 
   # Assert
   assert_success
@@ -154,7 +162,7 @@ function setup() {
 
   # Act
   run --separate-stderr in_shell \
-    'cdl -h somewhere else && printf "PWD=%s\n" "$PWD"'
+    'cdl -h somewhere else && printf "PWD=%s\n" "${PWD}"'
 
   # Assert
   assert_success
@@ -163,13 +171,15 @@ function setup() {
 }
 
 @test "an empty operand fails with CDL_ERR_USAGE instead of going HOME" {
+  local elsewhere
+
   # Arrange:
   # an empty substitution, such as "$(xclip -o)" with an empty clipboard.
-  local -r elsewhere="$(make_dir 'elsewhere')"
+  elsewhere="$(make_directory 'elsewhere')"
 
   # Act
   run --separate-stderr in_shell \
-    'cd "$1" && cdl ""; rc=$?; printf "%s\n" "$PWD"; exit "$rc"' "${elsewhere}"
+    'cd "$1" && cdl ""; exit_code=$?; printf "%s\n" "${PWD}"; exit "${exit_code}"' "${elsewhere}"
 
   # Assert
   assert_failure 10
@@ -191,8 +201,10 @@ function setup() {
 }
 
 @test "an option after the directory fails and says options go first" {
+  local target
+
   # Arrange
-  local -r target="$(make_dir 'target')"
+  target="$(make_directory 'target')"
 
   # Act
   run --separate-stderr cdl_then_pwd "${target}" -P
@@ -206,8 +218,8 @@ function setup() {
 @test "a second operand fails with CDL_ERR_USAGE instead of being ignored" {
   # Arrange:
   # an unquoted path with a space arrives as two words.
-  make_dir 'my' >/dev/null
-  make_dir 'my documents' >/dev/null
+  make_directory 'my' >/dev/null
+  make_directory 'my documents' >/dev/null
 
   # Act
   run --separate-stderr cdl_then_pwd 'my' 'documents'
@@ -218,7 +230,7 @@ function setup() {
   assert_stderr_contains 'cdl: Too many arguments: expected one directory, got 2'
 }
 
-# endregion
+# endregion Usage errors
 
 # region Directory errors
 
@@ -239,11 +251,11 @@ function a_target_cdl_cannot_enter_fails_with_its_reason() {
   # Arrange:
   # a file, a broken symlink, a symlink loop,
   # and a directory that may not be entered, with another in it.
-  if [[ ${target} == locked* ]] && ((EUID == 0)); then
+  if [[ "${target}" == locked* ]] && ((EUID == 0)); then
     skip 'root enters any directory'
   fi
   make_entries "${HOME}" 'notes.md' 'gone -> nowhere' 'loop -> loop'
-  make_dir 'locked/inner' >/dev/null
+  make_directory 'locked/inner' >/dev/null
   chmod 000 "${HOME}/locked"
 
   # Act
@@ -278,7 +290,7 @@ done
 
 @test "cdl - without a previous directory fails with CDL_ERR_NOT_FOUND" {
   # Arrange: sandbox_setup unsets OLDPWD.
-  if [[ ${CDL_SHELL_KIND} == 'zsh' ]]; then
+  if [[ "${CDL_SHELL_KIND}" == 'zsh' ]]; then
     skip 'zsh keeps its own record of the previous directory'
   fi
 
@@ -304,14 +316,14 @@ function cdl_back_to_no_directory_fails_with_its_reason() {
   local -r reason="$3"
 
   # Arrange
-  if [[ ${CDL_SHELL_KIND} == 'zsh' ]]; then
+  if [[ "${CDL_SHELL_KIND}" == 'zsh' ]]; then
     skip 'zsh keeps its own record of the previous directory'
   fi
   make_entries "${HOME}" 'file'
 
   # Act
   run --separate-stderr in_shell \
-    'OLDPWD="$1"; cdl - >/dev/null; rc=$?; printf "%s\n" "$PWD"; exit "$rc"' "${HOME}/${kind}"
+    'OLDPWD="$1"; cdl - >/dev/null; exit_code=$?; printf "%s\n" "${PWD}"; exit "${exit_code}"' "${HOME}/${kind}"
 
   # Assert
   assert_failure "${code}"
@@ -327,13 +339,15 @@ bats_test_function \
   -- cdl_back_to_no_directory_fails_with_its_reason 'gone' 31 'No such file or directory'
 
 @test "an unreadable directory is entered, then reported with CDL_ERR_LIST" {
+  local blind
+
   # Arrange:
   # search permission without read permission:
   # cd works, listing does not.
   if ((EUID == 0)); then
     skip 'root reads any directory'
   fi
-  local -r blind="$(make_dir 'blind')"
+  blind="$(make_directory 'blind')"
   chmod 100 "${blind}"
 
   # Act
@@ -345,6 +359,6 @@ bats_test_function \
   assert_output "${blind}"
 }
 
-# endregion
+# endregion Directory errors
 
 ### End

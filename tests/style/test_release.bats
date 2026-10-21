@@ -1,16 +1,10 @@
 #!/usr/bin/env bats
 
-# Name: tests/style/test_release.bats
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Test that a release is possible from the current tree.
 #
-# Description:
-#   A release must be possible from the current tree:
-#   the release steps accept the version in cdl.sh,
-#   refuse anything else with their documented codes,
-#   and find the notes of the version in the CHANGELOG.
-#
-#   Each test follows the Arrange-Act-Assert pattern.
+# The release steps accept the version in cdl.sh,
+# refuse anything else with their documented codes,
+# and find the notes of the version in the CHANGELOG.
 
 bats_require_minimum_version 1.11.0
 
@@ -59,13 +53,14 @@ function setup() {
   assert_equal "$(<"${GITHUB_ENV}")" "VERSION=${VERSION}" 'GITHUB_ENV'
 }
 
-# endregion
+# endregion Tag check
 
 # region Notes
 
 @test "the release notes of the version in cdl.sh come from its CHANGELOG section" {
-  # Arrange
   local -r notes="${BATS_TEST_TMPDIR}/notes.md"
+
+  # Arrange: the CHANGELOG of the repository is the input.
 
   # Act
   run --separate-stderr "${RELEASE}" notes "${VERSION}" "${notes}"
@@ -77,8 +72,9 @@ function setup() {
 }
 
 @test "a version without a CHANGELOG section fails with RELEASE_ERR_NOTES" {
-  # Arrange
   local -r notes="${BATS_TEST_TMPDIR}/notes.md"
+
+  # Arrange: no section of the CHANGELOG names 0.0.0.
 
   # Act
   run --separate-stderr "${RELEASE}" notes '0.0.0' "${notes}"
@@ -88,7 +84,7 @@ function setup() {
   assert_stderr_contains 'CHANGELOG.md has no notes for 0.0.0'
 }
 
-# endregion
+# endregion Notes
 
 # region Usage
 
@@ -103,6 +99,6 @@ function setup() {
   assert_stderr_contains "unknown step 'deploy'"
 }
 
-# endregion
+# endregion Usage
 
 ### End

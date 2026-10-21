@@ -17,7 +17,8 @@ CONTRIBUTING.md is the short public version of the same rules.
   - `integration`: cdl end to end, once per shell in `TEST_SHELLS`;
     `test_budget.bats` counts the commands of a call.
   - `style`: the rules a machine can check, the facts several files share,
-    and the release steps (`test_release.bats`).
+    the release steps (`test_release.bats`),
+    and the command lines and the guard of the tools (`test_tools.bats`).
   - `support`: the helpers every test loads through `test_helper.bash`;
     in `bin/`, the width oracle and the zsh completion driver.
 - `tools/`
@@ -79,7 +80,8 @@ The regions of `cdl.sh` read top to bottom:
   they catch the common slips early and never replace `make check`.
   On macOS add the system shell, which is bash 3.2:
   `make test TEST_SHELLS='/bin/bash zsh'`.
-- The width table between `# region Width table` and `# endregion` is generated.
+- The width table between `# region Width table`
+  and `# endregion Width table` is generated.
   Change `tools/gen-width-table.py` and run `make widths`; never edit the table.
 - `cdl` runs on every directory change, so it has a budget:
   nothing external runs when the file is sourced,
@@ -97,13 +99,24 @@ The regions of `cdl.sh` read top to bottom:
 - Single quotes for literal strings in shell;
   double quotes only when something inside expands
   or the text holds a single quote.
-- Braces around every variable (`"${name}"`, `"${dir}/${file}"`)
+- Braces around every variable (`"${name}"`, `"${directory}/${file}"`)
   and double quotes around every expansion, even a safe one.
   ShellCheck enforces both through `.shellcheckrc`
   (`require-variable-braces`, `quote-safe-variables`);
   `shellcheck -f diff FILE | patch -p1` applies its own fixes.
-- A name says what the thing is:
-  `entry_size`, `__cdl_terminal_width`, `assert_two_columns_aligned`.
+- The same holds where ShellCheck cannot see:
+  inside `[[ ]]`, in the subject of `case`,
+  and in the code strings that tests and tools hand to a shell.
+  The right side of `==`, `!=` or `=~` stays unquoted
+  only when it is a pattern on purpose.
+- A name says in full what the thing is, however long that makes it:
+  `entry_size`, `__cdl_terminal_width`, `assert_two_columns_aligned`;
+  `directory`, never `dir`. Common terms keep their short form
+  (ID, URL, JSON, MIME, PID, hex), and a name that mirrors a public one
+  keeps its words, as `__cdl_setting_max_rows` does `CDL_MAX_ROWS`.
+- A function that answers yes or no with its status, and a flag of 0 or 1,
+  open their names with the question: `is_`, `has_`, `can_` or `should_`,
+  right after the prefix (`__cdl_is_gnu_ls`, `is_colored`).
 
 ## Comments
 
@@ -152,12 +165,34 @@ prose of at most 80 columns, tables aligned so their source reads
 like the rendered page, `### Fixed` and its kin repeated only per version.
 A table holds short cells; a longer explanation goes below it, as a list.
 
+## File headers
+
+- A script opens with a card, which a reader judges at a glance:
+  one sentence in the imperative mood, what the script does,
+  then the keys that apply, in this order, a line each:
+  `Usage:`, `Effects:`, `Dependencies:`, `Settings:`, `Exit codes:`, `See:`.
+  `How it works:` follows, only for what the code does not show,
+  and `# Version:` closes the card.
+- `Effects:` lists every change outside the script,
+  and how to run it without one, or that there is no such way.
+  `Settings:` holds the variables a user sets, with their defaults;
+  a variable it only reads to learn where it runs belongs in How it works.
+  `Exit codes:` names each code;
+  a tool without `--help` and a README of its own says there what it means.
+- A test file or a support module opens with one sentence,
+  what it tests or gives, and a short paragraph where a reader needs one;
+  it takes no keys and no version.
+- Nothing else goes into a header: git knows the author and the date,
+  the path names the file, and LICENSE holds the license.
+  A style test checks both kinds.
+
 ## Regions
 
 - A file longer than a screen folds
-  into `# region Name` ... `# endregion` blocks,
+  into `# region Name` ... `# endregion Name` blocks,
   with one blank line inside each marker.
-  The markers balance in every file; a style test checks.
+  The end repeats the name, so a reader who lands on it knows what closes there.
+  The markers balance and their names match in every file; a style test checks.
 - One region holds one concern.
   New code goes into the region of its concern,
   or into a new region placed where a reader meets the concern first.
@@ -185,8 +220,13 @@ A table holds short cells; a longer explanation goes below it, as a list.
 ### Shell
 
 - `function name() { ... }`, never `name() { ... }`.
-- `local -r`, `local -i`, `local -ir` and `local -a` wherever they fit;
+- The `local` declarations open the body, as one block;
+  under zsh, an entry point runs `emulate -L zsh` before them.
+  `local -r`, `local -i`, `local -ir` and `local -a` wherever they fit;
   a bare `local` only for a value that changes.
+  A value that a later step makes, from `$(...)` or from `REPLY`,
+  is declared in the block and assigned in its step,
+  since `local` would hide the status of a command.
 - A result travels in `REPLY` and the caller declares `local REPLY`;
   `$(...)` costs a fork, which the listing path cannot afford.
 - External commands run through `command`,
@@ -203,9 +243,16 @@ A table holds short cells; a longer explanation goes below it, as a list.
   The sourced file never uses `set -e`, `set -u` or `set -o pipefail`:
   it survives whatever options the shell of the user runs with,
   and changes none of them.
-- The strict mode opens every standalone script
-  (`tools/*.sh`, `tests/support/bin/*`):
-  `set -o errexit -o nounset -o pipefail`.
+- Every standalone script (`tools/*.sh`, `tests/support/bin/*`)
+  ends with the execution guard of the style,
+  so a test can source it for its functions:
+  strict mode, the traps and the call of `main` all sit inside it.
+  Its ERR trap names an unplanned failure with the line and the command,
+  and ends with the internal code of the tool, the last of its block;
+  a code of the block passes on unchanged, as a helper has reported it.
+- The bash 3.2 of macOS runs `install-tools.sh` before Homebrew brings
+  a newer bash, so the guard turns on `inherit_errexit` only where it exists,
+  and the scripts keep to bash 3.2: `printf -v ... '%q'`, never `${x@Q}`.
 - Sourcing runs no external command and is safe to repeat:
   the `readonly` codes are guarded, the probes start fresh.
 
@@ -225,8 +272,7 @@ A table holds short cells; a longer explanation goes below it, as a list.
 
 - Standard library only; runs on Python 3.10 and later.
 - Type hints on every signature, numpydoc docstrings, `# region` markers,
-  and the same `# Name / # Author / # License / # Description` header
-  as a shell file.
+  and the same card as a script (see "File headers").
 - Clean under ruff with the ScriptsLib profile
   (every rule group, preview, line length 99, numpy docstrings)
   and under `mypy --strict`.
@@ -251,22 +297,26 @@ owns a block of ten exit codes, which no other tool uses,
 so a code in a CI log names its script and its reason at once.
 A tool names its codes after itself (`RELEASE_ERR_VERSION`),
 gives the first of its block to a wrong command line when it has one,
+the last of its block to a bug, which the ERR trap of its guard reports
+(`RELEASE_ERR_INTERNAL`, 29),
 and documents every code in its header.
 A style test holds the rule: no code named twice, no file across two blocks,
 no block shared.
 
-| Codes | File                                | Names                   |
-|------:|-------------------------------------|-------------------------|
-| 10-19 | `tools/ci/install-tools.sh`         | `INSTALL_ERR_*`         |
-| 20-29 | `tools/ci/release.sh`               | `RELEASE_ERR_*`         |
-| 30-39 | `tools/release-notes.sh`            | `NOTES_ERR_*`           |
-| 40-49 | `tools/bench.sh`                    | `BENCH_ERR_*`           |
-| 50-59 | `tools/gen-width-table.py`          | `EXIT_*`                |
-| 60-69 | `tests/support/bin/zsh-completions` | `ZSH_COMPLETIONS_ERR_*` |
-| 70-79 | `Makefile`                          | `MAKE_ERR_*`            |
+| Codes | File                                | Names                      |
+|------:|-------------------------------------|----------------------------|
+| 10-19 | `tools/ci/install-tools.sh`         | `INSTALL_ERR_*`            |
+| 20-29 | `tools/ci/release.sh`               | `RELEASE_ERR_*`            |
+| 30-39 | `tools/release-notes.sh`            | `NOTES_ERR_*`              |
+| 40-49 | `tools/bench.sh`                    | `BENCH_ERR_*`              |
+| 50-59 | `tools/gen-width-table.py`          | `EXIT_*`                   |
+| 60-69 | `tests/support/bin/zsh-completions` | `ZSH_COMPLETIONS_ERR_*`    |
+| 70-79 | `Makefile`                          | `MAKE_ERR_*`               |
+| 80-89 | `tests/support/bin/screen-cells`    | `SCREEN_CELLS_ERR_*`       |
+| 90-99 | `tools/ci/report-environment.sh`    | `REPORT_ENVIRONMENT_ERR_*` |
 
 The codes of the Makefile belong to its recipes.
-A new tool takes the next free block, 80-89, and a line in this table.
+A new tool takes the next free block, 100-109, and a line in this table.
 Codes stay below 126, where the shell's own codes begin.
 make itself exits with 2 whenever a recipe fails;
 the code of the recipe shows in its error line (`Error 71`).
@@ -276,7 +326,8 @@ the code of the recipe shows in its error line (`Error 71`).
 - A test states one rule in its name, as a sentence without "should":
   `a second operand fails with CDL_ERR_USAGE instead of being ignored`.
   It checks the rule, never the shape of the code.
-- Every test has the sections `# Arrange`, `# Act` and `# Assert`,
+- Every test opens with its locals, as every function does,
+  then has the sections `# Arrange`, `# Act` and `# Assert`,
   in that order; an empty section keeps its comment with the reason
   (`# Arrange: no fixtures needed.`).
 - A unit test feeds the formatter canned `ls -l` lines from `fixtures.bash`.
@@ -363,14 +414,14 @@ the code of the recipe shows in its error line (`Error 71`).
 
 ## Versions, changelog, release
 
-- The version lives in the `# Version:` and `# Date:` lines of `cdl.sh`.
-  `CHANGELOG.md` has a `## [X.Y.Z] - YYYY-MM-DD` section for it
-  (a style test checks),
-  and the release tag `vX.Y.Z` sits on the commit that bumps them.
+- The version lives in the `# Version:` line of the card of `cdl.sh`.
+  `CHANGELOG.md` has a `## [X.Y.Z] - YYYY-MM-DD` section for it,
+  dated on the day of the release (a style test checks),
+  and the release tag `vX.Y.Z` sits on the commit that bumps it.
 - The changelog follows Keep a Changelog: Fixed, Changed, Added.
   One entry per behavior a user can notice, written for that user,
   with the old behavior named.
-- Every return code appears in the file header, in `cdl --help`
+- Every return code appears in the card of `cdl.sh`, in `cdl --help`
   and in the README (a style test checks).
 
 ## Git

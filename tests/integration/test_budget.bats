@@ -1,21 +1,16 @@
 #!/usr/bin/env bats
 
-# Name: tests/integration/test_budget.bats
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Test the budget of external commands that a cdl call may start.
 #
-# Description:
-#   cdl runs on every change of directory,
-#   so the external commands it starts are a budget:
-#   none while the file is sourced,
-#   ls twice and awk once on the first listing of a session
-#   (the probe that finds out what ls can do, then the listing),
-#   ls once and awk once on every listing after it,
-#   tput only when the shell does not set COLUMNS,
-#   and never git or hostname: the header reads the branch from the files,
-#   and links take the host from the shell.
-#
-#   Each test follows the Arrange-Act-Assert pattern.
+# cdl runs on every change of directory,
+# so the external commands it starts are a budget:
+# none while the file is sourced,
+# ls twice and awk once on the first listing of a session
+# (the probe that finds out what ls can do, then the listing),
+# ls once and awk once on every listing after it,
+# tput only when the shell does not set COLUMNS,
+# and never git or hostname: the header reads the branch from the files,
+# and links take the host from the shell.
 
 bats_require_minimum_version 1.11.0
 
@@ -24,8 +19,8 @@ load '../support/test_helper'
 function setup() {
   sandbox_setup
   require_gnu_compatible_ls
-  LISTED_DIR="$(make_dir 'listed')"
-  make_entries "${LISTED_DIR}" 'src/' 'notes.md'
+  LISTED_DIRECTORY="$(make_directory 'listed')"
+  make_entries "${LISTED_DIRECTORY}" 'src/' 'notes.md'
 }
 
 # region Budget
@@ -49,7 +44,7 @@ function setup() {
   fake_logging_tools
 
   # Act
-  run --separate-stderr in_shell 'cdl "$1" >/dev/null' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'cdl "$1" >/dev/null' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -64,7 +59,7 @@ function setup() {
   # Act:
   # one listing to settle the probe, then three more.
   run --separate-stderr in_shell \
-    'cdl "$1" && cdl "$1" && cdl_list && cdl_list' "${LISTED_DIR}"
+    'cdl "$1" && cdl "$1" && cdl_list && cdl_list' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -75,10 +70,10 @@ function setup() {
 @test "a file named by a URI starts no more commands than a directory" {
   # Arrange
   fake_logging_tools
-  make_entries "${LISTED_DIR}" 'my notes.md'
+  make_entries "${LISTED_DIRECTORY}" 'my notes.md'
 
   # Act
-  run --separate-stderr in_shell 'cdl "$1" >/dev/null' "file://${LISTED_DIR}/my%20notes.md"
+  run --separate-stderr in_shell 'cdl "$1" >/dev/null' "file://${LISTED_DIRECTORY}/my%20notes.md"
 
   # Assert
   assert_success
@@ -89,11 +84,11 @@ function setup() {
 @test "the header reads the git branch without running git" {
   # Arrange
   fake_logging_tools
-  mkdir -p "${LISTED_DIR}/.git"
-  printf 'ref: refs/heads/main\n' >"${LISTED_DIR}/.git/HEAD"
+  mkdir -p "${LISTED_DIRECTORY}/.git"
+  printf 'ref: refs/heads/main\n' >"${LISTED_DIRECTORY}/.git/HEAD"
 
   # Act
-  run --separate-stderr in_shell 'CDL_HEADER=always cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'CDL_HEADER=always cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -108,7 +103,7 @@ function setup() {
   fake_logging_tools
 
   # Act
-  run --separate-stderr in_shell 'CDL_LINKS=always cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'CDL_LINKS=always cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -124,13 +119,13 @@ function setup() {
 
   # Act
   run --separate-stderr in_shell \
-    'cdl "$1" && unset COLUMNS && cdl "$1"' "${LISTED_DIR}"
+    'cdl "$1" && unset COLUMNS && cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
   assert_equal "$(logged_runs tput)" '1' 'runs of tput'
 }
 
-# endregion
+# endregion Budget
 
 ### End

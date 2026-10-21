@@ -1,17 +1,11 @@
 #!/usr/bin/env bats
 
-# Name: tests/integration/test_paths.bats
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Test the paths that are no plain directory.
 #
-# Description:
-#   Paths that are not a plain directory:
-#   a file, which cdl shows in its directory with a mark;
-#   a file:// URI, as file managers copy them;
-#   and a leading ~ that the shell left alone,
-#   as in a quoted operand or a piped path.
-#
-#   Each test follows the Arrange-Act-Assert pattern.
+# A file, which cdl shows in its directory with a mark;
+# a file:// URI, as file managers copy them;
+# and a leading ~ that the shell left alone,
+# as in a quoted operand or a piped path.
 
 # The tests spell out the ~ that cdl expands.
 # shellcheck disable=SC2088
@@ -24,8 +18,8 @@ function setup() {
   sandbox_setup
   require_gnu_compatible_ls
 
-  DOCS_DIR="$(make_dir 'docs')"
-  make_entries "${DOCS_DIR}" 'drafts/' 'notes.md' 'report.pdf'
+  DOCS_DIRECTORY="$(make_directory 'docs')"
+  make_entries "${DOCS_DIRECTORY}" 'drafts/' 'notes.md' 'report.pdf'
 }
 
 # region Files
@@ -36,12 +30,12 @@ function setup() {
 
   # Act
   run --separate-stderr in_shell \
-    'cdl "$1" && printf "PWD=%s\n" "$PWD"' "${DOCS_DIR}/notes.md"
+    'cdl "$1" && printf "PWD=%s\n" "${PWD}"' "${DOCS_DIRECTORY}/notes.md"
 
   # Assert
   assert_success
   assert_output_contains "$(marked_row 0 'notes.md')"
-  assert_output_contains "PWD=${DOCS_DIR}"
+  assert_output_contains "PWD=${DOCS_DIRECTORY}"
 }
 
 #######################################
@@ -58,12 +52,12 @@ function a_file_here_is_marked_without_moving() {
 
   # Act
   run --separate-stderr in_shell \
-    'cd "$1" && cdl "$2" >/dev/null && printf "%s\n" "$PWD" "$OLDPWD"' "${DOCS_DIR}" "${name}"
+    'cd "$1" && cdl "$2" >/dev/null && printf "%s\n" "${PWD}" "${OLDPWD}"' "${DOCS_DIRECTORY}" "${name}"
 
   # Assert:
   # docs, and HOME before it, for cdl - to go back to.
   assert_success
-  assert_output "${DOCS_DIR}"$'\n'"${HOME}"
+  assert_output "${DOCS_DIRECTORY}"$'\n'"${HOME}"
 }
 
 for __name in 'notes.md' './notes.md'; do
@@ -73,29 +67,33 @@ for __name in 'notes.md' './notes.md'; do
 done
 
 @test "a relative path to a file enters its own directory, whatever CDPATH holds" {
+  local elsewhere
+
   # Arrange:
   # CDPATH holds another docs directory, which cd would prefer.
-  local -r elsewhere="$(make_dir 'elsewhere')"
-  make_dir 'elsewhere/docs' >/dev/null
+  elsewhere="$(make_directory 'elsewhere')"
+  make_directory 'elsewhere/docs' >/dev/null
 
   # Act
   run --separate-stderr in_shell \
-    'CDPATH="$1" cdl docs/notes.md >/dev/null && printf "%s\n" "$PWD"' "${elsewhere}"
+    'CDPATH="$1" cdl docs/notes.md >/dev/null && printf "%s\n" "${PWD}"' "${elsewhere}"
 
   # Assert
   assert_success
-  assert_output "${DOCS_DIR}"
+  assert_output "${DOCS_DIRECTORY}"
 }
 
 @test "cd still decides first: a CDPATH directory wins over a file of the same name" {
+  local elsewhere
+
   # Arrange
-  local -r elsewhere="$(make_dir 'elsewhere')"
-  make_dir 'elsewhere/report.pdf' >/dev/null
+  elsewhere="$(make_directory 'elsewhere')"
+  make_directory 'elsewhere/report.pdf' >/dev/null
 
   # Act
   run --separate-stderr in_shell \
-    'cd "$1" && CDPATH="$2" cdl report.pdf >/dev/null && printf "%s\n" "$PWD"' \
-    "${DOCS_DIR}" "${elsewhere}"
+    'cd "$1" && CDPATH="$2" cdl report.pdf >/dev/null && printf "%s\n" "${PWD}"' \
+    "${DOCS_DIRECTORY}" "${elsewhere}"
 
   # Assert
   assert_success
@@ -108,7 +106,7 @@ done
 
   # Act
   run --separate-stderr in_shell \
-    'cdl "$1" && printf "PWD=%s\n" "$PWD"' "${HOME}/latest"
+    'cdl "$1" && printf "PWD=%s\n" "${PWD}"' "${HOME}/latest"
 
   # Assert
   assert_success
@@ -118,10 +116,10 @@ done
 
 @test "a broken symlink is marked in its directory" {
   # Arrange
-  make_entries "${DOCS_DIR}" 'old -> gone.pdf'
+  make_entries "${DOCS_DIRECTORY}" 'old -> gone.pdf'
 
   # Act
-  run --separate-stderr in_shell 'cdl "$1"' "${DOCS_DIR}/old"
+  run --separate-stderr in_shell 'cdl "$1"' "${DOCS_DIRECTORY}/old"
 
   # Assert
   assert_success
@@ -130,10 +128,10 @@ done
 
 @test "a hidden file is listed and marked even with CDL_HIDDEN=0" {
   # Arrange
-  make_entries "${DOCS_DIR}" '.secret'
+  make_entries "${DOCS_DIRECTORY}" '.secret'
 
   # Act
-  run --separate-stderr in_shell 'CDL_HIDDEN=0 cdl "$1"' "${DOCS_DIR}/.secret"
+  run --separate-stderr in_shell 'CDL_HIDDEN=0 cdl "$1"' "${DOCS_DIRECTORY}/.secret"
 
   # Assert
   assert_success
@@ -141,17 +139,19 @@ done
 }
 
 @test "a file deep in a long listing on a terminal brings the listing to it" {
+  local long_directory
+  local -a names=()
+  local -i number
+
   # Arrange:
   # forty entries in one column; ten lines keep six rows,
   # five of them around the mark under the line about those before.
-  local -r long_dir="$(make_dir 'long')"
-  local -a names=()
-  local -i number
+  long_directory="$(make_directory 'long')"
   for ((number = 10; number < 50; number++)); do
     names+=("entry-${number}")
   done
-  make_entries "${long_dir}" "${names[@]}"
-  export LINES=10 COLUMNS=60 CDL_COLOR='never' CDL_TEST_FILE="${long_dir}/entry-40"
+  make_entries "${long_directory}" "${names[@]}"
+  export LINES=10 COLUMNS=60 CDL_COLOR='never' CDL_TEST_FILE="${long_directory}/entry-40"
 
   # Act
   run --separate-stderr in_terminal 'cdl "${CDL_TEST_FILE}"'
@@ -168,12 +168,12 @@ done
   # Arrange: docs/notes.md is a file.
 
   # Act
-  run --separate-stderr cdl_then_pwd "${DOCS_DIR}/notes.md/"
+  run --separate-stderr cdl_then_pwd "${DOCS_DIRECTORY}/notes.md/"
 
   # Assert
   assert_failure 33
   assert_output "${HOME}"
-  assert_stderr_contains "cdl: Not a directory: '${DOCS_DIR}/notes.md/'"
+  assert_stderr_contains "cdl: Not a directory: '${DOCS_DIRECTORY}/notes.md/'"
 }
 
 # bats test_tags=smoke
@@ -181,23 +181,25 @@ done
   # Arrange: docs/notes.md is a file.
 
   # Act
-  run --separate-stderr cdl_then_pwd "${DOCS_DIR}/notes.md/inner"
+  run --separate-stderr cdl_then_pwd "${DOCS_DIRECTORY}/notes.md/inner"
 
   # Assert
   assert_failure 33
   assert_output "${HOME}"
   assert_stderr_contains \
-    "cdl: Not a directory: '${DOCS_DIR}/notes.md/inner' ('${DOCS_DIR}/notes.md' is a file)"
+    "cdl: Not a directory: '${DOCS_DIRECTORY}/notes.md/inner' ('${DOCS_DIRECTORY}/notes.md' is a file)"
 }
 
-# endregion
+# endregion Files
 
 # region URIs
 
 @test "a file:// URI enters the path its percent escapes spell" {
+  local target
+
   # Arrange:
   # a space and a Cyrillic letter, as a file manager encodes them.
-  local -r target="$(make_dir 'My Docs Д')"
+  target="$(make_directory 'My Docs Д')"
 
   # Act
   run --separate-stderr cdl_then_pwd "file://${HOME}/My%20Docs%20%D0%94"
@@ -211,18 +213,18 @@ done
   # Arrange: no fixtures needed.
 
   # Act
-  run --separate-stderr cdl_then_pwd "file://localhost${DOCS_DIR}"
+  run --separate-stderr cdl_then_pwd "file://localhost${DOCS_DIRECTORY}"
 
   # Assert
   assert_success
-  assert_output "${DOCS_DIR}"
+  assert_output "${DOCS_DIRECTORY}"
 }
 
 @test "a URI of a file enters its directory and marks the file" {
   # Arrange: no fixtures needed.
 
   # Act
-  run --separate-stderr in_shell 'cdl "$1"' "file://${DOCS_DIR}/report.pdf"
+  run --separate-stderr in_shell 'cdl "$1"' "file://${DOCS_DIRECTORY}/report.pdf"
 
   # Assert
   assert_success
@@ -230,8 +232,10 @@ done
 }
 
 @test "a percent sign without two hex digits after it stays as it is" {
+  local target
+
   # Arrange
-  local -r target="$(make_dir '100%')"
+  target="$(make_directory '100%')"
 
   # Act
   run --separate-stderr cdl_then_pwd "file://${HOME}/100%"
@@ -247,12 +251,12 @@ done
   # and enter the directory of notes.md.
 
   # Act
-  run --separate-stderr cdl_then_pwd "file://${DOCS_DIR}/notes.md%00tail"
+  run --separate-stderr cdl_then_pwd "file://${DOCS_DIRECTORY}/notes.md%00tail"
 
   # Assert
   assert_failure 31
   assert_output "${HOME}"
-  assert_stderr_contains "cdl: No such file or directory: '${DOCS_DIR}/notes.md%00tail'"
+  assert_stderr_contains "cdl: No such file or directory: '${DOCS_DIRECTORY}/notes.md%00tail'"
 }
 
 @test "a URI of another host fails as written, with CDL_ERR_NOT_FOUND" {
@@ -266,7 +270,7 @@ done
   assert_stderr_contains "cdl: No such file or directory: 'file://server/share'"
 }
 
-# endregion
+# endregion URIs
 
 # region Tilde
 
@@ -287,7 +291,7 @@ function a_leading_tilde_means_home() {
 
   # Act
   run --separate-stderr in_shell \
-    "cd / && ${snippet} >/dev/null && printf '%s\n' \"\$PWD\"" "${path}"
+    "cd / && ${snippet} >/dev/null && printf '%s\n' \"\${PWD}\"" "${path}"
 
   # Assert
   assert_success
@@ -314,18 +318,20 @@ bats_test_function \
 }
 
 @test "a directory named ~ here wins over HOME" {
+  local literal
+
   # Arrange
-  local -r literal="$(make_dir 'here/~')"
+  literal="$(make_directory 'here/~')"
 
   # Act
   run --separate-stderr in_shell \
-    'cd "$1" && cdl "~" >/dev/null && printf "%s\n" "$PWD"' "${HOME}/here"
+    'cd "$1" && cdl "~" >/dev/null && printf "%s\n" "${PWD}"' "${HOME}/here"
 
   # Assert
   assert_success
   assert_output "${literal}"
 }
 
-# endregion
+# endregion Tilde
 
 ### End

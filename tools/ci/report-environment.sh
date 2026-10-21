@@ -1,25 +1,48 @@
 #!/usr/bin/env bash
 
-# Name: tools/ci/report-environment.sh
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Report the tools that a CI job runs cdl with, as a Markdown table.
 #
-# Description:
-#   Report the tools a CI job runs cdl with:
-#   the shells under test, the ls and awk it will pick, and the test tools.
-#   A failure in one matrix leg reads differently
-#   once you know it ran uutils ls with mawk under bash 3.2.
-#
-#   The report is a Markdown table on stdout,
-#   and the run summary when GITHUB_STEP_SUMMARY is set.
-#
-# Usage:
-#   tools/ci/report-environment.sh [SHELL...]
-#
+# Usage: tools/ci/report-environment.sh [SHELL...]
 #   tools/ci/report-environment.sh bash zsh
 #   tools/ci/report-environment.sh /bin/bash zsh
+# Effects: appends the table to GITHUB_STEP_SUMMARY when it is set.
+# Dependencies: awk, python3; gls and mawk when they are installed.
+# Exit codes: 0 success,
+#   99 REPORT_ENVIRONMENT_ERR_INTERNAL: a bug in this script.
+# See: CLAUDE.md (Continuous integration).
+#
+# How it works:
+#   The table names the shells under test, the ls and awk that cdl picks,
+#   and the test tools: a failure in one matrix leg reads differently
+#   once you know it ran uutils ls with mawk under bash 3.2.
+#   GitHub Actions sets GITHUB_STEP_SUMMARY, the summary of the run.
+#
+# Version: 1.0.0
 
-set -o errexit -o nounset -o pipefail
+readonly REPORT_ENVIRONMENT_ERR_INTERNAL=99
+
+#######################################
+# End a run that failed where no code planned it: the ERR trap calls it.
+# It passes on unchanged a code that main returns, the 141 of a closed pipe,
+# and every code of the block of this tool, which a helper has reported.
+#
+# Arguments:
+#   1: The status of the failed command.
+#   2: Its line.
+#   3: The command.
+#######################################
+function __internal_error() {
+  # In the guard, FUNCNAME holds only this function and the top level:
+  # the command that failed there is main, which returned its code.
+  if ((${#FUNCNAME[@]} == 2 || $1 == 141 || $1 / 10 == REPORT_ENVIRONMENT_ERR_INTERNAL / 10)); then
+    exit "$1"
+  fi
+
+  printf 'report-environment: internal error at line %s (status %s): %s\n' \
+    "$2" "$1" "$3" >&2
+
+  exit "${REPORT_ENVIRONMENT_ERR_INTERNAL}"
+}
 
 #######################################
 # Print the first line of a command's version, or a dash.
@@ -80,10 +103,11 @@ function row() {
 #######################################
 function main() {
   local report
+  local shell
+
   report="$(
     printf '| Tool | Version |\n|------|---------|\n'
     row 'OS' "$(uname -sr)"
-    local shell
     for shell in "$@"; do
       row "${shell}" "$(version_of "${shell}" --version)"
     done
@@ -95,11 +119,22 @@ function main() {
   )"
 
   printf '%s\n' "${report}"
-  if [[ -n ${GITHUB_STEP_SUMMARY-} ]]; then
+  if [[ -n "${GITHUB_STEP_SUMMARY-}" ]]; then
     printf '### Environment\n\n%s\n\n' "${report}" >>"${GITHUB_STEP_SUMMARY}"
   fi
 }
 
-main "$@"
+# Tests may source this file for its functions; run as a program, it runs main.
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  set -o errexit -o nounset -o pipefail -o errtrace
+  # The bash 3.2 of macOS has no inherit_errexit,
+  # and install-tools.sh runs on it before Homebrew brings another.
+  shopt -s inherit_errexit 2>/dev/null || true
+  trap '__internal_error "$?" "${LINENO}" "${BASH_COMMAND}"' ERR
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
+
+  main "$@"
+fi
 
 ### End

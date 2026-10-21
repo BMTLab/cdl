@@ -1,16 +1,10 @@
 #!/usr/bin/env bats
 
-# Name: tests/style/test_width_table.bats
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Test the width table inside cdl.sh against its generator.
 #
-# Description:
-#   The width table inside cdl.sh is generated
-#   by tools/gen-width-table.py from the Unicode data of Python,
-#   so it must match the generator and keep the order
-#   that the binary search of the formatter relies on.
-#
-#   Each test follows the Arrange-Act-Assert pattern.
+# tools/gen-width-table.py makes the table from the Unicode data of Python,
+# so it must match the generator and keep the order
+# that the binary search of the formatter relies on.
 
 bats_require_minimum_version 1.11.0
 
@@ -67,7 +61,9 @@ function generated_ranges() {
 #   1: Code point in hex, e.g. 4E00.
 #######################################
 function generated_cells() {
-  local -r code="$((16#$1))"
+  local code
+
+  code="$((16#$1))"
 
   generated_ranges | awk -v code="${code}" '
     $1 <= code && code <= $2 { print $3; found = 1; exit }
@@ -75,7 +71,7 @@ function generated_cells() {
   '
 }
 
-# endregion
+# endregion Helpers
 
 # region Agreement
 
@@ -93,11 +89,13 @@ function generated_cells() {
   assert_success
 }
 
-# endregion
+# endregion Agreement
 
 # region Content
 
 @test "the generated ranges ascend without overlapping" {
+  local disorder
+
   # Arrange: the binary search in cdl.sh needs this order.
 
   # Act
@@ -105,7 +103,7 @@ function generated_cells() {
 
   # Assert
   assert_success
-  local -r disorder="$(awk '
+  disorder="$(awk '
     $1 > $2 || $1 <= last { print "range " NR ": " $0 }
     { last = $2 }
   ' <<<"${output}")"
@@ -157,6 +155,6 @@ for __sample in "${__CELL_SAMPLES[@]}"; do
     -- character_takes_cells "${__code}" "${__cells}"
 done
 
-# endregion
+# endregion Content
 
 ### End

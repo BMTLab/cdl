@@ -1,17 +1,12 @@
 #!/usr/bin/env bash
 
-# Name: tests/support/fixtures.bash
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Make the data of the tests: directory trees and canned ls -l lines.
 #
-# Description:
-#   Test data:
-#     - real directory trees for end-to-end tests,
-#       described in a tiny syntax and stamped with one fixed time;
-#     - canned `ls -l` lines and the rows cdl prints for them,
-#       for testing the formatter in isolation.
-#
-#   Loaded by tests/support/test_helper.bash.
+# The trees are real, for the tests from end to end,
+# described in a tiny syntax and stamped with one fixed time.
+# The canned lines, and the rows cdl prints for them,
+# test the formatter on its own.
+# test_helper.bash loads it.
 
 # region Fixed time
 
@@ -21,7 +16,7 @@
 FIXTURE_STAMP='202601020304'
 FIXTURE_DATE='2026-01-02 03:04'
 
-# endregion
+# endregion Fixed time
 
 # region Directory trees
 
@@ -34,11 +29,11 @@ FIXTURE_DATE='2026-01-02 03:04'
 # Outputs:
 #   The absolute path to stdout.
 #######################################
-function make_dir() {
-  local -r dir="${HOME}/$1"
+function make_directory() {
+  local -r directory="${HOME}/$1"
 
-  mkdir -p -- "${dir}"
-  printf '%s\n' "${dir}"
+  mkdir -p -- "${directory}"
+  printf '%s\n' "${directory}"
 }
 
 #######################################
@@ -55,20 +50,20 @@ function make_dir() {
 #   $@: Entry specs.
 #######################################
 function make_entries() {
-  local -r dir="$1"
+  local -r directory="$1"
+  local spec
   shift
 
-  local spec
   for spec in "$@"; do
-    case ${spec} in
-      *' -> '*) ln -s -- "${spec#* -> }" "${dir}/${spec%% -> *}" ;;
-      */) mkdir -p -- "${dir}/${spec%/}" ;;
-      *'*') __fixtures_make_executable "${dir}/${spec%'*'}" ;;
-      *) : >"${dir}/${spec}" ;;
+    case "${spec}" in
+      *' -> '*) ln -s -- "${spec#* -> }" "${directory}/${spec%% -> *}" ;;
+      */) mkdir -p -- "${directory}/${spec%/}" ;;
+      *'*') __fixtures_make_executable "${directory}/${spec%'*'}" ;;
+      *) : >"${directory}/${spec}" ;;
     esac
   done
 
-  __fixtures_stamp "${dir}"
+  __fixtures_stamp "${directory}"
 }
 
 #######################################
@@ -91,17 +86,17 @@ function __fixtures_make_executable() {
 #   1: Directory.
 #######################################
 function __fixtures_stamp() {
-  local -r dir="$1"
+  local -r directory="$1"
   local entry
 
-  for entry in "${dir}"/* "${dir}"/.[!.]*; do
-    if [[ -e ${entry} || -L ${entry} ]]; then
+  for entry in "${directory}"/* "${directory}"/.[!.]*; do
+    if [[ -e "${entry}" || -L "${entry}" ]]; then
       touch -h -t "${FIXTURE_STAMP}" -- "${entry}"
     fi
   done
 }
 
-# endregion
+# endregion Directory trees
 
 # region Canned ls -l lines
 
@@ -131,7 +126,7 @@ function ls_line() {
 # Arguments:
 #   1: Name field.
 #######################################
-function ls_dir() {
+function ls_directory() {
   ls_line 'drwxr-xr-x' 4096 "$1"
 }
 
@@ -206,6 +201,6 @@ function paint() {
   printf '\033[%sm%s\033[0m' "$1" "$2"
 }
 
-# endregion
+# endregion Canned ls -l lines
 
 ### End

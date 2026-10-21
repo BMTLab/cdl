@@ -1,17 +1,11 @@
 #!/usr/bin/env bash
 
-# Name: tests/support/assertions.bash
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Assert on the status, output and stderr that run --separate-stderr leaves.
 #
-# Description:
-#   Assertions over the `status`, `output` and `stderr`
-#   that bats' `run --separate-stderr` leaves behind.
-#   On failure each one prints what it expected,
-#   what it got, and the whole run,
-#   so a red test explains itself without a rerun.
-#
-#   Loaded by tests/support/test_helper.bash.
+# On failure each one prints what it expected,
+# what it got, and the whole run,
+# so a red test explains itself without a rerun.
+# test_helper.bash loads it.
 
 # region Status
 
@@ -20,7 +14,7 @@
 #######################################
 function assert_success() {
   if ((status != 0)); then
-    __assert_fail "expected success, got status ${status}"
+    fail_with_report "expected success, got status ${status}"
   fi
 }
 
@@ -34,11 +28,11 @@ function assert_failure() {
   local -ir expected="$1"
 
   if ((status != expected)); then
-    __assert_fail "expected status ${expected}, got ${status}"
+    fail_with_report "expected status ${expected}, got ${status}"
   fi
 }
 
-# endregion
+# endregion Status
 
 # region Output
 
@@ -51,8 +45,8 @@ function assert_failure() {
 function assert_output() {
   local -r expected="$1"
 
-  if [[ ${output} != "${expected}" ]]; then
-    __assert_fail 'output differs' "${expected}" "${output}"
+  if [[ "${output}" != "${expected}" ]]; then
+    fail_with_report 'output differs' "${expected}" "${output}"
   fi
 }
 
@@ -65,8 +59,8 @@ function assert_output() {
 function assert_output_contains() {
   local -r fragment="$1"
 
-  if [[ ${output} != *"${fragment}"* ]]; then
-    __assert_fail "output lacks: ${fragment}"
+  if [[ "${output}" != *"${fragment}"* ]]; then
+    fail_with_report "output lacks: ${fragment}"
   fi
 }
 
@@ -79,8 +73,8 @@ function assert_output_contains() {
 function refute_output_contains() {
   local -r fragment="$1"
 
-  if [[ ${output} == *"${fragment}"* ]]; then
-    __assert_fail "output must not contain: ${fragment}"
+  if [[ "${output}" == *"${fragment}"* ]]; then
+    fail_with_report "output must not contain: ${fragment}"
   fi
 }
 
@@ -93,8 +87,8 @@ function refute_output_contains() {
 function assert_stderr_contains() {
   local -r fragment="$1"
 
-  if [[ ${stderr-} != *"${fragment}"* ]]; then
-    __assert_fail "stderr lacks: ${fragment}"
+  if [[ "${stderr-}" != *"${fragment}"* ]]; then
+    fail_with_report "stderr lacks: ${fragment}"
   fi
 }
 
@@ -102,8 +96,8 @@ function assert_stderr_contains() {
 # Assert the last run printed nothing on stderr.
 #######################################
 function assert_no_stderr() {
-  if [[ -n ${stderr-} ]]; then
-    __assert_fail 'expected an empty stderr'
+  if [[ -n "${stderr-}" ]]; then
+    fail_with_report 'expected an empty stderr'
   fi
 }
 
@@ -120,12 +114,12 @@ function assert_equal() {
   local -r expected="$2"
   local -r subject="$3"
 
-  if [[ ${actual} != "${expected}" ]]; then
-    __assert_fail "${subject} differs" "${expected}" "${actual}"
+  if [[ "${actual}" != "${expected}" ]]; then
+    fail_with_report "${subject} differs" "${expected}" "${actual}"
   fi
 }
 
-# endregion
+# endregion Output
 
 # region Failure report
 
@@ -143,7 +137,7 @@ function assert_equal() {
 # Returns:
 #   1, always.
 #######################################
-function __assert_fail() {
+function fail_with_report() {
   local -r message="$1"
 
   {
@@ -161,6 +155,6 @@ function __assert_fail() {
   return 1
 }
 
-# endregion
+# endregion Failure report
 
 ### End

@@ -1,15 +1,10 @@
 #!/usr/bin/env bash
 
-# Name: tests/support/sandbox.bash
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Give each test a hermetic environment.
 #
-# Description:
-#   A hermetic environment for each test.
-#   Everything cdl reads from the environment is pinned,
-#   so a result never depends on the machine that runs the suite.
-#
-#   Loaded by tests/support/test_helper.bash.
+# Everything cdl reads from the environment is pinned,
+# so a result never depends on the machine that runs the suite.
+# test_helper.bash loads it.
 
 # region Locale
 
@@ -23,8 +18,10 @@
 #   The locale name to stdout, or 'C' if there is none.
 #######################################
 function __sandbox_find_utf8_locale() {
-  local -r installed="$(locale -a 2>/dev/null)"
+  local installed
   local candidate
+
+  installed="$(locale -a 2>/dev/null)"
 
   for candidate in C.UTF-8 C.utf8 en_US.UTF-8 en_US.utf8; do
     if grep -qx "${candidate}" <<<"${installed}"; then
@@ -39,7 +36,7 @@ function __sandbox_find_utf8_locale() {
 # Probed once per test file rather than once per test.
 SANDBOX_UTF8_LOCALE="$(__sandbox_find_utf8_locale)"
 
-# endregion
+# endregion Locale
 
 # region Settings
 
@@ -59,7 +56,7 @@ function list_cdl_settings() {
 # Read once per test file, as the locale is probed.
 SANDBOX_CDL_SETTINGS="$(list_cdl_settings)"
 
-# endregion
+# endregion Settings
 
 # region Setup
 
@@ -74,7 +71,7 @@ SANDBOX_CDL_SETTINGS="$(list_cdl_settings)"
 # and cd would otherwise report a different spelling.
 #
 # Globals:
-#   HOME, FAKE_BIN, PATH, TZ, LANG, TERM, COLUMNS, LS_COLORS (write);
+#   HOME, FAKE_BIN_DIRECTORY, PATH, TZ, LANG, TERM, COLUMNS, LS_COLORS (write);
 #   SANDBOX_CDL_SETTINGS (read).
 #######################################
 function sandbox_setup() {
@@ -82,10 +79,10 @@ function sandbox_setup() {
   root="$(cd "${BATS_TEST_TMPDIR}" && pwd -P)"
 
   export HOME="${root}/home"
-  export FAKE_BIN="${root}/fake-bin"
-  mkdir -p "${HOME}" "${FAKE_BIN}"
+  export FAKE_BIN_DIRECTORY="${root}/fake-bin"
+  mkdir -p "${HOME}" "${FAKE_BIN_DIRECTORY}"
 
-  export PATH="${FAKE_BIN}:${PATH}"
+  export PATH="${FAKE_BIN_DIRECTORY}:${PATH}"
   export TZ='UTC'
   export LANG="${SANDBOX_UTF8_LOCALE}"
   export TERM='xterm-256color'
@@ -103,6 +100,6 @@ function sandbox_setup() {
   cd "${HOME}" || return 1
 }
 
-# endregion
+# endregion Setup
 
 ### End

@@ -123,14 +123,18 @@ for people and coding agents alike. In short:
 
 - English for code, comments and messages; no em-dash anywhere.
 - Single quotes unless a string expands something.
+- Every script opens with a card: what it does, its usage, effects,
+  dependencies, settings and exit codes, and its version.
 - `function name() { ... }` declarations, each with a documentation header.
-- `local -r`, `local -i` and friends wherever they fit.
+- The `local` declarations open each function and each test;
+  `local -r`, `local -i` and friends wherever they fit,
+  and a `$(...)` value is assigned on a line of its own.
 - Errors go through `__cdl_error` with a named `CDL_ERR_*` code.
 - The return codes of cdl go by tens: the tens digit names what failed,
   and the units digit why. Every tool of the repository owns
   a block of ten exit codes that no other tool uses.
   CLAUDE.md has both, under "Exit codes".
-- Long files fold into `# region` and `# endregion` blocks.
+- Long files fold into `# region Name` and `# endregion Name` blocks.
 - Comments explain why, and break lines between phrases, never inside one.
 
 `make format` applies `.editorconfig` through shfmt,

@@ -1,20 +1,13 @@
 #!/usr/bin/env bats
 
-# Name: tests/integration/test_completion.bats
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Test what Tab offers after cdl and cdl_list, and after cd when cdl replaces it.
 #
-# Description:
-#   What Tab offers after cdl and cdl_list, and after cd when cdl replaces it:
-#   the options after a dash; otherwise the directories and files
-#   a word begins, as cdl takes both,
-#   and the directories under CDPATH, as cd offers them.
-#   bash runs the completion function itself;
-#   zsh runs on a pseudo-terminal through tests/support/bin/zsh-completions,
-#   with compinit, as a user meets it.
-#   Each test belongs to one shell and skips in the other.
-#
-#   Each test follows the Arrange-Act-Assert pattern.
+# A dash brings the options; any other word brings the directories and files
+# that it begins, as cdl takes both, and the directories under CDPATH,
+# as cd offers them. bash runs the completion function itself;
+# zsh runs on a pseudo-terminal through tests/support/bin/zsh-completions,
+# with compinit, as a user meets it.
+# Each test belongs to one shell and skips in the other.
 
 bats_require_minimum_version 1.11.0
 
@@ -23,9 +16,9 @@ load '../support/test_helper'
 function setup() {
   sandbox_setup
 
-  WORK_DIR="$(make_dir 'work')"
-  make_entries "${WORK_DIR}" 'pictures/' 'projects/' 'My Docs/' 'plain.txt'
-  POOL_BASE="$(make_dir 'base')"
+  WORK_DIRECTORY="$(make_directory 'work')"
+  make_entries "${WORK_DIRECTORY}" 'pictures/' 'projects/' 'My Docs/' 'plain.txt'
+  POOL_BASE="$(make_directory 'base')"
   make_entries "${POOL_BASE}" 'pool/'
 }
 
@@ -38,7 +31,7 @@ function setup() {
 #   1: 'bash' or 'zsh'.
 #######################################
 function only_in() {
-  if [[ ${CDL_SHELL_KIND} != "$1" ]]; then
+  if [[ "${CDL_SHELL_KIND}" != "$1" ]]; then
     skip "a test of the $1 completion"
   fi
 }
@@ -55,7 +48,7 @@ function only_in() {
 #######################################
 function bash_completions() {
   in_shell 'cd "$1" && COMP_WORDS=(cdl "$2") && COMP_CWORD=1 && __cdl_complete_bash \
-    && printf "%s\n" ${COMPREPLY[@]+"${COMPREPLY[@]}"}' "${WORK_DIR}" "$1" | LC_ALL=C sort
+    && printf "%s\n" ${COMPREPLY[@]+"${COMPREPLY[@]}"}' "${WORK_DIRECTORY}" "$1" | LC_ALL=C sort
 }
 
 #######################################
@@ -70,16 +63,16 @@ function bash_completions() {
 #######################################
 function zsh_completions() {
   local -a options=()
-  if [[ $1 == '--before-compinit' ]]; then
+  if [[ "$1" == '--before-compinit' ]]; then
     options=("$1")
     shift
   fi
 
-  CDL_ZSH="${CDL_SHELL_PATH}" "${__CDL_SUPPORT_DIR}/bin/zsh-completions" \
-    ${options[@]+"${options[@]}"} "${CDL_SCRIPT}" "${WORK_DIR}" "$1"
+  CDL_ZSH="${CDL_SHELL_PATH}" "${__CDL_SUPPORT_DIRECTORY}/bin/zsh-completions" \
+    ${options[@]+"${options[@]}"} "${CDL_SCRIPT}" "${WORK_DIRECTORY}" "$1"
 }
 
-# endregion
+# endregion Helpers
 
 # region bash
 
@@ -125,7 +118,7 @@ function zsh_completions() {
   run --separate-stderr in_bare_shell \
     'after_complete=()
      function blehook/eval-after-load() { after_complete+=("$2"); }
-     source "$CDL_SCRIPT"
+     source "${CDL_SCRIPT}"
      function ble/cmdinfo/complete:cd() { COMPREPLY=(-e -@); }
      for hook in "${after_complete[@]}"; do eval "${hook}"; done
      COMP_WORDS=(cd -) && COMP_CWORD=1
@@ -153,9 +146,9 @@ function zsh_completions() {
   # the last spec of cd is the one ble.sh goes by.
   run --separate-stderr in_bare_shell \
     'after_cmdspec=()
-     function ble-import() { if [[ $1 == -C ]]; then after_cmdspec+=("$2"); fi; }
+     function ble-import() { if [[ "$1" == -C ]]; then after_cmdspec+=("$2"); fi; }
      function ble/cmdspec/opts() { cd_spec="$1"; }
-     source "$CDL_SCRIPT"
+     source "${CDL_SCRIPT}"
      ble/cmdspec/opts "mandb-help=%help cd" cd
      for callback in "${after_cmdspec[@]}"; do eval "${callback}"; done
      printf "%s\n" "${cd_spec}"'
@@ -176,7 +169,7 @@ function zsh_completions() {
   # compopt stands in for the builtin, which works only inside completion.
   run --separate-stderr in_shell \
     'function compopt() { printf "compopt %s\n" "$*"; }
-     cd "$1" && COMP_WORDS=(cdl -) && COMP_CWORD=1 && __cdl_complete_bash' "${WORK_DIR}"
+     cd "$1" && COMP_WORDS=(cdl -) && COMP_CWORD=1 && __cdl_complete_bash' "${WORK_DIRECTORY}"
 
   # Assert
   assert_success
@@ -221,6 +214,8 @@ function zsh_completions() {
 }
 
 @test "bash leaves a word with ~ to readline, which keeps the ~" {
+  local function_output
+
   # Arrange
   only_in bash
 
@@ -228,7 +223,7 @@ function zsh_completions() {
   # the function offers nothing, so readline completes the file names.
   # shellcheck disable=SC2088 # the ~ as a user types it
   run --separate-stderr bash_completions '~/'
-  local -r function_output="${output}"
+  function_output="${output}"
   run --separate-stderr in_shell 'complete -p cdl'
 
   # Assert
@@ -249,7 +244,7 @@ function zsh_completions() {
   assert_output_contains "-W '-a --all -1 --one-column'"
 }
 
-# endregion
+# endregion bash
 
 # region zsh
 
@@ -333,7 +328,7 @@ function zsh_completions() {
   only_in zsh
 
   # Act
-  run --separate-stderr in_bare_shell 'source "$CDL_SCRIPT"'
+  run --separate-stderr in_bare_shell 'source "${CDL_SCRIPT}"'
 
   # Assert
   assert_success
@@ -341,6 +336,6 @@ function zsh_completions() {
   assert_no_stderr
 }
 
-# endregion
+# endregion zsh
 
 ### End

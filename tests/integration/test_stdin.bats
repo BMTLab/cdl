@@ -1,16 +1,10 @@
 #!/usr/bin/env bats
 
-# Name: tests/integration/test_stdin.bats
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Test a path piped into cdl, and the stdin that cdl must leave alone.
 #
-# Description:
-#   A path piped into cdl, and the stdin cdl must leave alone.
-#   bash and zsh differ by design here:
-#   bash runs the last command of a pipeline in a subshell,
-#   zsh runs it in the current shell.
-#
-#   Each test follows the Arrange-Act-Assert pattern.
+# bash and zsh differ by design here:
+# bash runs the last command of a pipeline in a subshell,
+# zsh runs it in the current shell.
 
 bats_require_minimum_version 1.11.0
 
@@ -23,9 +17,11 @@ function setup() {
 # region Reading a pipe
 
 @test "a piped path is listed" {
+  local target
+
   # Arrange
   require_gnu_compatible_ls
-  local -r target="$(make_dir 'target')"
+  target="$(make_directory 'target')"
   make_entries "${target}" 'piped-entry'
 
   # Act
@@ -37,16 +33,19 @@ function setup() {
 }
 
 @test "a piped path changes the directory in zsh but not in bash" {
+  local target
+  local expected
+
   # Arrange
-  local -r target="$(make_dir 'target')"
-  local expected="${HOME}"
-  if [[ ${CDL_SHELL_KIND} == 'zsh' ]]; then
+  target="$(make_directory 'target')"
+  expected="${HOME}"
+  if [[ "${CDL_SHELL_KIND}" == 'zsh' ]]; then
     expected="${target}"
   fi
 
   # Act
   run --separate-stderr in_shell \
-    'printf "%s\n" "$1" | cdl >/dev/null; printf "%s\n" "$PWD"' "${target}"
+    'printf "%s\n" "$1" | cdl >/dev/null; printf "%s\n" "${PWD}"' "${target}"
 
   # Assert
   assert_success
@@ -54,9 +53,11 @@ function setup() {
 }
 
 @test "the first non-blank line of the pipe is used, trimmed" {
+  local target
+
   # Arrange
   require_gnu_compatible_ls
-  local -r target="$(make_dir 'target')"
+  target="$(make_directory 'target')"
   make_entries "${target}" 'chosen'
 
   # Act
@@ -69,10 +70,13 @@ function setup() {
 }
 
 @test "an operand wins over a piped path" {
+  local operand
+  local piped
+
   # Arrange
   require_gnu_compatible_ls
-  local -r operand="$(make_dir 'operand')"
-  local -r piped="$(make_dir 'piped')"
+  operand="$(make_directory 'operand')"
+  piped="$(make_directory 'piped')"
   make_entries "${operand}" 'from-operand'
   make_entries "${piped}" 'from-pipe'
 
@@ -98,18 +102,20 @@ function setup() {
   assert_output_contains 'home-entry'
 }
 
-# endregion
+# endregion Reading a pipe
 
 # region Stdin that is not a pipe
 
 @test "stdin redirected from a file is not read as a path" {
+  local decoy
+
   # Arrange
-  local -r decoy="$(make_dir 'decoy')"
+  decoy="$(make_directory 'decoy')"
   printf '%s\n' "${decoy}" >"${BATS_TEST_TMPDIR}/paths.txt"
 
   # Act
   run --separate-stderr in_shell \
-    'cdl <"$1" >/dev/null; printf "%s\n" "$PWD"' "${BATS_TEST_TMPDIR}/paths.txt"
+    'cdl <"$1" >/dev/null; printf "%s\n" "${PWD}"' "${BATS_TEST_TMPDIR}/paths.txt"
 
   # Assert
   assert_success
@@ -122,7 +128,7 @@ function setup() {
 
   # Act
   run --separate-stderr in_shell \
-    'while IFS= read -r line; do cdl >/dev/null; printf "%s\n" "$line"; done <"$1"' \
+    'while IFS= read -r line; do cdl >/dev/null; printf "%s\n" "${line}"; done <"$1"' \
     "${BATS_TEST_TMPDIR}/lines.txt"
 
   # Assert
@@ -130,6 +136,6 @@ function setup() {
   assert_output "$(printf '%s\n' one two three)"
 }
 
-# endregion
+# endregion Stdin that is not a pipe
 
 ### End

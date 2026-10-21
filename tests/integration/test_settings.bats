@@ -1,18 +1,12 @@
 #!/usr/bin/env bats
 
-# Name: tests/integration/test_settings.bats
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Test the settings of cdl, and its options that are not about the listing.
 #
-# Description:
-#   The settings of cdl, which come from environment variables,
-#   and the options of cdl that are not about the listing:
-#   --version, and -L and -P for cd.
-#   A setting is checked before cdl moves,
-#   so a typo in an rc file shows at once and changes nothing.
-#   The settings of the shell that runs the suite stay out of every test.
-#
-#   Each test follows the Arrange-Act-Assert pattern.
+# The settings come from environment variables;
+# the options are --version, and -L and -P for cd.
+# A setting is checked before cdl moves,
+# so a typo in an rc file shows at once and changes nothing.
+# The settings of the shell that runs the suite stay out of every test.
 
 bats_require_minimum_version 1.11.0
 
@@ -20,15 +14,17 @@ load '../support/test_helper'
 
 function setup() {
   sandbox_setup
-  LISTED_DIR="$(make_dir 'listed')"
-  make_entries "${LISTED_DIR}" '.hidden' 'src/' 'visible'
+  LISTED_DIRECTORY="$(make_directory 'listed')"
+  make_entries "${LISTED_DIRECTORY}" '.hidden' 'src/' 'visible'
 }
 
 # region Version
 
 @test "cdl --version prints the version in the header of cdl.sh" {
+  local version
+
   # Arrange
-  local -r version="$(sed -n 's/^# Version: *//p' "${CDL_SCRIPT}")"
+  version="$(sed -n 's/^# Version: *//p' "${CDL_SCRIPT}")"
 
   # Act
   run --separate-stderr in_shell 'cdl --version && cdl -V'
@@ -38,7 +34,7 @@ function setup() {
   assert_output "cdl ${version}"$'\n'"cdl ${version}"
 }
 
-# endregion
+# endregion Version
 
 # region Invalid values
 
@@ -59,8 +55,8 @@ function invalid_setting_fails_before_moving() {
 
   # Act
   run --separate-stderr in_shell \
-    'export "$1=$2"; cdl "$3"; rc=$?; printf "%s\n" "$PWD"; exit "$rc"' \
-    "${variable}" "${value}" "${LISTED_DIR}"
+    'export "$1=$2"; cdl "$3"; exit_code=$?; printf "%s\n" "${PWD}"; exit "${exit_code}"' \
+    "${variable}" "${value}" "${LISTED_DIRECTORY}"
 
   # Assert
   assert_failure 20
@@ -99,7 +95,7 @@ done
   # Act
   run --separate-stderr in_shell \
     'CDL_COLOR= CDL_HIDDEN= CDL_WIDTH= CDL_MAX_ROWS= CDL_MAX_COLUMNS= CDL_HEADER= CDL_GIT= CDL_LINKS= CDL_REPLACE_CD= cdl "$1"' \
-    "${LISTED_DIR}"
+    "${LISTED_DIRECTORY}"
 
   # Assert:
   # the defaults: hidden entries listed, no error.
@@ -125,7 +121,7 @@ done
   # Arrange: no fixtures needed.
 
   # Act
-  run --separate-stderr in_shell 'cdl -V somewhere else && printf "PWD=%s\n" "$PWD"'
+  run --separate-stderr in_shell 'cdl -V somewhere else && printf "PWD=%s\n" "${PWD}"'
 
   # Assert
   assert_success
@@ -144,7 +140,7 @@ done
   assert_stderr_contains "cdl: CDL_HIDDEN: not 0 or 1: 'maybe'"
 }
 
-# endregion
+# endregion Invalid values
 
 # region Colors
 
@@ -153,7 +149,7 @@ done
   require_gnu_compatible_ls
 
   # Act
-  run --separate-stderr in_shell 'CDL_COLOR=always cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'CDL_COLOR=always cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -166,7 +162,7 @@ done
   export NO_COLOR=1
 
   # Act
-  run --separate-stderr in_shell 'CDL_COLOR=always cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'CDL_COLOR=always cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -175,11 +171,11 @@ done
 
 @test "CDL_COLOR=never keeps a terminal plain" {
   # Arrange
-  export CDL_TEST_DIR="${LISTED_DIR}"
+  export CDL_TEST_DIRECTORY="${LISTED_DIRECTORY}"
   export CDL_COLOR='never'
 
   # Act
-  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIR}"'
+  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIRECTORY}"'
 
   # Assert
   assert_success
@@ -187,7 +183,7 @@ done
   refute_output_contains $'\033'
 }
 
-# endregion
+# endregion Colors
 
 # region Hidden entries
 
@@ -195,7 +191,7 @@ done
   # Arrange: the listed directory holds .hidden, src and visible.
 
   # Act
-  run --separate-stderr in_shell 'CDL_HIDDEN=0 cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'CDL_HIDDEN=0 cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -208,14 +204,14 @@ done
   fake_bsd_ls 'with-color'
 
   # Act
-  run --separate-stderr in_shell 'CDL_HIDDEN=0 cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'CDL_HIDDEN=0 cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
   assert_output 'bsd-ls -lh'
 }
 
-# endregion
+# endregion Hidden entries
 
 # region Width
 
@@ -223,24 +219,24 @@ done
   # Arrange:
   # these rows sit side by side in 130 columns, but not in 80.
   require_gnu_compatible_ls
-  make_entries "${LISTED_DIR}" 'a-name-of-some-length.txt' 'another-name-of-length.txt'
+  make_entries "${LISTED_DIRECTORY}" 'a-name-of-some-length.txt' 'another-name-of-length.txt'
 
   # Act
   run --separate-stderr in_shell \
-    'COLUMNS=80 CDL_WIDTH=130 CDL_HIDDEN=0 cdl "$1"' "${LISTED_DIR}"
+    'COLUMNS=80 CDL_WIDTH=130 CDL_HIDDEN=0 cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
   assert_columns_aligned "${output}"
 }
 
-# endregion
+# endregion Width
 
 # region Symbolic links
 
 @test "cdl -P enters the directory a symlink resolves to" {
   # Arrange
-  make_dir 'real' >/dev/null
+  make_directory 'real' >/dev/null
   make_entries "${HOME}" 'link -> real'
 
   # Act
@@ -253,12 +249,12 @@ done
 
 @test "the last of -L and -P wins, in bash and zsh alike" {
   # Arrange
-  make_dir 'real' >/dev/null
+  make_directory 'real' >/dev/null
   make_entries "${HOME}" 'link -> real'
 
   # Act
   run --separate-stderr in_shell \
-    'cdl -L -P "$1" >/dev/null && printf "%s\n" "$PWD" && cdl -P -L "$1" >/dev/null && printf "%s\n" "$PWD"' \
+    'cdl -L -P "$1" >/dev/null && printf "%s\n" "${PWD}" && cdl -P -L "$1" >/dev/null && printf "%s\n" "${PWD}"' \
     "${HOME}/link"
 
   # Assert
@@ -268,12 +264,12 @@ done
 
 @test "cdl -L, like plain cdl, keeps the symlink in the path" {
   # Arrange
-  make_dir 'real' >/dev/null
+  make_directory 'real' >/dev/null
   make_entries "${HOME}" 'link -> real'
 
   # Act
   run --separate-stderr in_shell \
-    'cdl -L "$1" >/dev/null && printf "%s\n" "$PWD" && cdl "$1" >/dev/null && printf "%s\n" "$PWD"' \
+    'cdl -L "$1" >/dev/null && printf "%s\n" "${PWD}" && cdl "$1" >/dev/null && printf "%s\n" "${PWD}"' \
     "${HOME}/link"
 
   # Assert
@@ -281,7 +277,7 @@ done
   assert_output "${HOME}/link"$'\n'"${HOME}/link"
 }
 
-# endregion
+# endregion Symbolic links
 
 # region cdl_list
 
@@ -300,14 +296,14 @@ done
   # Arrange: no fixtures needed.
 
   # Act
-  run --separate-stderr in_shell 'cdl_list "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'cdl_list "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_failure 10
-  assert_stderr_contains "cdl: Unexpected argument: '${LISTED_DIR}'"
+  assert_stderr_contains "cdl: Unexpected argument: '${LISTED_DIRECTORY}'"
 }
 
-# endregion
+# endregion cdl_list
 
 # region The shell of the user
 
@@ -315,7 +311,8 @@ done
   # Arrange: the README has the user export CDL_REPLACE_CD=1.
   export CDL_REPLACE_CD=1 CDL_COLOR='always'
 
-  # Act
+  # Act:
+  # the dash form tells an unset variable from an empty one.
   sandbox_setup
   run --separate-stderr in_shell 'printf "%s %s" "${CDL_REPLACE_CD-unset}" "${CDL_COLOR-unset}"'
 
@@ -324,6 +321,6 @@ done
   assert_output 'unset unset'
 }
 
-# endregion
+# endregion The shell of the user
 
 ### End

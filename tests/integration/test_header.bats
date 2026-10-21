@@ -1,18 +1,12 @@
 #!/usr/bin/env bats
 
-# Name: tests/integration/test_header.bats
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Test the header line above the listing.
 #
-# Description:
-#   The header line above the listing:
-#   the directory, with ~ for HOME, its git branch,
-#   read from the files of the repository without running git,
-#   and how many directories and files it holds.
-#   A terminal gets the header, a file or a pipe does not,
-#   and CDL_HEADER and CDL_GIT change both.
-#
-#   Each test follows the Arrange-Act-Assert pattern.
+# It names the directory, with ~ for HOME, and its git branch,
+# read from the files of the repository without running git,
+# and counts the directories and files it holds.
+# A terminal gets the header, a file or a pipe does not,
+# and CDL_HEADER and CDL_GIT change both.
 
 # The header writes HOME as a literal ~, and the expected lines do too.
 # shellcheck disable=SC2088
@@ -27,9 +21,9 @@ function setup() {
 
   # 60 columns keep one entry per line, so a test can count lines.
   export COLUMNS=60
-  LISTED_DIR="$(make_dir 'projects/app')"
-  make_entries "${LISTED_DIR}" 'src/' 'notes.md'
-  export CDL_TEST_DIR="${LISTED_DIR}"
+  LISTED_DIRECTORY="$(make_directory 'projects/app')"
+  make_entries "${LISTED_DIRECTORY}" 'src/' 'notes.md'
+  export CDL_TEST_DIRECTORY="${LISTED_DIRECTORY}"
 }
 
 # region Helpers
@@ -44,11 +38,11 @@ function setup() {
 #   2: The line of HEAD: 'ref: refs/heads/NAME' or a commit hash.
 #######################################
 function make_git_head() {
-  local -r dir="$1"
+  local -r directory="$1"
   local -r head="$2"
 
-  mkdir -p -- "${dir}/.git"
-  printf '%s\n' "${head}" >"${dir}/.git/HEAD"
+  mkdir -p -- "${directory}/.git"
+  printf '%s\n' "${head}" >"${directory}/.git/HEAD"
 }
 
 #######################################
@@ -63,7 +57,7 @@ function sandbox_git() {
     -c commit.gpgsign=false "$@"
 }
 
-# endregion
+# endregion Helpers
 
 # region Where the header shows
 
@@ -71,11 +65,11 @@ function sandbox_git() {
 @test "a terminal gets a header with the directory, ~ for HOME, and what it holds" {
   # Arrange
   export CDL_COLOR='never'
-  printf '%1000s' '' >"${LISTED_DIR}/notes.md"
-  printf '%536s' '' >"${LISTED_DIR}/todo.md"
+  printf '%1000s' '' >"${LISTED_DIRECTORY}/notes.md"
+  printf '%536s' '' >"${LISTED_DIRECTORY}/todo.md"
 
   # Act
-  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIR}"'
+  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIRECTORY}"'
 
   # Assert:
   # the sizes of the two files add up to 1536 bytes.
@@ -89,7 +83,7 @@ function sandbox_git() {
   export CDL_LINKS='never'
 
   # Act
-  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIR}"'
+  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIRECTORY}"'
 
   # Assert
   assert_success
@@ -101,7 +95,7 @@ function sandbox_git() {
   # Arrange: no fixtures needed.
 
   # Act
-  run --separate-stderr in_shell 'cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -113,7 +107,7 @@ function sandbox_git() {
   # Arrange: no fixtures needed.
 
   # Act
-  run --separate-stderr in_shell 'CDL_HEADER=always cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'CDL_HEADER=always cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -125,7 +119,7 @@ function sandbox_git() {
   export CDL_COLOR='never' CDL_HEADER='never'
 
   # Act
-  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIR}"'
+  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIRECTORY}"'
 
   # Assert
   assert_success
@@ -134,12 +128,14 @@ function sandbox_git() {
 }
 
 @test "a directory ls cannot read gets no header, so no count misleads" {
+  local blind
+
   # Arrange:
   # search permission without read permission: cd works, ls does not.
   if ((EUID == 0)); then
     skip 'root reads any directory'
   fi
-  local -r blind="$(make_dir 'blind')"
+  blind="$(make_directory 'blind')"
   chmod 100 "${blind}"
 
   # Act
@@ -151,7 +147,7 @@ function sandbox_git() {
   assert_output ''
 }
 
-# endregion
+# endregion Where the header shows
 
 # region The path
 
@@ -171,11 +167,11 @@ function the_header_shows_the_whole_path() {
 
   # Act
   run --separate-stderr in_shell \
-    "${home_change}; CDL_HEADER=always cdl \"\$1\"" "${LISTED_DIR}"
+    "${home_change}; CDL_HEADER=always cdl \"\$1\"" "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
-  assert_equal "${lines[0]}" "${LISTED_DIR} · 1 dir, 1 file" 'the header'
+  assert_equal "${lines[0]}" "${LISTED_DIRECTORY} · 1 dir, 1 file" 'the header'
 }
 
 # Samples: "description|code that changes HOME".
@@ -196,24 +192,24 @@ done
 
   # Act
   run --separate-stderr in_shell \
-    'HOME="${HOME}/"; CDL_HEADER=always cdl "$1"' "${LISTED_DIR}"
+    'HOME="${HOME}/"; CDL_HEADER=always cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
   assert_equal "${lines[0]}" '~/projects/app · 1 dir, 1 file' 'the header'
 }
 
-# endregion
+# endregion The path
 
 # region Git branch
 
 # bats test_tags=smoke
 @test "the header names the git branch, read from .git/HEAD" {
   # Arrange
-  make_git_head "${LISTED_DIR}" 'ref: refs/heads/feature/header'
+  make_git_head "${LISTED_DIRECTORY}" 'ref: refs/heads/feature/header'
 
   # Act
-  run --separate-stderr in_shell 'CDL_HEADER=always cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'CDL_HEADER=always cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert:
   # .git is a hidden directory, and counts as one.
@@ -226,7 +222,7 @@ done
   make_git_head "${HOME}/projects" 'ref: refs/heads/main'
 
   # Act
-  run --separate-stderr in_shell 'CDL_HEADER=always cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'CDL_HEADER=always cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -235,10 +231,10 @@ done
 
 @test "a detached HEAD shows the short hash of its commit" {
   # Arrange
-  make_git_head "${LISTED_DIR}" '0123456789abcdef0123456789abcdef01234567'
+  make_git_head "${LISTED_DIRECTORY}" '0123456789abcdef0123456789abcdef01234567'
 
   # Act
-  run --separate-stderr in_shell 'CDL_HEADER=always cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'CDL_HEADER=always cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -254,23 +250,24 @@ done
 #######################################
 function a_worktree_shows_its_own_branch() {
   local -r spelling="$1"
+  local git_directory
 
   # Arrange:
   # the .git file of the worktree names a git directory
   # under ~/repo.git, as `git worktree add` lays them out.
   # A relative name counts from the directory of the .git file,
   # so the test lists a subdirectory, where the two differ.
-  local -r git_dir="${HOME}/repo.git/worktrees/app"
-  mkdir -p -- "${git_dir}"
-  printf 'ref: refs/heads/topic\n' >"${git_dir}/HEAD"
-  if [[ ${spelling} == 'absolute' ]]; then
-    printf 'gitdir: %s\n' "${git_dir}" >"${LISTED_DIR}/.git"
+  git_directory="${HOME}/repo.git/worktrees/app"
+  mkdir -p -- "${git_directory}"
+  printf 'ref: refs/heads/topic\n' >"${git_directory}/HEAD"
+  if [[ "${spelling}" == 'absolute' ]]; then
+    printf 'gitdir: %s\n' "${git_directory}" >"${LISTED_DIRECTORY}/.git"
   else
-    printf 'gitdir: ../../repo.git/worktrees/app\n' >"${LISTED_DIR}/.git"
+    printf 'gitdir: ../../repo.git/worktrees/app\n' >"${LISTED_DIRECTORY}/.git"
   fi
 
   # Act
-  run --separate-stderr in_shell 'CDL_HEADER=always cdl "$1"' "${LISTED_DIR}/src"
+  run --separate-stderr in_shell 'CDL_HEADER=always cdl "$1"' "${LISTED_DIRECTORY}/src"
 
   # Assert
   assert_success
@@ -286,10 +283,10 @@ done
 @test "a reftable repository shows no branch rather than a wrong one" {
   # Arrange:
   # the reftable format leaves this stub in HEAD for older tools.
-  make_git_head "${LISTED_DIR}" 'ref: refs/heads/.invalid'
+  make_git_head "${LISTED_DIRECTORY}" 'ref: refs/heads/.invalid'
 
   # Act
-  run --separate-stderr in_shell 'CDL_HEADER=always cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'CDL_HEADER=always cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -298,10 +295,10 @@ done
 
 @test "a .git without HEAD shows no branch, and no error" {
   # Arrange
-  mkdir -p "${LISTED_DIR}/.git"
+  mkdir -p "${LISTED_DIRECTORY}/.git"
 
   # Act
-  run --separate-stderr in_shell 'CDL_HEADER=always cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'CDL_HEADER=always cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -311,10 +308,10 @@ done
 
 @test "CDL_GIT=0 leaves the branch out" {
   # Arrange
-  make_git_head "${LISTED_DIR}" 'ref: refs/heads/main'
+  make_git_head "${LISTED_DIRECTORY}" 'ref: refs/heads/main'
 
   # Act
-  run --separate-stderr in_shell 'CDL_GIT=0 CDL_HEADER=always cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'CDL_GIT=0 CDL_HEADER=always cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -322,11 +319,13 @@ done
 }
 
 @test "a repository and its worktree made by git show their branches" {
+  local repository
+
   # Arrange
   if ! command -v git >/dev/null; then
     skip 'git is not installed'
   fi
-  local -r repository="$(make_dir 'repository')"
+  repository="$(make_directory 'repository')"
   sandbox_git init --quiet --initial-branch=trunk "${repository}"
   sandbox_git -C "${repository}" commit --quiet --allow-empty --message='Start'
   sandbox_git -C "${repository}" worktree add --quiet -b topic "${HOME}/worktree"
@@ -342,6 +341,6 @@ done
   assert_output_contains '~/worktree · topic · '
 }
 
-# endregion
+# endregion Git branch
 
 ### End

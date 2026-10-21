@@ -1,17 +1,10 @@
 #!/usr/bin/env bats
 
-# Name: tests/integration/test_listing.bats
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Test the listing that cdl prints for real directories, through the ls here.
 #
-# Description:
-#   The listing cdl prints for real directories,
-#   through the ls found on this machine:
-#   GNU ls, uutils ls or gls for the compact listing.
-#   Machines with only a BSD ls skip these tests;
-#   the BSD path is covered by test_ls_flavors.bats.
-#
-#   Each test follows the Arrange-Act-Assert pattern.
+# GNU ls, uutils ls or gls make the compact listing.
+# Machines with only a BSD ls skip these tests;
+# test_ls_flavors.bats covers the BSD path.
 
 bats_require_minimum_version 1.11.0
 
@@ -20,17 +13,17 @@ load '../support/test_helper'
 function setup() {
   sandbox_setup
   require_gnu_compatible_ls
-  LISTED_DIR="$(make_dir 'listed')"
+  LISTED_DIRECTORY="$(make_directory 'listed')"
 }
 
 # region Content
 
 @test "directories come before files" {
   # Arrange
-  make_entries "${LISTED_DIR}" 'a-file' 'z-dir/' 'b-file' 'c-dir/'
+  make_entries "${LISTED_DIRECTORY}" 'a-file' 'z-dir/' 'b-file' 'c-dir/'
 
   # Act
-  run --separate-stderr in_shell 'COLUMNS=60 cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'COLUMNS=60 cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -42,10 +35,10 @@ function setup() {
   # Arrange:
   # no two names differ in case alone, which the file system of macOS ignores;
   # a locale would put beta before Bravo, and ёж before Ёлка.
-  make_entries "${LISTED_DIR}" 'beta' 'Alpha' 'zulu' 'Bravo' 'Ёлка' 'ёж'
+  make_entries "${LISTED_DIRECTORY}" 'beta' 'Alpha' 'zulu' 'Bravo' 'Ёлка' 'ёж'
 
   # Act
-  run --separate-stderr in_shell 'COLUMNS=60 cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'COLUMNS=60 cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -55,10 +48,10 @@ function setup() {
 
 @test "hidden entries are listed, but not . and .." {
   # Arrange
-  make_entries "${LISTED_DIR}" '.hidden' 'visible'
+  make_entries "${LISTED_DIRECTORY}" '.hidden' 'visible'
 
   # Act
-  run --separate-stderr in_shell 'COLUMNS=60 cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'COLUMNS=60 cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -71,10 +64,10 @@ function setup() {
 
 @test "QUOTING_STYLE in the environment leaves the names as they are" {
   # Arrange
-  make_entries "${LISTED_DIR}" 'two words'
+  make_entries "${LISTED_DIRECTORY}" 'two words'
 
   # Act
-  run --separate-stderr in_shell 'QUOTING_STYLE=shell-escape cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'QUOTING_STYLE=shell-escape cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -83,10 +76,10 @@ function setup() {
 
 @test "a symlink is shown with its target" {
   # Arrange
-  make_entries "${LISTED_DIR}" 'target.txt' 'link -> target.txt'
+  make_entries "${LISTED_DIRECTORY}" 'target.txt' 'link -> target.txt'
 
   # Act
-  run --separate-stderr in_shell 'COLUMNS=60 cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'COLUMNS=60 cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -95,10 +88,10 @@ function setup() {
 
 @test "a name with runs of spaces is shown verbatim" {
   # Arrange
-  make_entries "${LISTED_DIR}" 'two  spaces   inside'
+  make_entries "${LISTED_DIRECTORY}" 'two  spaces   inside'
 
   # Act
-  run --separate-stderr in_shell 'cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -109,7 +102,7 @@ function setup() {
   # Arrange: the listed directory starts empty.
 
   # Act
-  run --separate-stderr in_shell 'cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -118,6 +111,9 @@ function setup() {
 }
 
 @test "a device file shows its major and minor numbers as the size" {
+  local device_row
+  local null_row
+
   # Arrange: /dev/null exists on every supported system.
 
   # Act
@@ -125,24 +121,24 @@ function setup() {
 
   # Assert
   assert_success
-  local -r device_row='^ *[0-9]+, *[0-9]+  [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}  null$'
-  local -r null_row="$(grep ' null$' <<<"${output}")"
-  if [[ ! ${null_row} =~ ${device_row} ]]; then
-    __assert_fail "unexpected /dev/null row: ${null_row}"
+  device_row='^ *[0-9]+, *[0-9]+  [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}  null$'
+  null_row="$(grep ' null$' <<<"${output}")"
+  if [[ ! "${null_row}" =~ ${device_row} ]]; then
+    fail_with_report "unexpected /dev/null row: ${null_row}"
   fi
 }
 
-# endregion
+# endregion Content
 
 # region Layout
 
 # bats test_tags=smoke
 @test "a wide terminal gets aligned columns that fit its width" {
   # Arrange
-  make_entries "${LISTED_DIR}" 'Документы/' 'src/' 'notes.md' '日本語.txt' 'README'
+  make_entries "${LISTED_DIRECTORY}" 'Документы/' 'src/' 'notes.md' '日本語.txt' 'README'
 
   # Act
-  run --separate-stderr in_shell 'COLUMNS=120 cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'COLUMNS=120 cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -152,10 +148,10 @@ function setup() {
 
 @test "a narrow terminal gets one column" {
   # Arrange
-  make_entries "${LISTED_DIR}" 'src/' 'notes.md' 'README' 'Makefile'
+  make_entries "${LISTED_DIRECTORY}" 'src/' 'notes.md' 'README' 'Makefile'
 
   # Act
-  run --separate-stderr in_shell 'COLUMNS=50 cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'COLUMNS=50 cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -166,11 +162,11 @@ function setup() {
   # Arrange:
   # bash runs a piped cdl in a subshell, where tput cannot see
   # the terminal; the width must still come from COLUMNS.
-  make_entries "${LISTED_DIR}" 'src/' 'notes.md' 'README' 'Makefile'
+  make_entries "${LISTED_DIRECTORY}" 'src/' 'notes.md' 'README' 'Makefile'
 
   # Act
   run --separate-stderr in_shell \
-    'printf "%s\n" "$1" | COLUMNS=120 cdl' "${LISTED_DIR}"
+    'printf "%s\n" "$1" | COLUMNS=120 cdl' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -190,11 +186,11 @@ function unusable_columns_fall_back_to_80() {
   local -r columns="$1"
 
   # Arrange
-  make_entries "${LISTED_DIR}" 'a-name-of-some-length.txt' 'another-name-of-length.txt'
+  make_entries "${LISTED_DIRECTORY}" 'a-name-of-some-length.txt' 'another-name-of-length.txt'
 
   # Act
   run --separate-stderr in_shell \
-    'unset TERM; COLUMNS="$2" cdl "$1"' "${LISTED_DIR}" "${columns}"
+    'unset TERM; COLUMNS="$2" cdl "$1"' "${LISTED_DIRECTORY}" "${columns}"
 
   # Assert
   assert_success
@@ -208,19 +204,23 @@ for __columns in 'abc' '0' '080' '-1'; do
     -- unusable_columns_fall_back_to_80 "${__columns}"
 done
 
-# endregion
+# endregion Layout
 
 # region Sizes
 
 @test "sizes read as GNU ls -h writes them, even through uutils ls" {
+  local reference_ls
+  local directory
+  local -a sizes=(0 1 1023)
+  local -i unit
+  local size
+  local expected
+
   # Arrange:
   # sparse files at the steps of the rounding in every unit,
   # each named by its size.
-  local reference_ls
   reference_ls="$(gnu_ls)" || skip 'no GNU ls to compare with'
-  local -r dir="$(make_dir 'sizes')"
-  local -a sizes=(0 1 1023)
-  local -i unit
+  directory="$(make_directory 'sizes')"
   for unit in 1024 1048576 1073741824; do
     sizes+=(
       "${unit}" "$((unit + 1))" "$((unit * 5 + unit / 2))"
@@ -228,16 +228,15 @@ done
       "$((unit * 1023))" "$((unit * 1023 + 1))" "$((unit * 1024 - 1))"
     )
   done
-  local size
   for size in "${sizes[@]}"; do
-    dd if=/dev/null of="${dir}/${size}" bs=1 seek="${size}" 2>/dev/null
+    dd if=/dev/null of="${directory}/${size}" bs=1 seek="${size}" 2>/dev/null
   done
-  local -r expected="$(
-    LC_ALL=C "${reference_ls}" -lh "${dir}" | awk 'NF > 2 { print $NF, $5 }' | sort
+  expected="$(
+    LC_ALL=C "${reference_ls}" -lh "${directory}" | awk 'NF > 2 { print $NF, $5 }' | sort
   )"
 
   # Act
-  run --separate-stderr in_shell 'CDL_MAX_COLUMNS=1 cdl "$1"' "${dir}"
+  run --separate-stderr in_shell 'CDL_MAX_COLUMNS=1 cdl "$1"' "${directory}"
 
   # Assert:
   # each name with its size, as the two listings give them.
@@ -248,27 +247,27 @@ done
 @test "BLOCK_SIZE in the environment leaves the sizes alone" {
   # Arrange:
   # ls reads both variables, and would print 4.9K, or blocks, for these bytes.
-  printf '%5000s' '' >"${LISTED_DIR}/five-thousand"
+  printf '%5000s' '' >"${LISTED_DIRECTORY}/five-thousand"
 
   # Act
   run --separate-stderr in_shell \
-    'BLOCK_SIZE=human-readable LS_BLOCK_SIZE=1K cdl "$1"' "${LISTED_DIR}"
+    'BLOCK_SIZE=human-readable LS_BLOCK_SIZE=1K cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
   assert_output_contains '4.9K  '
 }
 
-# endregion
+# endregion Sizes
 
 # region Colors
 
 @test "a listing sent to a pipe or a file has no escape sequences" {
   # Arrange
-  make_entries "${LISTED_DIR}" 'src/' 'run.sh*' 'link -> run.sh'
+  make_entries "${LISTED_DIRECTORY}" 'src/' 'run.sh*' 'link -> run.sh'
 
   # Act
-  run --separate-stderr in_shell 'cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -278,11 +277,11 @@ done
 # bats test_tags=smoke
 @test "a listing on a terminal is colored" {
   # Arrange
-  make_entries "${LISTED_DIR}" 'src/' 'run.sh*'
-  export CDL_TEST_DIR="${LISTED_DIR}"
+  make_entries "${LISTED_DIRECTORY}" 'src/' 'run.sh*'
+  export CDL_TEST_DIRECTORY="${LISTED_DIRECTORY}"
 
   # Act
-  run --separate-stderr in_terminal 'cdl "$CDL_TEST_DIR"'
+  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIRECTORY}"'
 
   # Assert
   assert_success
@@ -292,12 +291,12 @@ done
 @test "an empty NO_COLOR keeps the colors, as no-color.org asks" {
   # Arrange:
   # only a NO_COLOR that is set and not empty turns colors off.
-  make_entries "${LISTED_DIR}" 'src/'
-  export CDL_TEST_DIR="${LISTED_DIR}"
+  make_entries "${LISTED_DIRECTORY}" 'src/'
+  export CDL_TEST_DIRECTORY="${LISTED_DIRECTORY}"
   export NO_COLOR=''
 
   # Act
-  run --separate-stderr in_terminal 'cdl "$CDL_TEST_DIR"'
+  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIRECTORY}"'
 
   # Assert
   assert_success
@@ -306,12 +305,12 @@ done
 
 @test "NO_COLOR turns colors off, even on a terminal" {
   # Arrange
-  make_entries "${LISTED_DIR}" 'src/' 'run.sh*'
-  export CDL_TEST_DIR="${LISTED_DIR}"
+  make_entries "${LISTED_DIRECTORY}" 'src/' 'run.sh*'
+  export CDL_TEST_DIRECTORY="${LISTED_DIRECTORY}"
   export NO_COLOR=1
 
   # Act
-  run --separate-stderr in_terminal 'cdl "$CDL_TEST_DIR"'
+  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIRECTORY}"'
 
   # Assert
   assert_success
@@ -319,30 +318,30 @@ done
   refute_output_contains $'\033'
 }
 
-# endregion
+# endregion Colors
 
 # region Links
 
 @test "a colored terminal gets names linked to their files" {
   # Arrange
-  make_entries "${LISTED_DIR}" 'notes.md'
-  export CDL_TEST_DIR="${LISTED_DIR}" HOSTNAME='box'
+  make_entries "${LISTED_DIRECTORY}" 'notes.md'
+  export CDL_TEST_DIRECTORY="${LISTED_DIRECTORY}" HOSTNAME='box'
 
   # Act
-  run --separate-stderr in_terminal 'cdl "$CDL_TEST_DIR"'
+  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIRECTORY}"'
 
   # Assert
   assert_success
-  assert_output_contains "$(hyperlink "file://box${LISTED_DIR}/notes.md" 'notes.md')"
+  assert_output_contains "$(hyperlink "file://box${LISTED_DIRECTORY}/notes.md" 'notes.md')"
 }
 
 @test "the Linux console gets colors but no links, which it would print as text" {
   # Arrange
-  make_entries "${LISTED_DIR}" 'src/'
-  export CDL_TEST_DIR="${LISTED_DIR}" TERM='linux'
+  make_entries "${LISTED_DIRECTORY}" 'src/'
+  export CDL_TEST_DIRECTORY="${LISTED_DIRECTORY}" TERM='linux'
 
   # Act
-  run --separate-stderr in_terminal 'cdl "$CDL_TEST_DIR"'
+  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIRECTORY}"'
 
   # Assert
   assert_success
@@ -352,11 +351,11 @@ done
 
 @test "CDL_LINKS=never keeps a terminal free of links" {
   # Arrange
-  make_entries "${LISTED_DIR}" 'src/'
-  export CDL_TEST_DIR="${LISTED_DIR}" CDL_LINKS='never'
+  make_entries "${LISTED_DIRECTORY}" 'src/'
+  export CDL_TEST_DIRECTORY="${LISTED_DIRECTORY}" CDL_LINKS='never'
 
   # Act
-  run --separate-stderr in_terminal 'cdl "$CDL_TEST_DIR"'
+  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIRECTORY}"'
 
   # Assert
   assert_success
@@ -365,17 +364,17 @@ done
 
 @test "CDL_LINKS=always links the names in a pipe too" {
   # Arrange
-  make_entries "${LISTED_DIR}" 'notes.md'
+  make_entries "${LISTED_DIRECTORY}" 'notes.md'
   export HOSTNAME='box'
 
   # Act
-  run --separate-stderr in_shell 'CDL_LINKS=always cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'CDL_LINKS=always cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
-  assert_output_contains "$(hyperlink "file://box${LISTED_DIR}/notes.md" 'notes.md')"
+  assert_output_contains "$(hyperlink "file://box${LISTED_DIRECTORY}/notes.md" 'notes.md')"
 }
 
-# endregion
+# endregion Links
 
 ### End
