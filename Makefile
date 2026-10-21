@@ -43,7 +43,13 @@ SMOKE_FILES = $(shell grep -l '^\# bats test_tags=.*smoke' $(wildcard tests/unit
 # On macOS: make test TEST_SHELLS='/bin/bash zsh' covers bash 3.2.
 TEST_SHELLS ?= bash zsh
 
-# Extra bats options, e.g. BATS_FLAGS='--jobs 8' with GNU parallel.
+# bats runs the tests at the same time where GNU parallel is,
+# since each test keeps its files in BATS_TEST_TMPDIR;
+# BATS_JOBS='--jobs 1' on the command line runs them one by one.
+# getconf counts the CPUs on macOS too, which has no nproc.
+BATS_JOBS := $(if $(shell command -v parallel),--jobs $(shell getconf _NPROCESSORS_ONLN))
+
+# Extra bats options, e.g. BATS_FLAGS='--filter header'.
 BATS_FLAGS ?=
 
 # Where test-shells writes JUnit reports, one directory per shell;
@@ -89,7 +95,8 @@ help: ## Show this help
 	  $(MAKEFILE_LIST)
 	@printf '\n  Variables:\n'
 	@printf '    TEST_SHELLS    shells to test cdl in (now: %s)\n' '$(TEST_SHELLS)'
-	@printf '    BATS_FLAGS     extra bats options, e.g. --jobs 8\n'
+	@printf '    BATS_JOBS      bats --jobs, where GNU parallel is (now: %s)\n' '$(or $(BATS_JOBS),none)'
+	@printf '    BATS_FLAGS     extra bats options, e.g. --filter header\n'
 	@printf '    BATS_REPORT_DIR  JUnit reports, one directory per shell\n'
 	@printf '    INSTALL_PATH   where install puts cdl.sh (now: %s)\n' '$(INSTALL_PATH)'
 	@printf '    INSTALL_MODE   symlink or copy (now: %s)\n' '$(INSTALL_MODE)'
@@ -99,7 +106,7 @@ version: ## Print the version of cdl.sh
 	@printf '%s\n' '$(VERSION)'
 
 deps: ## Check the tools that the targets need
-	@for tool in awk bash zsh $(BATS) $(SHELLCHECK) $(SHFMT) $(MARKDOWNLINT) $(PYTHON) $(PRE_COMMIT) $(VHS); do \
+	@for tool in awk bash zsh $(BATS) parallel $(SHELLCHECK) $(SHFMT) $(MARKDOWNLINT) $(PYTHON) $(PRE_COMMIT) $(VHS); do \
 	  if command -v "$$tool" >/dev/null 2>&1; then \
 	    printf '  $(GREEN)✓$(RESET) %s\n' "$$tool"; \
 	  else \
@@ -140,18 +147,18 @@ test-shells: ## Run the unit and integration tests in every shell of TEST_SHELLS
 	    mkdir -p "$$report_directory"; \
 	    report=(--report-formatter junit --output "$$report_directory"); \
 	  fi; \
-	  CDL_TEST_SHELL="$$shell" $(BATS) $(BATS_FLAGS) "$${report[@]}" \
+	  CDL_TEST_SHELL="$$shell" $(BATS) $(BATS_JOBS) $(BATS_FLAGS) "$${report[@]}" \
 	    tests/unit tests/integration || exit $(MAKE_ERR_TESTS); \
 	done
 
 test-style: ## Check the code style rules and the facts files share
 	$(call step,'bats: style rules')
-	@$(BATS) $(BATS_FLAGS) tests/style
+	@$(BATS) $(BATS_JOBS) $(BATS_FLAGS) tests/style
 
 smoke: ## Run the tests tagged smoke, a quick part of the suite, in every shell of TEST_SHELLS
 	@for shell in $(TEST_SHELLS); do \
 	  printf '$(CYAN)→$(RESET) bats smoke: cdl running in %s\n' "$$shell"; \
-	  CDL_TEST_SHELL="$$shell" $(BATS) $(BATS_FLAGS) --filter-tags smoke \
+	  CDL_TEST_SHELL="$$shell" $(BATS) $(BATS_JOBS) $(BATS_FLAGS) --filter-tags smoke \
 	    $(SMOKE_FILES) || exit $(MAKE_ERR_SMOKE); \
 	done
 

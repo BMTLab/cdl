@@ -11,6 +11,8 @@
 #                   while cdl runs on /bin/bash.
 # The awk tests run with every awk installed: gawk, mawk, busybox, BSD awk;
 # busybox from 1.34, so not the 1.30 of Ubuntu 22.04.
+# GNU parallel lets bats run the tests at the same time,
+# as `make test` does on a laptop.
 
 name: Tests
 
@@ -34,23 +36,23 @@ jobs:
           - name: Ubuntu 26.04, uutils ls
             os: ubuntu-26.04
             shells: bash zsh
-            packages: zsh mawk busybox
+            packages: zsh mawk busybox parallel
           - name: Ubuntu 24.04, GNU ls
             os: ubuntu-24.04
             shells: bash zsh
-            packages: zsh mawk busybox
+            packages: zsh mawk busybox parallel
           - name: Ubuntu 22.04, bash 5.1
             os: ubuntu-22.04
             shells: bash zsh
-            packages: zsh mawk
+            packages: zsh mawk parallel
           - name: macOS 26, BSD ls, bash 3.2
             os: macos-26
             shells: /bin/bash zsh
-            packages: bash
+            packages: bash parallel
           - name: macOS 26, gls
             os: macos-26
             shells: /bin/bash zsh
-            packages: bash coreutils
+            packages: bash coreutils parallel
 
     env:
       REPORT_DIR: bats-reports

@@ -6,7 +6,7 @@
 #   tools/ci/report-environment.sh bash zsh
 #   tools/ci/report-environment.sh /bin/bash zsh
 # Effects: appends the table to GITHUB_STEP_SUMMARY when it is set.
-# Dependencies: awk, python3; gls and mawk when they are installed.
+# Dependencies: awk, python3; gls, mawk and GNU parallel when they are installed.
 # Exit codes: 0 success,
 #   99 REPORT_ENVIRONMENT_ERR_INTERNAL: a bug in this script.
 # See: CLAUDE.md (Continuous integration).
@@ -15,9 +15,10 @@
 #   The table names the shells under test, the ls and awk that cdl picks,
 #   and the test tools: a failure in one matrix leg reads differently
 #   once you know it ran uutils ls with mawk under bash 3.2.
+#   GNU parallel among them tells whether bats ran the tests at the same time.
 #   GitHub Actions sets GITHUB_STEP_SUMMARY, the summary of the run.
 #
-# Version: 1.0.0
+# Version: 1.1.0
 
 readonly REPORT_ENVIRONMENT_ERR_INTERNAL=99
 
@@ -115,6 +116,7 @@ function main() {
     row 'awk' "$(awk_in_use)"
     row 'bats' "$(version_of bats --version)"
     row 'bash of bats' "$(version_of bash --version)"
+    row 'GNU parallel' "$(version_of parallel --version)"
     row 'python3' "$(version_of python3 --version)"
   )"
 

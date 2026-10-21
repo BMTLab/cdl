@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning][semver].
 
 ## [Unreleased]
 
+### Changed
+
+- `make test` and `make smoke` run the tests at the same time
+  where GNU parallel is installed, and so does CI;
+  they used to run them one by one,
+  as `make test BATS_JOBS='--jobs 1'` still does.
+
 ## [2.0.1] - 2026-10-21
 
 ### Fixed

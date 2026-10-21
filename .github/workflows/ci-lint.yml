@@ -41,7 +41,7 @@ jobs:
           key: tools-lint-${{ runner.os }}-${{ hashFiles('tools/ci/install-tools.sh') }}
 
       - name: 🔧 Install tools
-        run: tools/ci/install-tools.sh shellcheck shfmt bats zsh
+        run: tools/ci/install-tools.sh shellcheck shfmt bats zsh parallel
 
       - name: ℹ️ Environment
         run: tools/ci/report-environment.sh bash zsh
