@@ -17,7 +17,8 @@ CONTRIBUTING.md is the short public version of the same rules.
   - `integration`: cdl end to end, once per shell in `TEST_SHELLS`;
     `test_budget.bats` counts the commands of a call.
   - `style`: the rules a machine can check, the facts several files share,
-    and the release steps (`test_release.bats`).
+    the release steps (`test_release.bats`),
+    and the command lines and the guard of the tools (`test_tools.bats`).
   - `support`: the helpers every test loads through `test_helper.bash`;
     in `bin/`, the width oracle and the zsh completion driver.
 - `tools/`
