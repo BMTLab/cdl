@@ -311,7 +311,8 @@ done
   # Arrange: the README has the user export CDL_REPLACE_CD=1.
   export CDL_REPLACE_CD=1 CDL_COLOR='always'
 
-  # Act
+  # Act:
+  # the dash form tells an unset variable from an empty one.
   sandbox_setup
   run --separate-stderr in_shell 'printf "%s %s" "${CDL_REPLACE_CD-unset}" "${CDL_COLOR-unset}"'
 

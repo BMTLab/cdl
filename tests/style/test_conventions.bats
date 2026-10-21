@@ -236,15 +236,20 @@ function report_violations() {
 #   One line per code, paths relative to the project root.
 #######################################
 function named_exit_codes() {
+  local file
+
   (
     cd "${CDL_ROOT}" || exit
-    for file in $(shell_files) tools/*.py Makefile; do
+    while IFS= read -r file; do
       sed -n -E \
         -e "s/^readonly ([A-Z_]+_ERR_[A-Z_]+)=([0-9]+)$/${file//\//\\/} \\2 \\1/p" \
         -e "s/^([A-Z_]+_ERR_[A-Z_]+) *:= *([0-9]+)$/${file//\//\\/} \\2 \\1/p" \
         -e "s/^(EXIT_[A-Z_]+) = ([0-9]+)$/${file//\//\\/} \\2 \\1/p" \
         "${file}"
-    done
+    done < <(
+      shell_files
+      printf '%s\n' tools/*.py Makefile
+    )
   ) | awk '$2 != 0'
 }
 
