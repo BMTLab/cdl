@@ -15,7 +15,7 @@
 #
 #   Loaded by tests/support/test_helper.bash.
 
-SCREEN_CELLS="${__CDL_SUPPORT_DIR}/bin/screen-cells"
+SCREEN_CELLS="${__CDL_SUPPORT_DIRECTORY}/bin/screen-cells"
 
 # region Text
 

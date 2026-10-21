@@ -182,7 +182,7 @@ fi
 # region Session state
 
 if [[ -n "${ZSH_VERSION-}" ]]; then
-  typeset -g __cdl_ls_bin __cdl_is_gnu_ls __cdl_ls_color_flag __cdl_awk_bin \
+  typeset -g __cdl_ls_command __cdl_is_gnu_ls __cdl_ls_color_flag __cdl_awk_command \
     __cdl_setting_color __cdl_setting_hidden __cdl_setting_width \
     __cdl_setting_max_rows __cdl_setting_max_columns __cdl_setting_header \
     __cdl_setting_git __cdl_setting_links __cdl_setting_replace_cd
@@ -191,10 +191,10 @@ fi
 # What the probes in "Tool detection" learned about ls and awk,
 # cached for the shell session.
 # Sourcing the file again, e.g. after an update, starts fresh probes.
-__cdl_ls_bin=''
+__cdl_ls_command=''
 __cdl_is_gnu_ls=0
 __cdl_ls_color_flag=''
-__cdl_awk_bin=''
+__cdl_awk_command=''
 
 # The settings of the call in progress,
 # which __cdl_read_settings fills on every call (see "Settings").
@@ -1291,17 +1291,17 @@ function __cdl_git_branch() {
   # Seven digits, as git shortens a commit hash by default.
   local -ir short_hash_length=7
 
-  __cdl_find_git_dir
-  local -r git_dir="${REPLY}"
+  __cdl_find_git_directory
+  local -r git_directory="${REPLY}"
   REPLY=''
-  if [[ -z "${git_dir}" ]]; then
+  if [[ -z "${git_directory}" ]]; then
     return 0
   fi
 
   # The braces catch the error of a missing file,
   # which zsh prints even with `2>/dev/null` on the command itself.
   local head=''
-  { read -r head <"${git_dir}/HEAD"; } 2>/dev/null || true
+  { read -r head <"${git_directory}/HEAD"; } 2>/dev/null || true
 
   case "${head}" in
     'ref: refs/heads/.invalid') ;;
@@ -1325,7 +1325,7 @@ function __cdl_git_branch() {
 # Outputs:
 #   Sets REPLY to the git directory, or to '' outside a repository.
 #######################################
-function __cdl_find_git_dir() {
+function __cdl_find_git_directory() {
   local directory="${PWD}"
 
   while [[ ! -e "${directory}/.git" ]]; do
@@ -1368,25 +1368,25 @@ function __cdl_find_git_dir() {
 # and a fork per listing would be wasted on a known answer.
 #
 # Globals:
-#   __cdl_ls_bin (read+write), __cdl_is_gnu_ls (write),
+#   __cdl_ls_command (read+write), __cdl_is_gnu_ls (write),
 #   __cdl_ls_color_flag (write).
 #######################################
 function __cdl_detect_ls() {
-  if [[ -n "${__cdl_ls_bin}" ]]; then
+  if [[ -n "${__cdl_ls_command}" ]]; then
     return 0
   fi
 
-  __cdl_ls_bin='ls'
+  __cdl_ls_command='ls'
   if command -v gls >/dev/null 2>&1; then
-    __cdl_ls_bin='gls'
+    __cdl_ls_command='gls'
   fi
 
   __cdl_is_gnu_ls=0
   __cdl_ls_color_flag=''
-  if command "${__cdl_ls_bin}" --group-directories-first --version \
+  if command "${__cdl_ls_command}" --group-directories-first --version \
     >/dev/null 2>&1; then
     __cdl_is_gnu_ls=1
-  elif command "${__cdl_ls_bin}" -G -d / >/dev/null 2>&1; then
+  elif command "${__cdl_ls_command}" -G -d / >/dev/null 2>&1; then
     __cdl_ls_color_flag='-G'
   fi
 }
@@ -1399,16 +1399,16 @@ function __cdl_detect_ls() {
 # The choice is cached for the shell session.
 #
 # Globals:
-#   __cdl_awk_bin (read+write).
+#   __cdl_awk_command (read+write).
 #######################################
 function __cdl_detect_awk() {
-  if [[ -n "${__cdl_awk_bin}" ]]; then
+  if [[ -n "${__cdl_awk_command}" ]]; then
     return 0
   fi
 
-  __cdl_awk_bin='awk'
+  __cdl_awk_command='awk'
   if command -v mawk >/dev/null 2>&1; then
-    __cdl_awk_bin='mawk'
+    __cdl_awk_command='mawk'
   fi
 }
 
@@ -1494,7 +1494,7 @@ function __cdl_print_listing() {
 #   1: Name of an entry to mark (optional).
 #
 # Globals:
-#   __cdl_ls_bin, __cdl_setting_hidden, __cdl_setting_max_columns,
+#   __cdl_ls_command, __cdl_setting_hidden, __cdl_setting_max_columns,
 #   __cdl_setting_git, PWD (read).
 #
 # Outputs:
@@ -1542,7 +1542,7 @@ function __cdl_print_compact_listing() {
   local listing
   local -i ls_status=0
   listing="$(
-    COLUMNS="${width}" LC_ALL=C command "${__cdl_ls_bin}" "${short_options}" \
+    COLUMNS="${width}" LC_ALL=C command "${__cdl_ls_command}" "${short_options}" \
       --group-directories-first \
       --block-size=1 \
       --quoting-style=literal \
@@ -1586,7 +1586,7 @@ function __cdl_print_compact_listing() {
 # so its output is shown as is instead of being reformatted.
 #
 # Globals:
-#   __cdl_ls_bin, __cdl_ls_color_flag, __cdl_setting_hidden (read).
+#   __cdl_ls_command, __cdl_ls_color_flag, __cdl_setting_hidden (read).
 #
 # Outputs:
 #   The listing to stdout.
@@ -1603,7 +1603,7 @@ function __cdl_print_plain_listing() {
     options+=("${__cdl_ls_color_flag}")
   fi
 
-  if ! command "${__cdl_ls_bin}" "${options[@]}"; then
+  if ! command "${__cdl_ls_command}" "${options[@]}"; then
     return "${CDL_ERR_LIST}"
   fi
 }
@@ -1647,7 +1647,7 @@ function __cdl_print_plain_listing() {
 #   8: Directory the names link into; empty or none: no links.
 #
 # Globals:
-#   __cdl_awk_bin, HOSTNAME or HOST (read).
+#   __cdl_awk_command, HOSTNAME or HOST (read).
 #
 # Inputs:
 #   `ls -l` lines on stdin.
@@ -1683,7 +1683,7 @@ function __cdl_format_listing() {
   # for about 0.3 ms more.
   CDL_HEADER_PATH="${header_path}" CDL_HEADER_BRANCH="${header_branch}" \
     CDL_MARK_NAME="${mark_name}" CDL_LINK_DIRECTORY="${link_directory}" \
-    CDL_LINK_HOST="${HOSTNAME:-${HOST-}}" LC_ALL=C command "${__cdl_awk_bin}" \
+    CDL_LINK_HOST="${HOSTNAME:-${HOST-}}" LC_ALL=C command "${__cdl_awk_command}" \
     -v width="${width}" -v max_rows="${max_rows}" -v max_columns="${max_columns}" \
     -v color="${is_colored}" -v utf8_output="${is_utf8_output}" -f /dev/fd/3 3<<'AWK'
     # region Layout

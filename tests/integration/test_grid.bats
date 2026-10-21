@@ -26,14 +26,14 @@ function setup() {
   require_gnu_compatible_ls
 
   # Thirty entries: more than a short terminal shows.
-  LISTED_DIR="$(make_dir 'listed')"
+  LISTED_DIRECTORY="$(make_directory 'listed')"
   local -a names=()
   local -i number
   for ((number = 10; number < 40; number++)); do
     names+=("entry-${number}")
   done
-  make_entries "${LISTED_DIR}" "${names[@]}"
-  export CDL_TEST_DIR="${LISTED_DIR}"
+  make_entries "${LISTED_DIRECTORY}" "${names[@]}"
+  export CDL_TEST_DIRECTORY="${LISTED_DIRECTORY}"
 }
 
 #######################################
@@ -58,7 +58,7 @@ function entry_rows() {
   export LINES=10 COLUMNS=60
 
   # Act
-  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIR}"'
+  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIRECTORY}"'
 
   # Assert:
   # the header, six rows and the note take eight lines.
@@ -73,7 +73,7 @@ function entry_rows() {
   export LINES=10 COLUMNS=60 CDL_HEADER='never'
 
   # Act
-  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIR}"'
+  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIRECTORY}"'
 
   # Assert
   assert_success
@@ -87,7 +87,7 @@ function entry_rows() {
   export LINES=3 COLUMNS=60
 
   # Act
-  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIR}"'
+  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIRECTORY}"'
 
   # Assert:
   # the header, five rows and the note.
@@ -104,7 +104,7 @@ function entry_rows() {
   # Act:
   # both listings go to the terminal itself, so a cut would show.
   run --separate-stderr in_terminal \
-    'cd "${CDL_TEST_DIR}" && cdl -a . && echo -- && cdl_list --all'
+    'cd "${CDL_TEST_DIRECTORY}" && cdl -a . && echo -- && cdl_list --all'
 
   # Assert:
   # thirty rows from each, and no note about a cut.
@@ -118,7 +118,7 @@ function entry_rows() {
   export LINES=10 COLUMNS=60
 
   # Act
-  run --separate-stderr in_shell 'cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -130,7 +130,7 @@ function entry_rows() {
   export COLUMNS=60 CDL_MAX_ROWS=4
 
   # Act
-  run --separate-stderr in_shell 'cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -143,7 +143,7 @@ function entry_rows() {
   export LINES=10 COLUMNS=60 CDL_MAX_ROWS=0
 
   # Act
-  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIR}"'
+  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIRECTORY}"'
 
   # Assert
   assert_success
@@ -156,7 +156,7 @@ function entry_rows() {
   export COLUMNS=60 CDL_MAX_ROWS=4
 
   # Act
-  run --separate-stderr in_shell 'cdl -a "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'cdl -a "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -173,7 +173,7 @@ function entry_rows() {
 
   # Act
   run --separate-stderr in_shell \
-    'cd "$1" && cdl -1 . | wc -l && cdl_list --one-column | wc -l' "${LISTED_DIR}"
+    'cd "$1" && cdl -1 . | wc -l && cdl_list --one-column | wc -l' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -186,7 +186,7 @@ function entry_rows() {
   export COLUMNS=200 CDL_MAX_COLUMNS=2
 
   # Act
-  run --separate-stderr in_shell 'cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -199,7 +199,7 @@ function entry_rows() {
   export COLUMNS=200 CDL_MAX_COLUMNS=3
 
   # Act
-  run --separate-stderr in_shell 'cdl -1 "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'cdl -1 "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success

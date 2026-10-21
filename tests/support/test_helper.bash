@@ -35,19 +35,19 @@ case "${CDL_SHELL_PATH##*/}" in
   *) CDL_SHELL_KIND='bash' ;;
 esac
 
-__CDL_SUPPORT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+__CDL_SUPPORT_DIRECTORY="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 
 # shellcheck source=sandbox.bash
-source "${__CDL_SUPPORT_DIR}/sandbox.bash"
+source "${__CDL_SUPPORT_DIRECTORY}/sandbox.bash"
 # shellcheck source=shells.bash
-source "${__CDL_SUPPORT_DIR}/shells.bash"
+source "${__CDL_SUPPORT_DIRECTORY}/shells.bash"
 # shellcheck source=assertions.bash
-source "${__CDL_SUPPORT_DIR}/assertions.bash"
+source "${__CDL_SUPPORT_DIRECTORY}/assertions.bash"
 # shellcheck source=fixtures.bash
-source "${__CDL_SUPPORT_DIR}/fixtures.bash"
+source "${__CDL_SUPPORT_DIRECTORY}/fixtures.bash"
 # shellcheck source=screen.bash
-source "${__CDL_SUPPORT_DIR}/screen.bash"
+source "${__CDL_SUPPORT_DIRECTORY}/screen.bash"
 # shellcheck source=fakes.bash
-source "${__CDL_SUPPORT_DIR}/fakes.bash"
+source "${__CDL_SUPPORT_DIRECTORY}/fakes.bash"
 
 ### End

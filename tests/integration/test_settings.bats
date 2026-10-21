@@ -20,8 +20,8 @@ load '../support/test_helper'
 
 function setup() {
   sandbox_setup
-  LISTED_DIR="$(make_dir 'listed')"
-  make_entries "${LISTED_DIR}" '.hidden' 'src/' 'visible'
+  LISTED_DIRECTORY="$(make_directory 'listed')"
+  make_entries "${LISTED_DIRECTORY}" '.hidden' 'src/' 'visible'
 }
 
 # region Version
@@ -59,8 +59,8 @@ function invalid_setting_fails_before_moving() {
 
   # Act
   run --separate-stderr in_shell \
-    'export "$1=$2"; cdl "$3"; rc=$?; printf "%s\n" "${PWD}"; exit "${rc}"' \
-    "${variable}" "${value}" "${LISTED_DIR}"
+    'export "$1=$2"; cdl "$3"; exit_code=$?; printf "%s\n" "${PWD}"; exit "${exit_code}"' \
+    "${variable}" "${value}" "${LISTED_DIRECTORY}"
 
   # Assert
   assert_failure 20
@@ -99,7 +99,7 @@ done
   # Act
   run --separate-stderr in_shell \
     'CDL_COLOR= CDL_HIDDEN= CDL_WIDTH= CDL_MAX_ROWS= CDL_MAX_COLUMNS= CDL_HEADER= CDL_GIT= CDL_LINKS= CDL_REPLACE_CD= cdl "$1"' \
-    "${LISTED_DIR}"
+    "${LISTED_DIRECTORY}"
 
   # Assert:
   # the defaults: hidden entries listed, no error.
@@ -153,7 +153,7 @@ done
   require_gnu_compatible_ls
 
   # Act
-  run --separate-stderr in_shell 'CDL_COLOR=always cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'CDL_COLOR=always cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -166,7 +166,7 @@ done
   export NO_COLOR=1
 
   # Act
-  run --separate-stderr in_shell 'CDL_COLOR=always cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'CDL_COLOR=always cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -175,11 +175,11 @@ done
 
 @test "CDL_COLOR=never keeps a terminal plain" {
   # Arrange
-  export CDL_TEST_DIR="${LISTED_DIR}"
+  export CDL_TEST_DIRECTORY="${LISTED_DIRECTORY}"
   export CDL_COLOR='never'
 
   # Act
-  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIR}"'
+  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIRECTORY}"'
 
   # Assert
   assert_success
@@ -195,7 +195,7 @@ done
   # Arrange: the listed directory holds .hidden, src and visible.
 
   # Act
-  run --separate-stderr in_shell 'CDL_HIDDEN=0 cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'CDL_HIDDEN=0 cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -208,7 +208,7 @@ done
   fake_bsd_ls 'with-color'
 
   # Act
-  run --separate-stderr in_shell 'CDL_HIDDEN=0 cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'CDL_HIDDEN=0 cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -223,11 +223,11 @@ done
   # Arrange:
   # these rows sit side by side in 130 columns, but not in 80.
   require_gnu_compatible_ls
-  make_entries "${LISTED_DIR}" 'a-name-of-some-length.txt' 'another-name-of-length.txt'
+  make_entries "${LISTED_DIRECTORY}" 'a-name-of-some-length.txt' 'another-name-of-length.txt'
 
   # Act
   run --separate-stderr in_shell \
-    'COLUMNS=80 CDL_WIDTH=130 CDL_HIDDEN=0 cdl "$1"' "${LISTED_DIR}"
+    'COLUMNS=80 CDL_WIDTH=130 CDL_HIDDEN=0 cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -240,7 +240,7 @@ done
 
 @test "cdl -P enters the directory a symlink resolves to" {
   # Arrange
-  make_dir 'real' >/dev/null
+  make_directory 'real' >/dev/null
   make_entries "${HOME}" 'link -> real'
 
   # Act
@@ -253,7 +253,7 @@ done
 
 @test "the last of -L and -P wins, in bash and zsh alike" {
   # Arrange
-  make_dir 'real' >/dev/null
+  make_directory 'real' >/dev/null
   make_entries "${HOME}" 'link -> real'
 
   # Act
@@ -268,7 +268,7 @@ done
 
 @test "cdl -L, like plain cdl, keeps the symlink in the path" {
   # Arrange
-  make_dir 'real' >/dev/null
+  make_directory 'real' >/dev/null
   make_entries "${HOME}" 'link -> real'
 
   # Act
@@ -300,11 +300,11 @@ done
   # Arrange: no fixtures needed.
 
   # Act
-  run --separate-stderr in_shell 'cdl_list "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'cdl_list "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_failure 10
-  assert_stderr_contains "cdl: Unexpected argument: '${LISTED_DIR}'"
+  assert_stderr_contains "cdl: Unexpected argument: '${LISTED_DIRECTORY}'"
 }
 
 # endregion cdl_list

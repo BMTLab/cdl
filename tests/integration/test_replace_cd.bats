@@ -22,9 +22,9 @@ function setup() {
   require_gnu_compatible_ls
 
   export CDL_REPLACE_CD=1 CDL_COLOR=never CDL_HEADER=never
-  NOTES_DIR="$(make_dir 'notes')"
-  make_entries "${NOTES_DIR}" 'todo.txt'
-  export CDL_TEST_DIR="${NOTES_DIR}"
+  NOTES_DIRECTORY="$(make_directory 'notes')"
+  make_entries "${NOTES_DIRECTORY}" 'todo.txt'
+  export CDL_TEST_DIRECTORY="${NOTES_DIRECTORY}"
 }
 
 #######################################
@@ -42,11 +42,11 @@ function only_in_zsh() {
   # Arrange: no fixtures needed.
 
   # Act
-  run --separate-stderr in_terminal 'cd "${CDL_TEST_DIR}" && printf "%s\n" "${PWD}"'
+  run --separate-stderr in_terminal 'cd "${CDL_TEST_DIRECTORY}" && printf "%s\n" "${PWD}"'
 
   # Assert
   assert_success
-  assert_output "$(listing_row 0 'todo.txt')"$'\n'"${NOTES_DIR}"
+  assert_output "$(listing_row 0 'todo.txt')"$'\n'"${NOTES_DIRECTORY}"
 }
 
 @test "on a terminal, cd takes a file, enters its directory and marks it" {
@@ -54,11 +54,11 @@ function only_in_zsh() {
 
   # Act
   run --separate-stderr in_terminal \
-    'cd "${CDL_TEST_DIR}/todo.txt" && printf "%s\n" "${PWD}"'
+    'cd "${CDL_TEST_DIRECTORY}/todo.txt" && printf "%s\n" "${PWD}"'
 
   # Assert
   assert_success
-  assert_output "$(marked_row 0 'todo.txt')"$'\n'"${NOTES_DIR}"
+  assert_output "$(marked_row 0 'todo.txt')"$'\n'"${NOTES_DIRECTORY}"
 }
 
 @test "an option only cdl knows takes cd to cdl, even into a pipe" {
@@ -78,11 +78,11 @@ function only_in_zsh() {
   unset CDL_REPLACE_CD
 
   # Act
-  run --separate-stderr in_terminal 'cd "${CDL_TEST_DIR}" && printf "%s\n" "${PWD}"'
+  run --separate-stderr in_terminal 'cd "${CDL_TEST_DIRECTORY}" && printf "%s\n" "${PWD}"'
 
   # Assert
   assert_success
-  assert_output "${NOTES_DIR}"
+  assert_output "${NOTES_DIRECTORY}"
 }
 
 @test "CDL_REPLACE_CD=0 in a running shell gives cd back to the shell" {
@@ -90,11 +90,11 @@ function only_in_zsh() {
 
   # Act
   run --separate-stderr in_terminal \
-    'CDL_REPLACE_CD=0; cd "${CDL_TEST_DIR}" && printf "%s\n" "${PWD}"'
+    'CDL_REPLACE_CD=0; cd "${CDL_TEST_DIRECTORY}" && printf "%s\n" "${PWD}"'
 
   # Assert
   assert_success
-  assert_output "${NOTES_DIR}"
+  assert_output "${NOTES_DIRECTORY}"
 }
 
 # endregion cd as cdl
@@ -106,25 +106,25 @@ function only_in_zsh() {
 
   # Act
   run --separate-stderr in_shell 'path="$(cd "$1" && pwd)"; printf "[%s]\n" "${path}"' \
-    "${NOTES_DIR}"
+    "${NOTES_DIRECTORY}"
 
   # Assert
   assert_success
-  assert_output "[${NOTES_DIR}]"
+  assert_output "[${NOTES_DIRECTORY}]"
 }
 
 @test "an option only the shell's cd knows goes to it, and a terminal still gets the listing" {
   # Arrange:
   # -LP is no option of cdl; bash and zsh take it, and the last letter wins,
   # so the path comes out physical.
-  local -r physical_dir="$(builtin cd -P "${NOTES_DIR}" && pwd)"
+  local -r physical_directory="$(builtin cd -P "${NOTES_DIRECTORY}" && pwd)"
 
   # Act
-  run --separate-stderr in_terminal 'cd -LP "${CDL_TEST_DIR}" && printf "%s\n" "${PWD}"'
+  run --separate-stderr in_terminal 'cd -LP "${CDL_TEST_DIRECTORY}" && printf "%s\n" "${PWD}"'
 
   # Assert
   assert_success
-  assert_output "$(listing_row 0 'todo.txt')"$'\n'"${physical_dir}"
+  assert_output "$(listing_row 0 'todo.txt')"$'\n'"${physical_directory}"
 }
 
 @test "in zsh, cd -0 still takes a place in the directory stack, and lists it" {
@@ -135,7 +135,7 @@ function only_in_zsh() {
   # the stack holds the notes, then HOME, where the shell started;
   # -0 counts from the right, so it names HOME.
   run --separate-stderr in_terminal \
-    'pushd -q "${CDL_TEST_DIR}" && cd -0 && printf "pwd=%s\n" "${PWD}"'
+    'pushd -q "${CDL_TEST_DIRECTORY}" && cd -0 && printf "pwd=%s\n" "${PWD}"'
 
   # Assert
   assert_success
@@ -146,13 +146,13 @@ function only_in_zsh() {
 @test "in zsh, cd old new still puts new in place of old in the path" {
   # Arrange
   only_in_zsh
-  make_entries "$(make_dir 'alpha')" 'docs/'
-  make_entries "$(make_dir 'beta')" 'docs/'
-  export CDL_TEST_DIR="${HOME}/alpha/docs"
+  make_entries "$(make_directory 'alpha')" 'docs/'
+  make_entries "$(make_directory 'beta')" 'docs/'
+  export CDL_TEST_DIRECTORY="${HOME}/alpha/docs"
 
   # Act
   run --separate-stderr in_terminal \
-    'builtin cd "${CDL_TEST_DIR}" && cd alpha beta && printf "pwd=%s\n" "${PWD}"'
+    'builtin cd "${CDL_TEST_DIRECTORY}" && cd alpha beta && printf "pwd=%s\n" "${PWD}"'
 
   # Assert
   assert_success

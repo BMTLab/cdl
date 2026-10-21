@@ -25,7 +25,7 @@ function setup() {
 # bats test_tags=smoke
 @test "cdl changes into the directory given as its operand" {
   # Arrange
-  local -r target="$(make_dir 'projects/app')"
+  local -r target="$(make_directory 'projects/app')"
 
   # Act
   run --separate-stderr cdl_then_pwd "${target}"
@@ -37,7 +37,7 @@ function setup() {
 
 @test "cdl without an operand goes to HOME, like cd" {
   # Arrange
-  local -r elsewhere="$(make_dir 'elsewhere')"
+  local -r elsewhere="$(make_directory 'elsewhere')"
 
   # Act
   run --separate-stderr in_shell \
@@ -51,8 +51,8 @@ function setup() {
 # bats test_tags=smoke
 @test "cdl - returns to the previous directory" {
   # Arrange
-  local -r first="$(make_dir 'first')"
-  local -r second="$(make_dir 'second')"
+  local -r first="$(make_directory 'first')"
+  local -r second="$(make_directory 'second')"
 
   # Act
   run --separate-stderr in_shell \
@@ -66,7 +66,7 @@ function setup() {
 
 @test "-- alone goes to HOME, like no operand at all" {
   # Arrange
-  local -r elsewhere="$(make_dir 'elsewhere')"
+  local -r elsewhere="$(make_directory 'elsewhere')"
 
   # Act
   run --separate-stderr in_shell \
@@ -91,7 +91,7 @@ function setup() {
 
 @test "-- makes the next word a directory even when it starts with a dash" {
   # Arrange
-  local -r target="$(make_dir '-dashed dir')"
+  local -r target="$(make_directory '-dashed dir')"
 
   # Act
   run --separate-stderr in_shell \
@@ -108,8 +108,8 @@ function setup() {
   # cd prints the directory it found through CDPATH;
   # the listing must be all that cdl prints.
   require_gnu_compatible_ls
-  local -r base="$(make_dir 'base')"
-  make_entries "$(make_dir 'base/target')" 'only-file'
+  local -r base="$(make_directory 'base')"
+  make_entries "$(make_directory 'base/target')" 'only-file'
 
   # Act
   run --separate-stderr in_shell 'CDPATH="$1" cdl target' "${base}"
@@ -121,7 +121,7 @@ function setup() {
 
 @test "cdl enters the directory itself, bypassing a user cd function" {
   # Arrange
-  local -r target="$(make_dir 'target')"
+  local -r target="$(make_directory 'target')"
 
   # Act
   run --separate-stderr in_shell \
@@ -165,11 +165,11 @@ function setup() {
 @test "an empty operand fails with CDL_ERR_USAGE instead of going HOME" {
   # Arrange:
   # an empty substitution, such as "$(xclip -o)" with an empty clipboard.
-  local -r elsewhere="$(make_dir 'elsewhere')"
+  local -r elsewhere="$(make_directory 'elsewhere')"
 
   # Act
   run --separate-stderr in_shell \
-    'cd "$1" && cdl ""; rc=$?; printf "%s\n" "${PWD}"; exit "${rc}"' "${elsewhere}"
+    'cd "$1" && cdl ""; exit_code=$?; printf "%s\n" "${PWD}"; exit "${exit_code}"' "${elsewhere}"
 
   # Assert
   assert_failure 10
@@ -192,7 +192,7 @@ function setup() {
 
 @test "an option after the directory fails and says options go first" {
   # Arrange
-  local -r target="$(make_dir 'target')"
+  local -r target="$(make_directory 'target')"
 
   # Act
   run --separate-stderr cdl_then_pwd "${target}" -P
@@ -206,8 +206,8 @@ function setup() {
 @test "a second operand fails with CDL_ERR_USAGE instead of being ignored" {
   # Arrange:
   # an unquoted path with a space arrives as two words.
-  make_dir 'my' >/dev/null
-  make_dir 'my documents' >/dev/null
+  make_directory 'my' >/dev/null
+  make_directory 'my documents' >/dev/null
 
   # Act
   run --separate-stderr cdl_then_pwd 'my' 'documents'
@@ -243,7 +243,7 @@ function a_target_cdl_cannot_enter_fails_with_its_reason() {
     skip 'root enters any directory'
   fi
   make_entries "${HOME}" 'notes.md' 'gone -> nowhere' 'loop -> loop'
-  make_dir 'locked/inner' >/dev/null
+  make_directory 'locked/inner' >/dev/null
   chmod 000 "${HOME}/locked"
 
   # Act
@@ -311,7 +311,7 @@ function cdl_back_to_no_directory_fails_with_its_reason() {
 
   # Act
   run --separate-stderr in_shell \
-    'OLDPWD="$1"; cdl - >/dev/null; rc=$?; printf "%s\n" "${PWD}"; exit "${rc}"' "${HOME}/${kind}"
+    'OLDPWD="$1"; cdl - >/dev/null; exit_code=$?; printf "%s\n" "${PWD}"; exit "${exit_code}"' "${HOME}/${kind}"
 
   # Assert
   assert_failure "${code}"
@@ -333,7 +333,7 @@ bats_test_function \
   if ((EUID == 0)); then
     skip 'root reads any directory'
   fi
-  local -r blind="$(make_dir 'blind')"
+  local -r blind="$(make_directory 'blind')"
   chmod 100 "${blind}"
 
   # Act

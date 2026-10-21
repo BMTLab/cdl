@@ -25,7 +25,7 @@ function setup() {
 @test "a piped path is listed" {
   # Arrange
   require_gnu_compatible_ls
-  local -r target="$(make_dir 'target')"
+  local -r target="$(make_directory 'target')"
   make_entries "${target}" 'piped-entry'
 
   # Act
@@ -38,7 +38,7 @@ function setup() {
 
 @test "a piped path changes the directory in zsh but not in bash" {
   # Arrange
-  local -r target="$(make_dir 'target')"
+  local -r target="$(make_directory 'target')"
   local expected="${HOME}"
   if [[ "${CDL_SHELL_KIND}" == 'zsh' ]]; then
     expected="${target}"
@@ -56,7 +56,7 @@ function setup() {
 @test "the first non-blank line of the pipe is used, trimmed" {
   # Arrange
   require_gnu_compatible_ls
-  local -r target="$(make_dir 'target')"
+  local -r target="$(make_directory 'target')"
   make_entries "${target}" 'chosen'
 
   # Act
@@ -71,8 +71,8 @@ function setup() {
 @test "an operand wins over a piped path" {
   # Arrange
   require_gnu_compatible_ls
-  local -r operand="$(make_dir 'operand')"
-  local -r piped="$(make_dir 'piped')"
+  local -r operand="$(make_directory 'operand')"
+  local -r piped="$(make_directory 'piped')"
   make_entries "${operand}" 'from-operand'
   make_entries "${piped}" 'from-pipe'
 
@@ -104,7 +104,7 @@ function setup() {
 
 @test "stdin redirected from a file is not read as a path" {
   # Arrange
-  local -r decoy="$(make_dir 'decoy')"
+  local -r decoy="$(make_directory 'decoy')"
   printf '%s\n' "${decoy}" >"${BATS_TEST_TMPDIR}/paths.txt"
 
   # Act

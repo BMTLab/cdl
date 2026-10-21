@@ -90,10 +90,10 @@ readonly APT_UPDATE_ATTEMPTS=3
 
 TOOLS_PREFIX="${RUNNER_TEMP:-${HOME}/.local}/cdl-tools"
 readonly TOOLS_PREFIX
-readonly TOOLS_BIN="${TOOLS_PREFIX}/bin"
+readonly TOOLS_BIN_DIRECTORY="${TOOLS_PREFIX}/bin"
 
-CACHE_DIR="${CI_CACHE_DIR:-${HOME}/.cache/cdl-ci}"
-readonly CACHE_DIR
+CACHE_DIRECTORY="${CI_CACHE_DIR:-${HOME}/.cache/cdl-ci}"
+readonly CACHE_DIRECTORY
 
 DOWNLOADS="$(mktemp -d)"
 readonly DOWNLOADS
@@ -121,7 +121,7 @@ trap 'rm -rf -- "${DOWNLOADS}"' EXIT
 function download_verified() {
   local -r url="$1"
   local -r expected="$2"
-  local -r file="${CACHE_DIR}/downloads/${url##*/}"
+  local -r file="${CACHE_DIRECTORY}/downloads/${url##*/}"
 
   if [[ -f "${file}" && "$(sha256_of "${file}")" == "${expected}" ]]; then
     printf '%s\n' "${file}"
@@ -210,7 +210,7 @@ function install_shellcheck() {
     "${digest}")"
 
   tar -xJf "${archive}" -C "${DOWNLOADS}"
-  install -m 0755 "${DOWNLOADS}/${name}/shellcheck" "${TOOLS_BIN}/shellcheck"
+  install -m 0755 "${DOWNLOADS}/${name}/shellcheck" "${TOOLS_BIN_DIRECTORY}/shellcheck"
 }
 
 #######################################
@@ -225,7 +225,7 @@ function install_shfmt() {
     "https://github.com/mvdan/sh/releases/download/v${SHFMT_VERSION}/shfmt_v${SHFMT_VERSION}_linux_${arch}" \
     "${digest}")"
 
-  install -m 0755 "${binary}" "${TOOLS_BIN}/shfmt"
+  install -m 0755 "${binary}" "${TOOLS_BIN_DIRECTORY}/shfmt"
 }
 
 #######################################
@@ -242,7 +242,7 @@ function install_actionlint() {
     "${digest}")"
 
   tar -xzf "${archive}" -C "${DOWNLOADS}" actionlint
-  install -m 0755 "${DOWNLOADS}/actionlint" "${TOOLS_BIN}/actionlint"
+  install -m 0755 "${DOWNLOADS}/actionlint" "${TOOLS_BIN_DIRECTORY}/actionlint"
 }
 
 #######################################
@@ -293,7 +293,7 @@ function install_packages() {
 #   $@: Package names.
 #######################################
 function install_brew_packages() {
-  HOMEBREW_CACHE="${CACHE_DIR}/homebrew" HOMEBREW_NO_AUTO_UPDATE=1 \
+  HOMEBREW_CACHE="${CACHE_DIRECTORY}/homebrew" HOMEBREW_NO_AUTO_UPDATE=1 \
     brew install --quiet "$@"
 }
 
@@ -313,7 +313,7 @@ function install_brew_packages() {
 #   0 on success; INSTALL_ERR_DOWNLOAD if the mirrors cannot be reached.
 #######################################
 function install_apt_packages() {
-  local -r debs="${CACHE_DIR}/apt"
+  local -r debs="${CACHE_DIRECTORY}/apt"
   local package
   local -a missing=()
 
@@ -434,9 +434,9 @@ function main() {
     ci_error 'name at least one tool' "${INSTALL_ERR_USAGE}" || return
   fi
 
-  mkdir -p "${TOOLS_BIN}"
+  mkdir -p "${TOOLS_BIN_DIRECTORY}"
   if [[ -n "${GITHUB_PATH-}" ]]; then
-    printf '%s\n' "${TOOLS_BIN}" >>"${GITHUB_PATH}"
+    printf '%s\n' "${TOOLS_BIN_DIRECTORY}" >>"${GITHUB_PATH}"
   fi
 
   local tool

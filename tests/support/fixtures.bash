@@ -34,11 +34,11 @@ FIXTURE_DATE='2026-01-02 03:04'
 # Outputs:
 #   The absolute path to stdout.
 #######################################
-function make_dir() {
-  local -r dir="${HOME}/$1"
+function make_directory() {
+  local -r directory="${HOME}/$1"
 
-  mkdir -p -- "${dir}"
-  printf '%s\n' "${dir}"
+  mkdir -p -- "${directory}"
+  printf '%s\n' "${directory}"
 }
 
 #######################################
@@ -55,20 +55,20 @@ function make_dir() {
 #   $@: Entry specs.
 #######################################
 function make_entries() {
-  local -r dir="$1"
+  local -r directory="$1"
   shift
 
   local spec
   for spec in "$@"; do
     case "${spec}" in
-      *' -> '*) ln -s -- "${spec#* -> }" "${dir}/${spec%% -> *}" ;;
-      */) mkdir -p -- "${dir}/${spec%/}" ;;
-      *'*') __fixtures_make_executable "${dir}/${spec%'*'}" ;;
-      *) : >"${dir}/${spec}" ;;
+      *' -> '*) ln -s -- "${spec#* -> }" "${directory}/${spec%% -> *}" ;;
+      */) mkdir -p -- "${directory}/${spec%/}" ;;
+      *'*') __fixtures_make_executable "${directory}/${spec%'*'}" ;;
+      *) : >"${directory}/${spec}" ;;
     esac
   done
 
-  __fixtures_stamp "${dir}"
+  __fixtures_stamp "${directory}"
 }
 
 #######################################
@@ -91,10 +91,10 @@ function __fixtures_make_executable() {
 #   1: Directory.
 #######################################
 function __fixtures_stamp() {
-  local -r dir="$1"
+  local -r directory="$1"
   local entry
 
-  for entry in "${dir}"/* "${dir}"/.[!.]*; do
+  for entry in "${directory}"/* "${directory}"/.[!.]*; do
     if [[ -e "${entry}" || -L "${entry}" ]]; then
       touch -h -t "${FIXTURE_STAMP}" -- "${entry}"
     fi
@@ -131,7 +131,7 @@ function ls_line() {
 # Arguments:
 #   1: Name field.
 #######################################
-function ls_dir() {
+function ls_directory() {
   ls_line 'drwxr-xr-x' 4096 "$1"
 }
 

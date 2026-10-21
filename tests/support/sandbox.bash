@@ -74,7 +74,7 @@ SANDBOX_CDL_SETTINGS="$(list_cdl_settings)"
 # and cd would otherwise report a different spelling.
 #
 # Globals:
-#   HOME, FAKE_BIN, PATH, TZ, LANG, TERM, COLUMNS, LS_COLORS (write);
+#   HOME, FAKE_BIN_DIRECTORY, PATH, TZ, LANG, TERM, COLUMNS, LS_COLORS (write);
 #   SANDBOX_CDL_SETTINGS (read).
 #######################################
 function sandbox_setup() {
@@ -82,10 +82,10 @@ function sandbox_setup() {
   root="$(cd "${BATS_TEST_TMPDIR}" && pwd -P)"
 
   export HOME="${root}/home"
-  export FAKE_BIN="${root}/fake-bin"
-  mkdir -p "${HOME}" "${FAKE_BIN}"
+  export FAKE_BIN_DIRECTORY="${root}/fake-bin"
+  mkdir -p "${HOME}" "${FAKE_BIN_DIRECTORY}"
 
-  export PATH="${FAKE_BIN}:${PATH}"
+  export PATH="${FAKE_BIN_DIRECTORY}:${PATH}"
   export TZ='UTC'
   export LANG="${SANDBOX_UTF8_LOCALE}"
   export TERM='xterm-256color'

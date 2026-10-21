@@ -23,9 +23,9 @@ load '../support/test_helper'
 function setup() {
   sandbox_setup
 
-  WORK_DIR="$(make_dir 'work')"
-  make_entries "${WORK_DIR}" 'pictures/' 'projects/' 'My Docs/' 'plain.txt'
-  POOL_BASE="$(make_dir 'base')"
+  WORK_DIRECTORY="$(make_directory 'work')"
+  make_entries "${WORK_DIRECTORY}" 'pictures/' 'projects/' 'My Docs/' 'plain.txt'
+  POOL_BASE="$(make_directory 'base')"
   make_entries "${POOL_BASE}" 'pool/'
 }
 
@@ -55,7 +55,7 @@ function only_in() {
 #######################################
 function bash_completions() {
   in_shell 'cd "$1" && COMP_WORDS=(cdl "$2") && COMP_CWORD=1 && __cdl_complete_bash \
-    && printf "%s\n" ${COMPREPLY[@]+"${COMPREPLY[@]}"}' "${WORK_DIR}" "$1" | LC_ALL=C sort
+    && printf "%s\n" ${COMPREPLY[@]+"${COMPREPLY[@]}"}' "${WORK_DIRECTORY}" "$1" | LC_ALL=C sort
 }
 
 #######################################
@@ -75,8 +75,8 @@ function zsh_completions() {
     shift
   fi
 
-  CDL_ZSH="${CDL_SHELL_PATH}" "${__CDL_SUPPORT_DIR}/bin/zsh-completions" \
-    ${options[@]+"${options[@]}"} "${CDL_SCRIPT}" "${WORK_DIR}" "$1"
+  CDL_ZSH="${CDL_SHELL_PATH}" "${__CDL_SUPPORT_DIRECTORY}/bin/zsh-completions" \
+    ${options[@]+"${options[@]}"} "${CDL_SCRIPT}" "${WORK_DIRECTORY}" "$1"
 }
 
 # endregion Helpers
@@ -176,7 +176,7 @@ function zsh_completions() {
   # compopt stands in for the builtin, which works only inside completion.
   run --separate-stderr in_shell \
     'function compopt() { printf "compopt %s\n" "$*"; }
-     cd "$1" && COMP_WORDS=(cdl -) && COMP_CWORD=1 && __cdl_complete_bash' "${WORK_DIR}"
+     cd "$1" && COMP_WORDS=(cdl -) && COMP_CWORD=1 && __cdl_complete_bash' "${WORK_DIRECTORY}"
 
   # Assert
   assert_success

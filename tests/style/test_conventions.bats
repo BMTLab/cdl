@@ -258,14 +258,14 @@ function named_exit_codes() {
   local -r help_text="$(in_shell 'cdl --help')"
   local -r readme="$(<"${CDL_ROOT}/README.md")"
   local name
-  local -i settings=0
+  local -i setting_count=0
   local -a violations=()
 
   # Act:
   # the settings are the variables that __cdl_read_settings reads,
   # as list_cdl_settings finds them for the sandbox too.
   while IFS= read -r name; do
-    settings+=1
+    setting_count+=1
     if ! grep -qE "^#   ${name} " "${CDL_SCRIPT}"; then
       violations+=("${name}: missing from the table of settings in cdl.sh")
     fi
@@ -278,7 +278,7 @@ function named_exit_codes() {
   done < <(list_cdl_settings)
 
   # Assert
-  if ((settings == 0)); then
+  if ((setting_count == 0)); then
     __assert_fail 'no settings found in __cdl_read_settings'
   fi
   report_violations 'settings' "${violations[@]}"

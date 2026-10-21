@@ -66,10 +66,10 @@ function time_per_call() {
     source "$1" || exit
     function baseline() { builtin cd -- "$1" && command ls -Al; }
     start="${EPOCHREALTIME}"
-    i=0
-    while ((i < $2)); do
+    calls_done=0
+    while ((calls_done < $2)); do
       '"${command}"' "$3" >/dev/null 2>&1
-      i=$((i + 1))
+      calls_done=$((calls_done + 1))
     done
     end="${EPOCHREALTIME}"
     awk -v start="${start}" -v end="${end}" -v calls="$2" \

@@ -110,14 +110,14 @@ function in_terminal() {
     command=("${CDL_SHELL_PATH}" -f "${script_file}")
   fi
 
-  local transcript rc=0
+  local transcript exit_code=0
   if [[ "$(uname -s)" == 'Darwin' ]]; then
-    transcript="$(script -q /dev/null "${command[@]}" </dev/null)" || rc=$?
+    transcript="$(script -q /dev/null "${command[@]}" </dev/null)" || exit_code=$?
   else
     # The command string goes through sh, so each word is quoted.
     local quoted
     printf -v quoted '%q ' "${command[@]}"
-    transcript="$(script -qec "${quoted}" /dev/null </dev/null)" || rc=$?
+    transcript="$(script -qec "${quoted}" /dev/null </dev/null)" || exit_code=$?
   fi
 
   # The pty turns LF into CR LF, and the BSD script of macOS echoes
@@ -125,7 +125,7 @@ function in_terminal() {
   # and two backspaces over them.
   transcript="${transcript//$'\r'/}"
   printf '%s\n' "${transcript//$'^D\b\b'/}"
-  return "${rc}"
+  return "${exit_code}"
 }
 
 # endregion Runners
@@ -147,7 +147,7 @@ function in_terminal() {
 #   cdl's return code.
 #######################################
 function cdl_then_pwd() {
-  in_shell 'cdl "$@" >/dev/null; rc=$?; printf "%s\n" "${PWD}"; exit "${rc}"' "$@"
+  in_shell 'cdl "$@" >/dev/null; exit_code=$?; printf "%s\n" "${PWD}"; exit "${exit_code}"' "$@"
 }
 
 #######################################

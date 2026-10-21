@@ -6,7 +6,7 @@
 #
 # Description:
 #   Stand-ins for the external tools cdl runs: ls, gls and awk.
-#   Each one lands in FAKE_BIN, which sandbox_setup puts first on PATH,
+#   Each one lands in FAKE_BIN_DIRECTORY, which sandbox_setup puts first on PATH,
 #   so a test can reproduce another system (BSD ls, Homebrew gls)
 #   or another awk without touching the machine.
 #
@@ -30,7 +30,7 @@ function gnu_compatible_ls() {
   local candidate path
 
   for candidate in gnuls gls ls; do
-    path="$(PATH="${PATH#"${FAKE_BIN}":}" command -v "${candidate}")" || continue
+    path="$(PATH="${PATH#"${FAKE_BIN_DIRECTORY}":}" command -v "${candidate}")" || continue
     if "${path}" --group-directories-first --version >/dev/null 2>&1; then
       printf '%s\n' "${path}"
       return 0
@@ -93,7 +93,7 @@ function gnu_ls() {
   local candidate path
 
   for candidate in gnuls gls ls; do
-    path="$(PATH="${PATH#"${FAKE_BIN}":}" command -v "${candidate}")" || continue
+    path="$(PATH="${PATH#"${FAKE_BIN_DIRECTORY}":}" command -v "${candidate}")" || continue
     if "${path}" --version 2>/dev/null | grep -q 'GNU coreutils'; then
       printf '%s\n' "${path}"
       return 0
@@ -152,7 +152,7 @@ function use_awk() {
     gawk-utf8) command="LC_ALL='${SANDBOX_UTF8_LOCALE}' exec gawk \"\$@\"" ;;
     *)
       local real_awk
-      real_awk="$(PATH="${PATH#"${FAKE_BIN}":}" command -v "${name}")"
+      real_awk="$(PATH="${PATH#"${FAKE_BIN_DIRECTORY}":}" command -v "${name}")"
       command="exec '${real_awk}' \"\$@\""
       ;;
   esac
@@ -174,7 +174,7 @@ function use_awk() {
 #   2: Exit status of a listing (optional; default: 0).
 #
 # Globals:
-#   PATH (write): FAKE_BIN, /usr/bin and /bin only,
+#   PATH (write): FAKE_BIN_DIRECTORY, /usr/bin and /bin only,
 #   so a Homebrew gls cannot take precedence over the fake.
 #######################################
 function fake_bsd_ls() {
@@ -195,7 +195,7 @@ done
 echo \"bsd-ls \$*\"
 exit ${listing_status}"
 
-  export PATH="${FAKE_BIN}:/usr/bin:/bin"
+  export PATH="${FAKE_BIN_DIRECTORY}:/usr/bin:/bin"
   if command -v gls >/dev/null; then
     skip 'a gls in /usr/bin would take precedence over the fake BSD ls'
   fi
@@ -263,7 +263,7 @@ function fake_logging_tools() {
 
   local name real_path
   for name in ls gls awk mawk gawk tput; do
-    real_path="$(PATH="${PATH#"${FAKE_BIN}":}" command -v "${name}")" || continue
+    real_path="$(PATH="${PATH#"${FAKE_BIN_DIRECTORY}":}" command -v "${name}")" || continue
     __fakes_install "${name}" "echo '${name}' >>'${TOOL_LOG}'
 exec '${real_path}' \"\$@\""
   done
@@ -295,7 +295,7 @@ function logged_runs() {
 }
 
 #######################################
-# Write an executable stand-in into FAKE_BIN.
+# Write an executable stand-in into FAKE_BIN_DIRECTORY.
 #
 # Arguments:
 #   1: Command name.
@@ -305,8 +305,8 @@ function __fakes_install() {
   local -r name="$1"
   local -r body="$2"
 
-  printf '#!/bin/sh\n%s\n' "${body}" >"${FAKE_BIN}/${name}"
-  chmod +x "${FAKE_BIN}/${name}"
+  printf '#!/bin/sh\n%s\n' "${body}" >"${FAKE_BIN_DIRECTORY}/${name}"
+  chmod +x "${FAKE_BIN_DIRECTORY}/${name}"
 }
 
 # endregion Fakes

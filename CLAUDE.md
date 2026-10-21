@@ -98,7 +98,7 @@ The regions of `cdl.sh` read top to bottom:
 - Single quotes for literal strings in shell;
   double quotes only when something inside expands
   or the text holds a single quote.
-- Braces around every variable (`"${name}"`, `"${dir}/${file}"`)
+- Braces around every variable (`"${name}"`, `"${directory}/${file}"`)
   and double quotes around every expansion, even a safe one.
   ShellCheck enforces both through `.shellcheckrc`
   (`require-variable-braces`, `quote-safe-variables`);
@@ -108,8 +108,14 @@ The regions of `cdl.sh` read top to bottom:
   and in the code strings that tests and tools hand to a shell.
   The right side of `==`, `!=` or `=~` stays unquoted
   only when it is a pattern on purpose.
-- A name says what the thing is:
-  `entry_size`, `__cdl_terminal_width`, `assert_two_columns_aligned`.
+- A name says in full what the thing is, however long that makes it:
+  `entry_size`, `__cdl_terminal_width`, `assert_two_columns_aligned`;
+  `directory`, never `dir`. Common terms keep their short form
+  (ID, URL, JSON, MIME, PID, hex), and a name that mirrors a public one
+  keeps its words, as `__cdl_setting_max_rows` does `CDL_MAX_ROWS`.
+- A function that answers yes or no with its status, and a flag of 0 or 1,
+  open their names with the question: `is_`, `has_`, `can_` or `should_`,
+  right after the prefix (`__cdl_is_gnu_ls`, `is_colored`).
 
 ## Comments
 

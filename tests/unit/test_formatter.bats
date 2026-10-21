@@ -102,7 +102,7 @@ function setup() {
   # Arrange:
   # uutils ls also emits a leading reset and a trailing erase-in-line.
   local -r name=$'\033[0m\033[01;34msrc\033[0m\033[K'
-  local -r input="$(ls_dir "${name}")"
+  local -r input="$(ls_directory "${name}")"
 
   # Act
   run --separate-stderr format_listing 120 <<<"${input}"
@@ -190,7 +190,7 @@ function setup() {
 @test "a wide terminal puts the entries side by side" {
   # Arrange
   local -r input="$(
-    ls_dir 'src'
+    ls_directory 'src'
     ls_file 'a.txt'
     ls_file 'b.txt'
     ls_file 'c.txt'
@@ -323,7 +323,7 @@ function setup() {
 @test "escape sequences take no room in the layout" {
   # Arrange
   local -r input="$(
-    ls_dir "$(paint '01;34' 'src')"
+    ls_directory "$(paint '01;34' 'src')"
     ls_file 'plain-name.txt'
     ls_file "$(paint '01;32' 'run.sh')"
     ls_file 'other.txt'
@@ -491,7 +491,7 @@ done
   # Arrange
   local -r input="$(
     printf 'total 8\n'
-    ls_dir 'src'
+    ls_directory 'src'
     ls_file 'a.txt' 1000
     ls_file 'b.txt' 1048
   )"
@@ -796,7 +796,7 @@ done
 @test "names in the root directory link without a double slash" {
   # Arrange
   export HOSTNAME='box'
-  local -r input="$(ls_dir 'etc')"
+  local -r input="$(ls_directory 'etc')"
 
   # Act
   run --separate-stderr format_listing 60 0 0 0 '' '' '' '/' <<<"${input}"
@@ -871,7 +871,7 @@ done
 @test "links take no room in the layout" {
   # Arrange
   local -r input="$(
-    ls_dir 'src'
+    ls_directory 'src'
     ls_file 'plain-name.txt'
     ls_file 'run.sh'
     ls_file 'other.txt'

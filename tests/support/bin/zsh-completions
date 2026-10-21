@@ -152,23 +152,23 @@ exit 1
 #   0 on success; ZSH_COMPLETIONS_ERR_TIMEOUT if zsh never finished.
 #######################################
 function print_completions() {
-  local -r work_dir="$(mktemp -d)"
+  local -r work_directory="$(mktemp -d)"
   # shellcheck disable=SC2064 # the path is fixed now, on purpose
-  trap "rm -rf -- '${work_dir}'" EXIT
+  trap "rm -rf -- '${work_directory}'" EXIT
 
-  printf '%s\n' "${SESSION_SETUP}" >"${work_dir}/setup.zsh"
-  : >"${work_dir}/hits"
+  printf '%s\n' "${SESSION_SETUP}" >"${work_directory}/setup.zsh"
+  : >"${work_directory}/hits"
 
   if ! CDL_COMPLETION_SHOULD_SOURCE_BEFORE_COMPINIT="$1" CDL_COMPLETION_SCRIPT="$2" \
     CDL_COMPLETION_DIRECTORY="$3" CDL_COMPLETION_LINE="$4" \
-    CDL_COMPLETION_SETUP="${work_dir}/setup.zsh" CDL_COMPLETION_HITS="${work_dir}/hits" \
+    CDL_COMPLETION_SETUP="${work_directory}/setup.zsh" CDL_COMPLETION_HITS="${work_directory}/hits" \
     CDL_COMPLETION_DONE="${DONE_MARKER}" CDL_COMPLETION_READY="${READY_PROMPT}" \
     "${CDL_ZSH:-zsh}" -f -c "${SESSION_DRIVER}"; then
     printf 'zsh-completions: no answer from zsh for: %s\n' "$4" >&2
     return "${ZSH_COMPLETIONS_ERR_TIMEOUT}"
   fi
 
-  grep -vxF -- "${DONE_MARKER}" "${work_dir}/hits" | LC_ALL=C sort -u
+  grep -vxF -- "${DONE_MARKER}" "${work_directory}/hits" | LC_ALL=C sort -u
 }
 
 #######################################

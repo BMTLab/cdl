@@ -17,8 +17,8 @@ load '../support/test_helper'
 
 function setup() {
   sandbox_setup
-  LISTED_DIR="$(make_dir 'listed')"
-  make_entries "${LISTED_DIR}" 'entry'
+  LISTED_DIRECTORY="$(make_directory 'listed')"
+  make_entries "${LISTED_DIRECTORY}" 'entry'
 }
 
 # region Choosing ls
@@ -28,7 +28,7 @@ function setup() {
   fake_recording_gls
 
   # Act
-  run --separate-stderr in_shell 'cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -44,7 +44,7 @@ function setup() {
 
   # Act
   run --separate-stderr in_shell \
-    'cdl "$1" && cdl "$1" && cdl_list && cdl_list' "${LISTED_DIR}"
+    'cdl "$1" && cdl "$1" && cdl_list && cdl_list' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -58,7 +58,7 @@ function setup() {
 
   # Act
   run --separate-stderr in_shell \
-    'cdl_list && source "${CDL_SCRIPT}" && cdl_list' "${LISTED_DIR}"
+    'cdl_list && source "${CDL_SCRIPT}" && cdl_list' "${LISTED_DIRECTORY}"
 
   # Assert
   assert_success
@@ -74,7 +74,7 @@ function setup() {
   fake_bsd_ls 'with-color'
 
   # Act
-  run --separate-stderr in_shell 'cdl "$1"' "${LISTED_DIR}"
+  run --separate-stderr in_shell 'cdl "$1"' "${LISTED_DIRECTORY}"
 
   # Assert:
   # no terminal, so no -G either.
@@ -85,10 +85,10 @@ function setup() {
 @test "a BSD ls on a terminal is asked for colors with -G" {
   # Arrange
   fake_bsd_ls 'with-color'
-  export CDL_TEST_DIR="${LISTED_DIR}"
+  export CDL_TEST_DIRECTORY="${LISTED_DIRECTORY}"
 
   # Act
-  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIR}"'
+  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIRECTORY}"'
 
   # Assert
   assert_success
@@ -99,10 +99,10 @@ function setup() {
   # Arrange:
   # OpenBSD and NetBSD reject -G.
   fake_bsd_ls 'without-color'
-  export CDL_TEST_DIR="${LISTED_DIR}"
+  export CDL_TEST_DIRECTORY="${LISTED_DIRECTORY}"
 
   # Act
-  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIR}"'
+  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIRECTORY}"'
 
   # Assert
   assert_success
@@ -114,22 +114,22 @@ function setup() {
   fake_bsd_ls 'with-color' 1
 
   # Act
-  run --separate-stderr cdl_then_pwd "${LISTED_DIR}"
+  run --separate-stderr cdl_then_pwd "${LISTED_DIRECTORY}"
 
   # Assert:
   # the directory is entered all the same.
   assert_failure 40
-  assert_output "${LISTED_DIR}"
+  assert_output "${LISTED_DIRECTORY}"
 }
 
 @test "NO_COLOR keeps -G away from a BSD ls on a terminal" {
   # Arrange
   fake_bsd_ls 'with-color'
-  export CDL_TEST_DIR="${LISTED_DIR}"
+  export CDL_TEST_DIRECTORY="${LISTED_DIRECTORY}"
   export NO_COLOR=1
 
   # Act
-  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIR}"'
+  run --separate-stderr in_terminal 'cdl "${CDL_TEST_DIRECTORY}"'
 
   # Assert
   assert_success

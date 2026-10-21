@@ -136,9 +136,9 @@ test-shells: ## Run the unit and integration tests in every shell of TEST_SHELLS
 	  printf '$(CYAN)→$(RESET) bats: cdl running in %s\n' "$$shell"; \
 	  report=(); \
 	  if [[ -n '$(BATS_REPORT_DIR)' ]]; then \
-	    report_dir='$(BATS_REPORT_DIR)'/"$${shell//\//_}"; \
-	    mkdir -p "$$report_dir"; \
-	    report=(--report-formatter junit --output "$$report_dir"); \
+	    report_directory='$(BATS_REPORT_DIR)'/"$${shell//\//_}"; \
+	    mkdir -p "$$report_directory"; \
+	    report=(--report-formatter junit --output "$$report_directory"); \
 	  fi; \
 	  CDL_TEST_SHELL="$$shell" $(BATS) $(BATS_FLAGS) "$${report[@]}" \
 	    tests/unit tests/integration || exit $(MAKE_ERR_TESTS); \

@@ -115,7 +115,7 @@ done
 
 @test "sourcing twice in one shell keeps cdl working" {
   # Arrange
-  local -r target="$(make_dir 'target')"
+  local -r target="$(make_directory 'target')"
 
   # Act
   run --separate-stderr in_shell \
@@ -150,7 +150,7 @@ done
   if [[ "${CDL_SHELL_KIND}" != 'zsh' ]]; then
     skip 'cdl.plugin.zsh is for zsh plugin managers'
   fi
-  local -r target="$(make_dir 'target')"
+  local -r target="$(make_directory 'target')"
 
   # Act:
   # sourced from elsewhere, from inside a function, as managers do.
@@ -172,7 +172,7 @@ done
   if [[ "${CDL_SHELL_KIND}" != 'zsh' ]]; then
     skip 'WARN_CREATE_GLOBAL is an option of zsh'
   fi
-  local -r target="$(make_dir 'target')"
+  local -r target="$(make_directory 'target')"
   export CDL_REPLACE_CD=1
 
   # Act:
@@ -240,7 +240,7 @@ done
   # without COLUMNS and TERM, tput fails,
   # which must not end a shell running with errexit.
   require_gnu_compatible_ls
-  local -r target="$(make_dir 'target')"
+  local -r target="$(make_directory 'target')"
   make_entries "${target}" 'entry'
 
   # Act
@@ -259,7 +259,7 @@ done
 @test "user aliases and functions named ls, awk or tput do not change the listing" {
   # Arrange
   require_gnu_compatible_ls
-  local -r target="$(make_dir 'target')"
+  local -r target="$(make_directory 'target')"
   make_entries "${target}" 'entry'
 
   # Act:
@@ -287,7 +287,7 @@ done
     skip 'zsh only'
   fi
   require_gnu_compatible_ls
-  local -r target="$(make_dir 'my target')"
+  local -r target="$(make_directory 'my target')"
   make_entries "${target}" 'entry'
 
   # Act
@@ -304,7 +304,7 @@ done
 
 @test "cdl leaves no REPLY behind" {
   # Arrange
-  local -r target="$(make_dir 'target')"
+  local -r target="$(make_directory 'target')"
 
   # Act
   run --separate-stderr in_shell \
@@ -322,8 +322,8 @@ done
 @test "cdl_list lists the current directory and keeps OLDPWD" {
   # Arrange
   require_gnu_compatible_ls
-  local -r first="$(make_dir 'first')"
-  local -r second="$(make_dir 'second')"
+  local -r first="$(make_directory 'first')"
+  local -r second="$(make_directory 'second')"
   make_entries "${second}" 'entry'
 
   # Act
@@ -338,7 +338,7 @@ done
 @test "a cd wrapper written for cdl 1.0 keeps working" {
   # Arrange
   require_gnu_compatible_ls
-  local -r target="$(make_dir 'target')"
+  local -r target="$(make_directory 'target')"
   make_entries "${target}" 'entry'
 
   # Act
