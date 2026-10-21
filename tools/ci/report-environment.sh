@@ -18,8 +18,36 @@
 #
 #   tools/ci/report-environment.sh bash zsh
 #   tools/ci/report-environment.sh /bin/bash zsh
+#
+# Exit Codes:
+#   0: Success.
+#   99: REPORT_ENVIRONMENT_ERR_INTERNAL
+#      A bug: a command failed where no code planned it.
 
-set -o errexit -o nounset -o pipefail
+readonly REPORT_ENVIRONMENT_ERR_INTERNAL=99
+
+#######################################
+# End a run that failed where no code planned it: the ERR trap calls it.
+# It passes on unchanged a code that main returns, the 141 of a closed pipe,
+# and every code of the block of this tool, which a helper has reported.
+#
+# Arguments:
+#   1: The status of the failed command.
+#   2: Its line.
+#   3: The command.
+#######################################
+function __internal_error() {
+  # In the guard, FUNCNAME holds only this function and the top level:
+  # the command that failed there is main, which returned its code.
+  if ((${#FUNCNAME[@]} == 2 || $1 == 141 || $1 / 10 == REPORT_ENVIRONMENT_ERR_INTERNAL / 10)); then
+    exit "$1"
+  fi
+
+  printf 'report-environment: internal error at line %s (status %s): %s\n' \
+    "$2" "$1" "$3" >&2
+
+  exit "${REPORT_ENVIRONMENT_ERR_INTERNAL}"
+}
 
 #######################################
 # Print the first line of a command's version, or a dash.
@@ -101,6 +129,17 @@ function main() {
   fi
 }
 
-main "$@"
+# Tests may source this file for its functions; run as a program, it runs main.
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  set -o errexit -o nounset -o pipefail -o errtrace
+  # The bash 3.2 of macOS has no inherit_errexit,
+  # and install-tools.sh runs on it before Homebrew brings another.
+  shopt -s inherit_errexit 2>/dev/null || true
+  trap '__internal_error "$?" "${LINENO}" "${BASH_COMMAND}"' ERR
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
+
+  main "$@"
+fi
 
 ### End

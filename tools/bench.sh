@@ -28,15 +28,43 @@
 #      A shell to measure is not installed.
 #   42: BENCH_ERR_CLOCK
 #      A shell to measure has no EPOCHREALTIME clock.
-
-set -o errexit -o nounset -o pipefail
+#   49: BENCH_ERR_INTERNAL
+#      A bug: a command failed where no code planned it.
 
 readonly BENCH_ERR_USAGE=40
 readonly BENCH_ERR_SHELL=41
 readonly BENCH_ERR_CLOCK=42
+readonly BENCH_ERR_INTERNAL=49
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 readonly PROJECT_ROOT
+
+# region Errors
+
+#######################################
+# End a run that failed where no code planned it: the ERR trap calls it.
+# It passes on unchanged a code that main returns, the 141 of a closed pipe,
+# and every code of the block of this tool, which a helper has reported.
+#
+# Arguments:
+#   1: The status of the failed command.
+#   2: Its line.
+#   3: The command.
+#######################################
+function __internal_error() {
+  # In the guard, FUNCNAME holds only this function and the top level:
+  # the command that failed there is main, which returned its code.
+  if ((${#FUNCNAME[@]} == 2 || $1 == 141 || $1 / 10 == BENCH_ERR_INTERNAL / 10)); then
+    exit "$1"
+  fi
+
+  printf 'bench: internal error at line %s (status %s): %s\n' \
+    "$2" "$1" "$3" >&2
+
+  exit "${BENCH_ERR_INTERNAL}"
+}
+
+# endregion Errors
 
 # region Measurement
 
@@ -138,11 +166,20 @@ function main() {
   while (($# > 0)); do
     case "$1" in
       -n)
-        calls="${2:?-n needs a number of calls}"
+        # The number reaches arithmetic in the shell it times.
+        if [[ ! "${2-}" =~ ^[1-9][0-9]*$ ]]; then
+          printf 'bench: -n needs a number of calls, not: %s\n' "${2-}" >&2
+          return "${BENCH_ERR_USAGE}"
+        fi
+        calls="$2"
         shift 2
         ;;
       -d)
-        directory="${2:?-d needs a directory}"
+        if [[ -z "${2-}" ]]; then
+          printf 'bench: -d needs a directory\n' >&2
+          return "${BENCH_ERR_USAGE}"
+        fi
+        directory="$2"
         shift 2
         ;;
       -h | --help)
@@ -181,6 +218,21 @@ function main() {
 
 # endregion Entry point
 
-main "$@"
+# region Execution guard
+
+# Tests may source this file for its functions; run as a program, it runs main.
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  set -o errexit -o nounset -o pipefail -o errtrace
+  # The bash 3.2 of macOS has no inherit_errexit,
+  # and install-tools.sh runs on it before Homebrew brings another.
+  shopt -s inherit_errexit 2>/dev/null || true
+  trap '__internal_error "$?" "${LINENO}" "${BASH_COMMAND}"' ERR
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
+
+  main "$@"
+fi
+
+# endregion Execution guard
 
 ### End

@@ -35,8 +35,8 @@
 #      gh could not publish the release.
 #   25: RELEASE_ERR_PROVENANCE
 #      The build provenance of cdl.sh does not verify.
-
-set -o errexit -o nounset -o pipefail
+#   29: RELEASE_ERR_INTERNAL
+#      A bug: a command failed where no code planned it.
 
 readonly RELEASE_ERR_USAGE=20
 readonly RELEASE_ERR_VERSION=21
@@ -44,6 +44,7 @@ readonly RELEASE_ERR_NOTES=22
 readonly RELEASE_ERR_ASSETS=23
 readonly RELEASE_ERR_PUBLISH=24
 readonly RELEASE_ERR_PROVENANCE=25
+readonly RELEASE_ERR_INTERNAL=29
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 readonly PROJECT_ROOT
@@ -53,6 +54,26 @@ readonly CI_SCRIPT_NAME='Release'
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 # region Helpers
+
+#######################################
+# End a run that failed where no code planned it: the ERR trap calls it.
+# It passes on unchanged a code that main returns, the 141 of a closed pipe,
+# and every code of the block of this tool, which a helper has reported.
+#
+# Arguments:
+#   1: The status of the failed command.
+#   2: Its line.
+#   3: The command.
+#######################################
+function __internal_error() {
+  # In the guard, FUNCNAME holds only this function and the top level:
+  # the command that failed there is main, which returned its code.
+  if ((${#FUNCNAME[@]} == 2 || $1 == 141 || $1 / 10 == RELEASE_ERR_INTERNAL / 10)); then
+    exit "$1"
+  fi
+
+  ci_error "internal error at line $2 (status $1): $3" "${RELEASE_ERR_INTERNAL}" || exit
+}
 
 #######################################
 # Print the version in the header of cdl.sh.
@@ -282,6 +303,21 @@ function main() {
 
 # endregion Entry point
 
-main "$@"
+# region Execution guard
+
+# Tests may source this file for its functions; run as a program, it runs main.
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  set -o errexit -o nounset -o pipefail -o errtrace
+  # The bash 3.2 of macOS has no inherit_errexit,
+  # and install-tools.sh runs on it before Homebrew brings another.
+  shopt -s inherit_errexit 2>/dev/null || true
+  trap '__internal_error "$?" "${LINENO}" "${BASH_COMMAND}"' ERR
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
+
+  main "$@"
+fi
+
+# endregion Execution guard
 
 ### End

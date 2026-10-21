@@ -44,12 +44,13 @@
 #      or apt-get could not reach its mirrors.
 #   12: INSTALL_ERR_PLATFORM
 #      There is no pinned binary for this machine.
-
-set -o errexit -o nounset -o pipefail
+#   19: INSTALL_ERR_INTERNAL
+#      A bug: a command failed where no code planned it.
 
 readonly INSTALL_ERR_USAGE=10
 readonly INSTALL_ERR_DOWNLOAD=11
 readonly INSTALL_ERR_PLATFORM=12
+readonly INSTALL_ERR_INTERNAL=19
 
 readonly CI_SCRIPT_NAME='install-tools'
 # shellcheck source=common.sh
@@ -95,11 +96,27 @@ readonly TOOLS_BIN_DIRECTORY="${TOOLS_PREFIX}/bin"
 CACHE_DIRECTORY="${CI_CACHE_DIR:-${HOME}/.cache/cdl-ci}"
 readonly CACHE_DIRECTORY
 
-DOWNLOADS="$(mktemp -d)"
-readonly DOWNLOADS
-trap 'rm -rf -- "${DOWNLOADS}"' EXIT
-
 # region Helpers
+
+#######################################
+# End a run that failed where no code planned it: the ERR trap calls it.
+# It passes on unchanged a code that main returns, the 141 of a closed pipe,
+# and every code of the block of this tool, which a helper has reported.
+#
+# Arguments:
+#   1: The status of the failed command.
+#   2: Its line.
+#   3: The command.
+#######################################
+function __internal_error() {
+  # In the guard, FUNCNAME holds only this function and the top level:
+  # the command that failed there is main, which returned its code.
+  if ((${#FUNCNAME[@]} == 2 || $1 == 141 || $1 / 10 == INSTALL_ERR_INTERNAL / 10)); then
+    exit "$1"
+  fi
+
+  ci_error "internal error at line $2 (status $1): $3" "${INSTALL_ERR_INTERNAL}" || exit
+}
 
 #######################################
 # Download a file, or take it from the cache,
@@ -197,8 +214,12 @@ function digest_for() {
 
 #######################################
 # Install the pinned ShellCheck.
+#
+# Arguments:
+#   1: A scratch directory for the archive.
 #######################################
 function install_shellcheck() {
+  local -r work_directory="$1"
   local arch digest archive
   local name
 
@@ -211,8 +232,8 @@ function install_shellcheck() {
     "https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/${name}.linux.${arch}.tar.xz" \
     "${digest}")"
 
-  tar -xJf "${archive}" -C "${DOWNLOADS}"
-  install -m 0755 "${DOWNLOADS}/${name}/shellcheck" "${TOOLS_BIN_DIRECTORY}/shellcheck"
+  tar -xJf "${archive}" -C "${work_directory}"
+  install -m 0755 "${work_directory}/${name}/shellcheck" "${TOOLS_BIN_DIRECTORY}/shellcheck"
 }
 
 #######################################
@@ -232,8 +253,12 @@ function install_shfmt() {
 
 #######################################
 # Install the pinned actionlint.
+#
+# Arguments:
+#   1: A scratch directory for the archive.
 #######################################
 function install_actionlint() {
+  local -r work_directory="$1"
   local arch digest archive
   arch="$(asset_arch 'amd64' 'arm64')"
   digest="$(digest_for "${arch}" 'amd64' \
@@ -243,18 +268,21 @@ function install_actionlint() {
     "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_${arch}.tar.gz" \
     "${digest}")"
 
-  tar -xzf "${archive}" -C "${DOWNLOADS}" actionlint
-  install -m 0755 "${DOWNLOADS}/actionlint" "${TOOLS_BIN_DIRECTORY}/actionlint"
+  tar -xzf "${archive}" -C "${work_directory}" actionlint
+  install -m 0755 "${work_directory}/actionlint" "${TOOLS_BIN_DIRECTORY}/actionlint"
 }
 
 #######################################
 # Install bats-core from its pinned commit.
 #
+# Arguments:
+#   1: A scratch directory for the checkout.
+#
 # Returns:
 #   0 on success; INSTALL_ERR_DOWNLOAD if the tag points elsewhere.
 #######################################
 function install_bats() {
-  local -r checkout="${DOWNLOADS}/bats-core"
+  local -r checkout="$1/bats-core"
   local commit
 
   git clone --quiet --depth 1 --branch "v${BATS_VERSION}" \
@@ -434,10 +462,17 @@ function download_debs() {
 function main() {
   local tool
   local -a packages=()
+  local work_directory quoted_work_directory
 
   if (($# == 0)); then
     ci_error 'name at least one tool' "${INSTALL_ERR_USAGE}" || return
   fi
+
+  work_directory="$(mktemp -d)"
+  # %q in place of ${work_directory@Q}, which bash 3.2 lacks.
+  printf -v quoted_work_directory '%q' "${work_directory}"
+  # shellcheck disable=SC2064 # The trap holds the path itself, as it is now.
+  trap "rm -rf -- ${quoted_work_directory}" EXIT
 
   mkdir -p "${TOOLS_BIN_DIRECTORY}"
   if [[ -n "${GITHUB_PATH-}" ]]; then
@@ -446,10 +481,10 @@ function main() {
 
   for tool in "$@"; do
     case "${tool}" in
-      shellcheck) install_shellcheck ;;
+      shellcheck) install_shellcheck "${work_directory}" ;;
       shfmt) install_shfmt ;;
-      actionlint) install_actionlint ;;
-      bats) install_bats ;;
+      actionlint) install_actionlint "${work_directory}" ;;
+      bats) install_bats "${work_directory}" ;;
       *) packages+=("${tool}") ;;
     esac
   done
@@ -460,6 +495,21 @@ function main() {
 
 # endregion Entry point
 
-main "$@"
+# region Execution guard
+
+# Tests may source this file for its functions; run as a program, it runs main.
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  set -o errexit -o nounset -o pipefail -o errtrace
+  # The bash 3.2 of macOS has no inherit_errexit,
+  # and install-tools.sh runs on it before Homebrew brings another.
+  shopt -s inherit_errexit 2>/dev/null || true
+  trap '__internal_error "$?" "${LINENO}" "${BASH_COMMAND}"' ERR
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
+
+  main "$@"
+fi
+
+# endregion Execution guard
 
 ### End
