@@ -80,10 +80,11 @@ function row() {
 #######################################
 function main() {
   local report
+  local shell
+
   report="$(
     printf '| Tool | Version |\n|------|---------|\n'
     row 'OS' "$(uname -sr)"
-    local shell
     for shell in "$@"; do
       row "${shell}" "$(version_of "${shell}" --version)"
     done

@@ -134,12 +134,14 @@ function sandbox_git() {
 }
 
 @test "a directory ls cannot read gets no header, so no count misleads" {
+  local blind
+
   # Arrange:
   # search permission without read permission: cd works, ls does not.
   if ((EUID == 0)); then
     skip 'root reads any directory'
   fi
-  local -r blind="$(make_directory 'blind')"
+  blind="$(make_directory 'blind')"
   chmod 100 "${blind}"
 
   # Act
@@ -254,13 +256,14 @@ done
 #######################################
 function a_worktree_shows_its_own_branch() {
   local -r spelling="$1"
+  local git_directory
 
   # Arrange:
   # the .git file of the worktree names a git directory
   # under ~/repo.git, as `git worktree add` lays them out.
   # A relative name counts from the directory of the .git file,
   # so the test lists a subdirectory, where the two differ.
-  local -r git_directory="${HOME}/repo.git/worktrees/app"
+  git_directory="${HOME}/repo.git/worktrees/app"
   mkdir -p -- "${git_directory}"
   printf 'ref: refs/heads/topic\n' >"${git_directory}/HEAD"
   if [[ "${spelling}" == 'absolute' ]]; then
@@ -322,11 +325,13 @@ done
 }
 
 @test "a repository and its worktree made by git show their branches" {
+  local repository
+
   # Arrange
   if ! command -v git >/dev/null; then
     skip 'git is not installed'
   fi
-  local -r repository="$(make_directory 'repository')"
+  repository="$(make_directory 'repository')"
   sandbox_git init --quiet --initial-branch=trunk "${repository}"
   sandbox_git -C "${repository}" commit --quiet --allow-empty --message='Start'
   sandbox_git -C "${repository}" worktree add --quiet -b topic "${HOME}/worktree"

@@ -122,6 +122,7 @@ function download_verified() {
   local -r url="$1"
   local -r expected="$2"
   local -r file="${CACHE_DIRECTORY}/downloads/${url##*/}"
+  local actual
 
   if [[ -f "${file}" && "$(sha256_of "${file}")" == "${expected}" ]]; then
     printf '%s\n' "${file}"
@@ -134,7 +135,6 @@ function download_verified() {
     ci_error "download failed: ${url}" "${INSTALL_ERR_DOWNLOAD}" || return
   fi
 
-  local actual
   actual="$(sha256_of "${file}")"
   if [[ "${actual}" != "${expected}" ]]; then
     rm -f "${file}"
@@ -200,11 +200,13 @@ function digest_for() {
 #######################################
 function install_shellcheck() {
   local arch digest archive
+  local name
+
   arch="$(asset_arch 'x86_64' 'aarch64')"
   digest="$(digest_for "${arch}" 'x86_64' \
     "${SHELLCHECK_SHA256_X86_64}" "${SHELLCHECK_SHA256_AARCH64}")"
 
-  local -r name="shellcheck-v${SHELLCHECK_VERSION}"
+  name="shellcheck-v${SHELLCHECK_VERSION}"
   archive="$(download_verified \
     "https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/${name}.linux.${arch}.tar.xz" \
     "${digest}")"
@@ -253,11 +255,11 @@ function install_actionlint() {
 #######################################
 function install_bats() {
   local -r checkout="${DOWNLOADS}/bats-core"
+  local commit
 
   git clone --quiet --depth 1 --branch "v${BATS_VERSION}" \
     https://github.com/bats-core/bats-core.git "${checkout}"
 
-  local commit
   commit="$(git -C "${checkout}" rev-parse HEAD)"
   if [[ "${commit}" != "${BATS_COMMIT}" ]]; then
     ci_error "bats v${BATS_VERSION} is ${commit}, not ${BATS_COMMIT}" \
@@ -430,6 +432,9 @@ function download_debs() {
 #   $@: Tool names, see the usage.
 #######################################
 function main() {
+  local tool
+  local -a packages=()
+
   if (($# == 0)); then
     ci_error 'name at least one tool' "${INSTALL_ERR_USAGE}" || return
   fi
@@ -439,8 +444,6 @@ function main() {
     printf '%s\n' "${TOOLS_BIN_DIRECTORY}" >>"${GITHUB_PATH}"
   fi
 
-  local tool
-  local -a packages=()
   for tool in "$@"; do
     case "${tool}" in
       shellcheck) install_shellcheck ;;

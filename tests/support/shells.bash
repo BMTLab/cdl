@@ -101,21 +101,22 @@ function in_bare_shell() {
 function in_terminal() {
   local -r snippet="$1"
   local -r script_file="${BATS_TEST_TMPDIR}/terminal-snippet"
+  local -a command
+  local transcript exit_code=0
+  local quoted
 
   # shellcheck disable=SC2016 # expanded by the shell under test
   printf 'source "${CDL_SCRIPT}" || exit\n%s\n' "${snippet}" >"${script_file}"
 
-  local -a command=("${CDL_SHELL_PATH}" --noprofile --norc "${script_file}")
+  command=("${CDL_SHELL_PATH}" --noprofile --norc "${script_file}")
   if [[ "${CDL_SHELL_KIND}" == 'zsh' ]]; then
     command=("${CDL_SHELL_PATH}" -f "${script_file}")
   fi
 
-  local transcript exit_code=0
   if [[ "$(uname -s)" == 'Darwin' ]]; then
     transcript="$(script -q /dev/null "${command[@]}" </dev/null)" || exit_code=$?
   else
     # The command string goes through sh, so each word is quoted.
-    local quoted
     printf -v quoted '%q ' "${command[@]}"
     transcript="$(script -qec "${quoted}" /dev/null </dev/null)" || exit_code=$?
   fi

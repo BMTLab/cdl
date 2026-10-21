@@ -22,13 +22,14 @@ bats_require_minimum_version 1.11.0
 load '../support/test_helper'
 
 function setup() {
+  local -a names=()
+  local -i number
+
   sandbox_setup
   require_gnu_compatible_ls
 
   # Thirty entries: more than a short terminal shows.
   LISTED_DIRECTORY="$(make_directory 'listed')"
-  local -a names=()
-  local -i number
   for ((number = 10; number < 40; number++)); do
     names+=("entry-${number}")
   done

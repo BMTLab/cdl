@@ -112,6 +112,8 @@ function grid_columns() {
 function assert_columns_aligned() {
   local -r listing="$1"
   local offsets
+  local misaligned
+
   offsets="$(entry_offsets <<<"${listing}" | sort -u)"
 
   if [[ -z "${offsets}" ]]; then
@@ -119,7 +121,6 @@ function assert_columns_aligned() {
     return
   fi
 
-  local misaligned
   misaligned="$(awk '{ seen[$1]++ } END { for (c in seen) if (seen[c] > 1) print c }' <<<"${offsets}")"
   if [[ -n "${misaligned}" ]]; then
     fail_with_report "column(s) ${misaligned//$'\n'/, } start at different cells: ${offsets//$'\n'/; }"

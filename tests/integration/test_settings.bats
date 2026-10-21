@@ -27,8 +27,10 @@ function setup() {
 # region Version
 
 @test "cdl --version prints the version in the header of cdl.sh" {
+  local version
+
   # Arrange
-  local -r version="$(sed -n 's/^# Version: *//p' "${CDL_SCRIPT}")"
+  version="$(sed -n 's/^# Version: *//p' "${CDL_SCRIPT}")"
 
   # Act
   run --separate-stderr in_shell 'cdl --version && cdl -V'

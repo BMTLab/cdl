@@ -62,8 +62,10 @@ function only_in_zsh() {
 }
 
 @test "an option only cdl knows takes cd to cdl, even into a pipe" {
+  local cdl_version
+
   # Arrange
-  local -r cdl_version="$(in_shell 'cdl --version')"
+  cdl_version="$(in_shell 'cdl --version')"
 
   # Act
   run --separate-stderr in_shell 'cd --version | cat'
@@ -114,10 +116,12 @@ function only_in_zsh() {
 }
 
 @test "an option only the shell's cd knows goes to it, and a terminal still gets the listing" {
+  local physical_directory
+
   # Arrange:
   # -LP is no option of cdl; bash and zsh take it, and the last letter wins,
   # so the path comes out physical.
-  local -r physical_directory="$(builtin cd -P "${NOTES_DIRECTORY}" && pwd)"
+  physical_directory="$(builtin cd -P "${NOTES_DIRECTORY}" && pwd)"
 
   # Act
   run --separate-stderr in_terminal 'cd -LP "${CDL_TEST_DIRECTORY}" && printf "%s\n" "${PWD}"'

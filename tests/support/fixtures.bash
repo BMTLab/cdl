@@ -56,9 +56,9 @@ function make_directory() {
 #######################################
 function make_entries() {
   local -r directory="$1"
+  local spec
   shift
 
-  local spec
   for spec in "$@"; do
     case "${spec}" in
       *' -> '*) ln -s -- "${spec#* -> }" "${directory}/${spec%% -> *}" ;;

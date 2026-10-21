@@ -94,10 +94,11 @@ function count_cells() {
 #   SANDBOX_UTF8_LOCALE (read).
 #######################################
 function main() {
+  local line
+
   # Characters, not bytes: bash reads the locale when LC_ALL changes.
   LC_ALL="${SANDBOX_UTF8_LOCALE:-C.UTF-8}"
 
-  local line
   LC_ALL=C sed -E $'s#\033\\[[0-?]*[ -/]*[@-~]##g; s#\033\\][^\a\033]*(\a|\033\\\\)##g' \
     | while IFS= read -r line; do
       count_cells "${line}"

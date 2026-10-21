@@ -64,8 +64,9 @@ function setup() {
 # region Notes
 
 @test "the release notes of the version in cdl.sh come from its CHANGELOG section" {
-  # Arrange
   local -r notes="${BATS_TEST_TMPDIR}/notes.md"
+
+  # Arrange: the CHANGELOG of the repository is the input.
 
   # Act
   run --separate-stderr "${RELEASE}" notes "${VERSION}" "${notes}"
@@ -77,8 +78,9 @@ function setup() {
 }
 
 @test "a version without a CHANGELOG section fails with RELEASE_ERR_NOTES" {
-  # Arrange
   local -r notes="${BATS_TEST_TMPDIR}/notes.md"
+
+  # Arrange: no section of the CHANGELOG names 0.0.0.
 
   # Act
   run --separate-stderr "${RELEASE}" notes '0.0.0' "${notes}"

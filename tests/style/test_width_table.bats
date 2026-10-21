@@ -67,7 +67,9 @@ function generated_ranges() {
 #   1: Code point in hex, e.g. 4E00.
 #######################################
 function generated_cells() {
-  local -r code="$((16#$1))"
+  local code
+
+  code="$((16#$1))"
 
   generated_ranges | awk -v code="${code}" '
     $1 <= code && code <= $2 { print $3; found = 1; exit }
@@ -98,14 +100,15 @@ function generated_cells() {
 # region Content
 
 @test "the generated ranges ascend without overlapping" {
-  # Arrange: the binary search in cdl.sh needs this order.
+  local disorder
 
+  # Arrange: the binary search in cdl.sh needs this order.
   # Act
   run generated_ranges
 
   # Assert
   assert_success
-  local -r disorder="$(awk '
+  disorder="$(awk '
     $1 > $2 || $1 <= last { print "range " NR ": " $0 }
     { last = $2 }
   ' <<<"${output}")"

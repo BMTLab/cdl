@@ -24,8 +24,10 @@ function setup() {
 
 # bats test_tags=smoke
 @test "cdl changes into the directory given as its operand" {
+  local target
+
   # Arrange
-  local -r target="$(make_directory 'projects/app')"
+  target="$(make_directory 'projects/app')"
 
   # Act
   run --separate-stderr cdl_then_pwd "${target}"
@@ -36,8 +38,10 @@ function setup() {
 }
 
 @test "cdl without an operand goes to HOME, like cd" {
+  local elsewhere
+
   # Arrange
-  local -r elsewhere="$(make_directory 'elsewhere')"
+  elsewhere="$(make_directory 'elsewhere')"
 
   # Act
   run --separate-stderr in_shell \
@@ -50,9 +54,12 @@ function setup() {
 
 # bats test_tags=smoke
 @test "cdl - returns to the previous directory" {
+  local first
+  local second
+
   # Arrange
-  local -r first="$(make_directory 'first')"
-  local -r second="$(make_directory 'second')"
+  first="$(make_directory 'first')"
+  second="$(make_directory 'second')"
 
   # Act
   run --separate-stderr in_shell \
@@ -65,8 +72,10 @@ function setup() {
 }
 
 @test "-- alone goes to HOME, like no operand at all" {
+  local elsewhere
+
   # Arrange
-  local -r elsewhere="$(make_directory 'elsewhere')"
+  elsewhere="$(make_directory 'elsewhere')"
 
   # Act
   run --separate-stderr in_shell \
@@ -90,8 +99,10 @@ function setup() {
 }
 
 @test "-- makes the next word a directory even when it starts with a dash" {
+  local target
+
   # Arrange
-  local -r target="$(make_directory '-dashed dir')"
+  target="$(make_directory '-dashed dir')"
 
   # Act
   run --separate-stderr in_shell \
@@ -104,11 +115,13 @@ function setup() {
 }
 
 @test "a CDPATH match is entered without echoing its path" {
+  local base
+
   # Arrange:
   # cd prints the directory it found through CDPATH;
   # the listing must be all that cdl prints.
   require_gnu_compatible_ls
-  local -r base="$(make_directory 'base')"
+  base="$(make_directory 'base')"
   make_entries "$(make_directory 'base/target')" 'only-file'
 
   # Act
@@ -120,8 +133,10 @@ function setup() {
 }
 
 @test "cdl enters the directory itself, bypassing a user cd function" {
+  local target
+
   # Arrange
-  local -r target="$(make_directory 'target')"
+  target="$(make_directory 'target')"
 
   # Act
   run --separate-stderr in_shell \
@@ -163,9 +178,11 @@ function setup() {
 }
 
 @test "an empty operand fails with CDL_ERR_USAGE instead of going HOME" {
+  local elsewhere
+
   # Arrange:
   # an empty substitution, such as "$(xclip -o)" with an empty clipboard.
-  local -r elsewhere="$(make_directory 'elsewhere')"
+  elsewhere="$(make_directory 'elsewhere')"
 
   # Act
   run --separate-stderr in_shell \
@@ -191,8 +208,10 @@ function setup() {
 }
 
 @test "an option after the directory fails and says options go first" {
+  local target
+
   # Arrange
-  local -r target="$(make_directory 'target')"
+  target="$(make_directory 'target')"
 
   # Act
   run --separate-stderr cdl_then_pwd "${target}" -P
@@ -327,13 +346,15 @@ bats_test_function \
   -- cdl_back_to_no_directory_fails_with_its_reason 'gone' 31 'No such file or directory'
 
 @test "an unreadable directory is entered, then reported with CDL_ERR_LIST" {
+  local blind
+
   # Arrange:
   # search permission without read permission:
   # cd works, listing does not.
   if ((EUID == 0)); then
     skip 'root reads any directory'
   fi
-  local -r blind="$(make_directory 'blind')"
+  blind="$(make_directory 'blind')"
   chmod 100 "${blind}"
 
   # Act

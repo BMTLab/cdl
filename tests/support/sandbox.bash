@@ -23,8 +23,10 @@
 #   The locale name to stdout, or 'C' if there is none.
 #######################################
 function __sandbox_find_utf8_locale() {
-  local -r installed="$(locale -a 2>/dev/null)"
+  local installed
   local candidate
+
+  installed="$(locale -a 2>/dev/null)"
 
   for candidate in C.UTF-8 C.utf8 en_US.UTF-8 en_US.utf8; do
     if grep -qx "${candidate}" <<<"${installed}"; then

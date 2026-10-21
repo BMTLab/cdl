@@ -89,8 +89,8 @@ function measure_shell() {
   local -r shell="$1"
   local -r calls="$2"
   local -r directory="$3"
-
   local cdl_ms baseline_ms
+
   cdl_ms="$(time_per_call "${shell}" "${calls}" "${directory}" 'cdl')"
   baseline_ms="$(time_per_call "${shell}" "${calls}" "${directory}" 'baseline')"
 
@@ -132,6 +132,8 @@ function usage() {
 function main() {
   local calls=200
   local directory='/usr/bin'
+  local -a shells
+  local shell
 
   while (($# > 0)); do
     case "$1" in
@@ -155,14 +157,13 @@ function main() {
     esac
   done
 
-  local -a shells=("$@")
+  shells=("$@")
   if ((${#shells[@]} == 0)); then
     shells=(bash zsh)
   fi
 
   printf '\n  %s calls in %s, output to /dev/null\n\n' "${calls}" "${directory}"
 
-  local shell
   for shell in "${shells[@]}"; do
     if ! command -v "${shell}" >/dev/null; then
       printf 'bench: shell not found: %s\n' "${shell}" >&2

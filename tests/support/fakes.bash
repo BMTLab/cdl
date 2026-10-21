@@ -52,6 +52,8 @@ function gnu_compatible_ls() {
 #######################################
 function has_supported_busybox_awk() {
   local version
+  local -i major
+  local -i minor
 
   command -v busybox >/dev/null || return 1
   busybox awk 'BEGIN {}' 2>/dev/null || return 1
@@ -60,9 +62,12 @@ function has_supported_busybox_awk() {
   version="$(busybox 2>&1 | head -n 1)"
   version="${version#BusyBox v}"
   version="${version%% *}"
-  local -ir major="${version%%.*}"
-  version="${version#*.}"
-  local -ir minor="${version%%.*}"
+  # The numbers reach arithmetic only as plain digits.
+  if [[ ! "${version}" =~ ^([0-9]+)\.([0-9]+) ]]; then
+    return 1
+  fi
+  major="${BASH_REMATCH[1]}"
+  minor="${BASH_REMATCH[2]}"
 
   ((major > 1 || (major == 1 && minor >= 34)))
 }
@@ -146,12 +151,12 @@ function available_awks() {
 function use_awk() {
   local -r name="$1"
   local command
+  local real_awk
 
   case "${name}" in
     busybox-awk) command='exec busybox awk "$@"' ;;
     gawk-utf8) command="LC_ALL='${SANDBOX_UTF8_LOCALE}' exec gawk \"\$@\"" ;;
     *)
-      local real_awk
       real_awk="$(PATH="${PATH#"${FAKE_BIN_DIRECTORY}":}" command -v "${name}")"
       command="exec '${real_awk}' \"\$@\""
       ;;
@@ -231,13 +236,15 @@ exec '${real_ls}' \"\$@\""
 #######################################
 function fake_probe_counting_ls() {
   local real_ls
+  local body
+
   real_ls="$(gnu_compatible_ls)" || skip 'no GNU-compatible ls here'
 
   LS_PROBE_LOG="${BATS_TEST_TMPDIR}/ls-probes.log"
   : >"${LS_PROBE_LOG}"
 
-  local -r body="case \" \$* \" in
-  *' --version '*) echo probe >>'${LS_PROBE_LOG}' ;;
+  body="case \" \$* \" in
+  *' --version '*) printf '%s\n' probe >>'${LS_PROBE_LOG}' ;;
 esac
 exec '${real_ls}' \"\$@\""
   __fakes_install ls "${body}"
@@ -258,10 +265,11 @@ exec '${real_ls}' \"\$@\""
 #   TOOL_LOG (write): the file that collects one name per run.
 #######################################
 function fake_logging_tools() {
+  local name real_path
+
   TOOL_LOG="${BATS_TEST_TMPDIR}/tools.log"
   : >"${TOOL_LOG}"
 
-  local name real_path
   for name in ls gls awk mawk gawk tput; do
     real_path="$(PATH="${PATH#"${FAKE_BIN_DIRECTORY}":}" command -v "${name}")" || continue
     __fakes_install "${name}" "printf '%s\n' '${name}' >>'${TOOL_LOG}'

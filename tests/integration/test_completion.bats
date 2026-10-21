@@ -221,6 +221,8 @@ function zsh_completions() {
 }
 
 @test "bash leaves a word with ~ to readline, which keeps the ~" {
+  local function_output
+
   # Arrange
   only_in bash
 
@@ -228,7 +230,7 @@ function zsh_completions() {
   # the function offers nothing, so readline completes the file names.
   # shellcheck disable=SC2088 # the ~ as a user types it
   run --separate-stderr bash_completions '~/'
-  local -r function_output="${output}"
+  function_output="${output}"
   run --separate-stderr in_shell 'complete -p cdl'
 
   # Assert

@@ -68,12 +68,13 @@ cd "${CDL_COMPLETION_DIRECTORY}"
 # Write down the candidates of each compadd call that adds them;
 # the calls that only test words (-O, -A, -D) pass straight through.
 function compadd() {
+  local -a found
+
   if [[ "${@[1,(i)(-|--)]}" == *-(O|A|D)\ * ]]; then
     builtin compadd "$@"
     return
   fi
 
-  local -a found
   builtin compadd -O found "$@"
   if (( ${#found} )); then
     print -rl -- "${found[@]}" >>| "${CDL_COMPLETION_HITS}"
@@ -152,7 +153,9 @@ exit 1
 #   0 on success; ZSH_COMPLETIONS_ERR_TIMEOUT if zsh never finished.
 #######################################
 function print_completions() {
-  local -r work_directory="$(mktemp -d)"
+  local work_directory
+
+  work_directory="$(mktemp -d)"
   # shellcheck disable=SC2064 # the path is fixed now, on purpose
   trap "rm -rf -- '${work_directory}'" EXIT
 

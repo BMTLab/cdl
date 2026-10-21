@@ -124,7 +124,9 @@ for people and coding agents alike. In short:
 - English for code, comments and messages; no em-dash anywhere.
 - Single quotes unless a string expands something.
 - `function name() { ... }` declarations, each with a documentation header.
-- `local -r`, `local -i` and friends wherever they fit.
+- The `local` declarations open each function and each test;
+  `local -r`, `local -i` and friends wherever they fit,
+  and a `$(...)` value is assigned on a line of its own.
 - Errors go through `__cdl_error` with a named `CDL_ERR_*` code.
 - The return codes of cdl go by tens: the tens digit names what failed,
   and the units digit why. Every tool of the repository owns

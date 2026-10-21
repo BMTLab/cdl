@@ -467,9 +467,9 @@ function __cdl_apply_listing_options() {
 function __cdl_check_choice() {
   local -r name="$1"
   local -r value="$2"
+  local choice
   shift 2
 
-  local choice
   for choice in "$@"; do
     if [[ "${value}" == "${choice}" ]]; then
       return 0
@@ -766,6 +766,7 @@ function __cdl_resolve_target() {
 function __cdl_enter() {
   local -r target="$1"
   local -r option="$2"
+  local directory
 
   if __cdl_change_directory "${target}" "${option}"; then
     REPLY=''
@@ -777,7 +778,7 @@ function __cdl_enter() {
   fi
 
   __cdl_holding_directory "${target}"
-  local -r directory="${REPLY}"
+  directory="${REPLY}"
   if [[ -n "${directory}" ]] && ! __cdl_change_directory "${directory}" "${option}"; then
     __cdl_report_chdir_failure "${directory}"
     return
@@ -871,6 +872,9 @@ function __cdl_holding_directory() {
 #######################################
 function __cdl_diagnose_chdir_failure() {
   local target="$1"
+  local bare
+  local part
+  local below
 
   if [[ "${target}" == '-' && -z "${OLDPWD-}" ]]; then
     REPLY='No previous directory: OLDPWD is not set'
@@ -882,10 +886,10 @@ function __cdl_diagnose_chdir_failure() {
 
   # Trailing slashes come off first: they hide a file from the tests,
   # where cd sees the file and calls it not a directory.
-  local bare="${target%"${target##*[!/]}"}"
+  bare="${target%"${target##*[!/]}"}"
   bare="${bare:-/}"
   __cdl_nearest_existing_part "${bare}"
-  local -r part="${REPLY}"
+  part="${REPLY}"
 
   if [[ ! -d "${part}" ]]; then
     REPLY="Not a directory: '${target}'"
@@ -903,7 +907,7 @@ function __cdl_diagnose_chdir_failure() {
   fi
 
   __cdl_part_below "${part}" "${bare}"
-  local -r below="${REPLY}"
+  below="${REPLY}"
   REPLY="No such file or directory: '${target}'"
   if [[ -L "${below}" ]]; then
     __cdl_blame_part "${below}" "${bare}" 'is a broken symlink'
@@ -947,8 +951,9 @@ function __cdl_nearest_existing_part() {
 function __cdl_part_below() {
   local -r part="$1"
   local -r whole="$2"
+  local rest
 
-  local rest="${whole}"
+  rest="${whole}"
   if [[ "${part}" == '/' ]]; then
     rest="${whole#/}"
   elif [[ "${part}" != '.' ]]; then
@@ -1291,9 +1296,11 @@ function __cdl_pretty_path() {
 function __cdl_git_branch() {
   # Seven digits, as git shortens a commit hash by default.
   local -ir short_hash_length=7
+  local git_directory
+  local head=''
 
   __cdl_find_git_directory
-  local -r git_directory="${REPLY}"
+  git_directory="${REPLY}"
   REPLY=''
   if [[ -z "${git_directory}" ]]; then
     return 0
@@ -1301,7 +1308,6 @@ function __cdl_git_branch() {
 
   # The braces catch the error of a missing file,
   # which zsh prints even with `2>/dev/null` on the command itself.
-  local head=''
   { read -r head <"${git_directory}/HEAD"; } 2>/dev/null || true
 
   case "${head}" in
@@ -1328,6 +1334,7 @@ function __cdl_git_branch() {
 #######################################
 function __cdl_find_git_directory() {
   local directory="${PWD}"
+  local line=''
 
   while [[ ! -e "${directory}/.git" ]]; do
     if [[ -z "${directory}" ]]; then
@@ -1342,7 +1349,6 @@ function __cdl_find_git_directory() {
     return 0
   fi
 
-  local line=''
   { read -r line <"${REPLY}"; } 2>/dev/null || true
 
   case "${line}" in
@@ -1508,19 +1514,26 @@ function __cdl_print_compact_listing() {
   local -r mark="${1-}"
   local -i is_colored=0
   local color_mode='never'
+  local width
+  local short_options='-l'
+  local listing
+  local -i ls_status=0
+  local header_path='' header_branch=''
+  local -i header_lines=0
+  local link_directory=''
+
   if __cdl_should_color; then
     is_colored=1
     color_mode='always'
   fi
 
   __cdl_terminal_width
-  local -r width="${REPLY}"
+  width="${REPLY}"
 
   # `-A` lists hidden entries, but never `.` and `..`;
   # a hidden entry to mark brings them in.
   # Sizes come in bytes: the formatter writes them like `ls -h`,
   # and adds them up for the header.
-  local short_options='-l'
   if ((__cdl_setting_hidden)) || [[ "${mark}" == .* ]]; then
     short_options='-Al'
   fi
@@ -1540,8 +1553,6 @@ function __cdl_print_compact_listing() {
   # `$(...)` drops the trailing newlines of the output, so the last name,
   # when it ends in a newline, shows without its final '?':
   # a sentinel line would fix that for a fork on every listing.
-  local listing
-  local -i ls_status=0
   listing="$(
     COLUMNS="${width}" LC_ALL=C command "${__cdl_ls_command}" "${short_options}" \
       --group-directories-first \
@@ -1552,8 +1563,6 @@ function __cdl_print_compact_listing() {
   )" || ls_status=$?
 
   # A header only over a listing in full, so its counts never mislead.
-  local header_path='' header_branch=''
-  local -i header_lines=0
   if ((ls_status == 0)) && __cdl_should_show_header; then
     header_lines=1
     __cdl_pretty_path "${PWD}"
@@ -1564,7 +1573,6 @@ function __cdl_print_compact_listing() {
     fi
   fi
 
-  local link_directory=''
   if __cdl_should_link "${is_colored}"; then
     link_directory="${PWD}"
   fi
@@ -2412,6 +2420,9 @@ function cdl() {
 function __cdl_complete_bash() {
   local -r option_words='-a --all -1 --one-column -L -P -h --help -V --version --'
   local -r word="${COMP_WORDS[COMP_CWORD]}"
+  local base
+  local -a bases=()
+
   COMPREPLY=()
 
   case "${word}" in
@@ -2430,8 +2441,6 @@ function __cdl_complete_bash() {
     return 0
   fi
 
-  local base
-  local -a bases=()
   IFS=':' read -r -a bases <<<"${CDPATH}"
   for base in ${bases[@]+"${bases[@]}"}; do
     base="${base%/}"
@@ -2456,9 +2465,9 @@ function __cdl_complete_bash() {
 #######################################
 function __cdl_add_completions() {
   local -r prefix="$1"
+  local candidate
   shift
 
-  local candidate
   while IFS= read -r candidate; do
     COMPREPLY+=("${candidate#"${prefix}"}")
   done < <(compgen "$@")
@@ -2576,12 +2585,12 @@ function __cdl_hand_ble_cd_completion() {
 #######################################
 function __cdl_add_precmd_function() {
   local -r function_name="$1"
+  local hook
 
   # Declared as a global array first, which it is,
   # so that WARN_CREATE_GLOBAL stays quiet.
   typeset -ga precmd_functions
 
-  local hook
   for hook in ${precmd_functions[@]+"${precmd_functions[@]}"}; do
     if [[ "${hook}" == "${function_name}" ]]; then
       return 0
@@ -2605,6 +2614,7 @@ function __cdl_register_zsh_completion_at_prompt() {
 
   local hook
   local -a kept=()
+
   for hook in "${precmd_functions[@]}"; do
     if [[ "${hook}" != '__cdl_register_zsh_completion_at_prompt' ]]; then
       kept+=("${hook}")

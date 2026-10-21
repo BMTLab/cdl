@@ -198,8 +198,13 @@ A table holds short cells; a longer explanation goes below it, as a list.
 ### Shell
 
 - `function name() { ... }`, never `name() { ... }`.
-- `local -r`, `local -i`, `local -ir` and `local -a` wherever they fit;
+- The `local` declarations open the body, as one block;
+  under zsh, an entry point runs `emulate -L zsh` before them.
+  `local -r`, `local -i`, `local -ir` and `local -a` wherever they fit;
   a bare `local` only for a value that changes.
+  A value that a later step makes, from `$(...)` or from `REPLY`,
+  is declared in the block and assigned in its step,
+  since `local` would hide the status of a command.
 - A result travels in `REPLY` and the caller declares `local REPLY`;
   `$(...)` costs a fork, which the listing path cannot afford.
 - External commands run through `command`,
@@ -289,7 +294,8 @@ the code of the recipe shows in its error line (`Error 71`).
 - A test states one rule in its name, as a sentence without "should":
   `a second operand fails with CDL_ERR_USAGE instead of being ignored`.
   It checks the rule, never the shape of the code.
-- Every test has the sections `# Arrange`, `# Act` and `# Assert`,
+- Every test opens with its locals, as every function does,
+  then has the sections `# Arrange`, `# Act` and `# Assert`,
   in that order; an empty section keeps its comment with the reason
   (`# Arrange: no fixtures needed.`).
 - A unit test feeds the formatter canned `ls -l` lines from `fixtures.bash`.

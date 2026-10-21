@@ -66,13 +66,14 @@ function report_violations() {
 # region Headers
 
 @test "every shell file starts with a header naming itself, its author and license" {
-  # Arrange
   local file
   local -a violations=()
+  local header
+
+  # Arrange: the shell files of the repository are the input.
 
   # Act
   while IFS= read -r file; do
-    local header
     header="$(head -n 12 "${CDL_ROOT}/${file}")"
     if ! grep -qxF "# Name: ${file##*/}" <<<"${header}" \
       && ! grep -qxF "# Name: ${file}" <<<"${header}"; then
@@ -91,11 +92,13 @@ function report_violations() {
 }
 
 @test "cdl.sh declares a semantic version and an ISO date" {
-  # Arrange: the header of cdl.sh is the input.
+  local version
+  local date
 
+  # Arrange: the header of cdl.sh is the input.
   # Act
-  local -r version="$(script_header 'Version')"
-  local -r date="$(script_header 'Date')"
+  version="$(script_header 'Version')"
+  date="$(script_header 'Date')"
 
   # Assert
   if [[ ! "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -111,8 +114,10 @@ function report_violations() {
 # region Facts several files share
 
 @test "cdl --version reports the version in the header of cdl.sh" {
+  local version
+
   # Arrange
-  local -r version="$(script_header 'Version')"
+  version="$(script_header 'Version')"
 
   # Act
   run grep -cx "CDL_VERSION='${version}'" "${CDL_SCRIPT}"
@@ -123,9 +128,12 @@ function report_violations() {
 }
 
 @test "the CHANGELOG has a section for the version and date of cdl.sh" {
+  local version
+  local date
+
   # Arrange
-  local -r version="$(script_header 'Version')"
-  local -r date="$(script_header 'Date')"
+  version="$(script_header 'Version')"
+  date="$(script_header 'Date')"
 
   # Act
   run grep -cxF "## [${version}] - ${date}" "${CDL_ROOT}/CHANGELOG.md"
@@ -136,11 +144,14 @@ function report_violations() {
 }
 
 @test "every return code is documented in the header, the help and the README" {
-  # Arrange
-  local -r help_text="$(in_shell 'cdl --help')"
-  local -r readme="$(<"${CDL_ROOT}/README.md")"
+  local help_text
+  local readme
   local name value
   local -a violations=()
+
+  # Arrange
+  help_text="$(in_shell 'cdl --help')"
+  readme="$(<"${CDL_ROOT}/README.md")"
 
   # Act
   while IFS='=' read -r name value; do
@@ -188,16 +199,18 @@ function named_exit_codes() {
 }
 
 @test "every return code of cdl is a category of ten, or a reason inside one" {
+  local codes
+  local -a violations=()
+  local line
+
   # Arrange:
   # the codes of cdl.sh, a public API of their own,
   # apart from the blocks of the tools (see "Exit codes" in CLAUDE.md).
-  local -r codes="$(sed -n 's/^: "\${\(CDL_ERR_[A-Z_]*\):=\([0-9]*\)}"$/\2 \1/p' "${CDL_SCRIPT}")"
-  local -a violations=()
+  codes="$(sed -n 's/^: "\${\(CDL_ERR_[A-Z_]*\):=\([0-9]*\)}"$/\2 \1/p' "${CDL_SCRIPT}")"
 
   # Act:
   # a code out of range, a code named twice,
   # and a reason whose category has no code of its own.
-  local line
   while IFS= read -r line; do
     violations+=("${line}")
   done < <(awk '
@@ -220,19 +233,21 @@ function named_exit_codes() {
 }
 
 @test "every tool owns a block of ten exit codes, which no other tool uses" {
-  # Arrange
-  local -r codes="$(named_exit_codes)"
+  local codes
   local -a violations=()
+  local duplicate
+  local line
+
+  # Arrange
+  codes="$(named_exit_codes)"
 
   # Act:
   # a code named twice; a file whose codes span two blocks;
   # a block that two files share.
-  local duplicate
   while IFS= read -r duplicate; do
     violations+=("code ${duplicate} is named more than once: $(awk -v code="${duplicate}" '$2 == code { printf "%s %s; ", $1, $3 }' <<<"${codes}")")
   done < <(awk '{ print $2 }' <<<"${codes}" | sort -n | uniq -d)
 
-  local line
   while IFS= read -r line; do
     violations+=("${line}")
   done < <(awk '
@@ -254,12 +269,15 @@ function named_exit_codes() {
 }
 
 @test "every setting is documented in cdl.sh, the help and the README" {
-  # Arrange
-  local -r help_text="$(in_shell 'cdl --help')"
-  local -r readme="$(<"${CDL_ROOT}/README.md")"
+  local help_text
+  local readme
   local name
   local -i setting_count=0
   local -a violations=()
+
+  # Arrange
+  help_text="$(in_shell 'cdl --help')"
+  readme="$(<"${CDL_ROOT}/README.md")"
 
   # Act:
   # the settings are the variables that __cdl_read_settings reads,
@@ -285,13 +303,16 @@ function named_exit_codes() {
 }
 
 @test "the map in CLAUDE.md names the regions of cdl.sh in order" {
+  local regions
+  local mapped
+
   # Arrange
-  local -r regions="$(sed -n 's/^# region //p' "${CDL_SCRIPT}" | paste -sd ',' - | sed 's/,/, /g')"
+  regions="$(sed -n 's/^# region //p' "${CDL_SCRIPT}" | paste -sd ',' - | sed 's/,/, /g')"
 
   # Act:
   # the numbered list under the map, each item up to its first comma,
   # which leaves out the regions of the awk program.
-  local -r mapped="$(
+  mapped="$(
     awk '
       /^The regions of `cdl.sh` read top to bottom:$/ { inside = 1; next }
       inside && /^[0-9]+\. / { sub(/^[0-9]+\. /, ""); sub(/,.*/, ""); print; listed = 1; next }
@@ -308,14 +329,15 @@ function named_exit_codes() {
 # region Code style
 
 @test "every shell file is formatted as the workspace rule shfmt -i 2 -ci -bn says" {
+  local -a files=()
+  local file
+
   # Arrange:
   # `make format` takes its options from .editorconfig;
   # this keeps that file in step with the flags of the workspace style.
   if ! command -v shfmt >/dev/null; then
     skip 'shfmt is not installed'
   fi
-  local -a files=()
-  local file
   while IFS= read -r file; do
     files+=("${CDL_ROOT}/${file}")
   done < <(shell_files)
@@ -343,9 +365,10 @@ function named_exit_codes() {
 }
 
 @test "shell functions are declared with the function keyword" {
-  # Arrange
-  local file
+  local file match
   local -a violations=()
+
+  # Arrange: the shell files of the repository are the input.
 
   # Act
   while IFS= read -r file; do
@@ -375,9 +398,10 @@ function named_exit_codes() {
 }
 
 @test "every endregion closes the open region it names" {
-  # Arrange
   local file verdict
   local -a violations=()
+
+  # Arrange: the shell files and the Python tools are the input.
 
   # Act:
   # a stack of the open regions, which each endregion must name in turn,
@@ -415,9 +439,10 @@ function named_exit_codes() {
 }
 
 @test "every test follows Arrange-Act-Assert" {
-  # Arrange
   local file
   local -a violations=()
+
+  # Arrange: the test files of the repository are the input.
 
   # Act:
   # inside each @test block, and inside each function

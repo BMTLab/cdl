@@ -73,9 +73,11 @@ for __name in 'notes.md' './notes.md'; do
 done
 
 @test "a relative path to a file enters its own directory, whatever CDPATH holds" {
+  local elsewhere
+
   # Arrange:
   # CDPATH holds another docs directory, which cd would prefer.
-  local -r elsewhere="$(make_directory 'elsewhere')"
+  elsewhere="$(make_directory 'elsewhere')"
   make_directory 'elsewhere/docs' >/dev/null
 
   # Act
@@ -88,8 +90,10 @@ done
 }
 
 @test "cd still decides first: a CDPATH directory wins over a file of the same name" {
+  local elsewhere
+
   # Arrange
-  local -r elsewhere="$(make_directory 'elsewhere')"
+  elsewhere="$(make_directory 'elsewhere')"
   make_directory 'elsewhere/report.pdf' >/dev/null
 
   # Act
@@ -141,12 +145,14 @@ done
 }
 
 @test "a file deep in a long listing on a terminal brings the listing to it" {
+  local long_directory
+  local -a names=()
+  local -i number
+
   # Arrange:
   # forty entries in one column; ten lines keep six rows,
   # five of them around the mark under the line about those before.
-  local -r long_directory="$(make_directory 'long')"
-  local -a names=()
-  local -i number
+  long_directory="$(make_directory 'long')"
   for ((number = 10; number < 50; number++)); do
     names+=("entry-${number}")
   done
@@ -195,9 +201,11 @@ done
 # region URIs
 
 @test "a file:// URI enters the path its percent escapes spell" {
+  local target
+
   # Arrange:
   # a space and a Cyrillic letter, as a file manager encodes them.
-  local -r target="$(make_directory 'My Docs Д')"
+  target="$(make_directory 'My Docs Д')"
 
   # Act
   run --separate-stderr cdl_then_pwd "file://${HOME}/My%20Docs%20%D0%94"
@@ -230,8 +238,10 @@ done
 }
 
 @test "a percent sign without two hex digits after it stays as it is" {
+  local target
+
   # Arrange
-  local -r target="$(make_directory '100%')"
+  target="$(make_directory '100%')"
 
   # Act
   run --separate-stderr cdl_then_pwd "file://${HOME}/100%"
@@ -314,8 +324,10 @@ bats_test_function \
 }
 
 @test "a directory named ~ here wins over HOME" {
+  local literal
+
   # Arrange
-  local -r literal="$(make_directory 'here/~')"
+  literal="$(make_directory 'here/~')"
 
   # Act
   run --separate-stderr in_shell \

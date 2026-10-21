@@ -116,8 +116,10 @@ for __name in CDL_ERR_USAGE CDL_ERR_SETTING CDL_ERR_CHDIR CDL_ERR_NOT_FOUND \
 done
 
 @test "sourcing twice in one shell keeps cdl working" {
+  local target
+
   # Arrange
-  local -r target="$(make_directory 'target')"
+  target="$(make_directory 'target')"
 
   # Act
   run --separate-stderr in_shell \
@@ -130,10 +132,10 @@ done
 }
 
 @test "sourcing from inside a function keeps cdl working afterwards" {
-  # Arrange:
-  # zsh plugin managers source plugins from inside functions.
   local -r missing="${HOME}/missing"
 
+  # Arrange:
+  # zsh plugin managers source plugins from inside functions.
   # Act
   run --separate-stderr in_bare_shell \
     'function load_plugin() { source "${CDL_SCRIPT}"; }
@@ -148,11 +150,13 @@ done
 
 # bats test_tags=smoke
 @test "the zsh plugin file sources cdl.sh from its own directory" {
+  local target
+
   # Arrange
   if [[ "${CDL_SHELL_KIND}" != 'zsh' ]]; then
     skip 'cdl.plugin.zsh is for zsh plugin managers'
   fi
-  local -r target="$(make_directory 'target')"
+  target="$(make_directory 'target')"
 
   # Act:
   # sourced from elsewhere, from inside a function, as managers do.
@@ -168,13 +172,15 @@ done
 }
 
 @test "loaded from a function under WARN_CREATE_GLOBAL, cdl stays quiet" {
+  local target
+
   # Arrange:
   # zsh warns about every global a function creates with this option,
   # and plugin managers load files from functions.
   if [[ "${CDL_SHELL_KIND}" != 'zsh' ]]; then
     skip 'WARN_CREATE_GLOBAL is an option of zsh'
   fi
-  local -r target="$(make_directory 'target')"
+  target="$(make_directory 'target')"
   export CDL_REPLACE_CD=1
 
   # Act:
@@ -193,9 +199,10 @@ done
 }
 
 @test "sourcing runs no external command" {
+  local -r empty_path="${BATS_TEST_TMPDIR}/empty"
+
   # Arrange:
   # with an empty PATH, any external command would fail loudly.
-  local -r empty_path="${BATS_TEST_TMPDIR}/empty"
   mkdir -p "${empty_path}"
 
   # Act
@@ -209,8 +216,10 @@ done
 }
 
 @test "sourcing adds only cdl, cdl_list and __cdl_ functions" {
-  # Arrange
   local list_functions='compgen -A function'
+  local name
+
+  # Arrange
   if [[ "${CDL_SHELL_KIND}" == 'zsh' ]]; then
     list_functions='print -l ${(k)functions}'
   fi
@@ -224,7 +233,6 @@ done
 
   # Assert
   assert_success
-  local name
   while IFS= read -r name; do
     case "${name}" in
       cdl | cdl_list | __cdl_*) ;;
@@ -238,11 +246,13 @@ done
 # region Hostile shell setups
 
 @test "cdl works in a shell running with set -eu and no terminal" {
+  local target
+
   # Arrange:
   # without COLUMNS and TERM, tput fails,
   # which must not end a shell running with errexit.
   require_gnu_compatible_ls
-  local -r target="$(make_directory 'target')"
+  target="$(make_directory 'target')"
   make_entries "${target}" 'entry'
 
   # Act
@@ -251,7 +261,7 @@ done
      unset COLUMNS TERM
      source "${CDL_SCRIPT}"
      cdl "$1"
-     echo survived' "${target}"
+     printf "%s\n" survived' "${target}"
 
   # Assert
   assert_success
@@ -259,9 +269,11 @@ done
 }
 
 @test "user aliases and functions named ls, awk or tput do not change the listing" {
+  local target
+
   # Arrange
   require_gnu_compatible_ls
-  local -r target="$(make_directory 'target')"
+  target="$(make_directory 'target')"
   make_entries "${target}" 'entry'
 
   # Act:
@@ -284,12 +296,14 @@ done
 }
 
 @test "zsh options that change word splitting and arrays do not break cdl" {
+  local target
+
   # Arrange
   if [[ "${CDL_SHELL_KIND}" != 'zsh' ]]; then
     skip 'zsh only'
   fi
   require_gnu_compatible_ls
-  local -r target="$(make_directory 'my target')"
+  target="$(make_directory 'my target')"
   make_entries "${target}" 'entry'
 
   # Act
@@ -307,8 +321,10 @@ done
 }
 
 @test "cdl leaves no REPLY behind" {
+  local target
+
   # Arrange
-  local -r target="$(make_directory 'target')"
+  target="$(make_directory 'target')"
 
   # Act
   run --separate-stderr in_shell \
@@ -324,10 +340,13 @@ done
 # region Listing without moving
 
 @test "cdl_list lists the current directory and keeps OLDPWD" {
+  local first
+  local second
+
   # Arrange
   require_gnu_compatible_ls
-  local -r first="$(make_directory 'first')"
-  local -r second="$(make_directory 'second')"
+  first="$(make_directory 'first')"
+  second="$(make_directory 'second')"
   make_entries "${second}" 'entry'
 
   # Act
@@ -340,9 +359,11 @@ done
 }
 
 @test "a cd wrapper written for cdl 1.0 keeps working" {
+  local target
+
   # Arrange
   require_gnu_compatible_ls
-  local -r target="$(make_directory 'target')"
+  target="$(make_directory 'target')"
   make_entries "${target}" 'entry'
 
   # Act
