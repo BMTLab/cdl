@@ -1,26 +1,23 @@
 #!/usr/bin/env bash
 
-# Name: tools/release-notes.sh
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Print the CHANGELOG section of a version, without its heading.
 #
-# Description:
-#   Print the CHANGELOG section of a version, without its heading:
-#   the body of the GitHub release for that version.
-#   The CHANGELOG stays the one place where release notes are written.
-#
-# Usage:
-#   tools/release-notes.sh [VERSION]
-#
+# Usage: tools/release-notes.sh [VERSION]
 #   tools/release-notes.sh          # the version in the header of cdl.sh
 #   tools/release-notes.sh 2.0.0
+# Effects: none; it reads CHANGELOG.md, and cdl.sh without a VERSION.
+# Dependencies: awk, sed.
+# Exit codes: 0 success,
+#   30 NOTES_ERR_MISSING: CHANGELOG.md has no section, or an empty one,
+#     for the version,
+#   39 NOTES_ERR_INTERNAL: a bug in this script.
+# See: CLAUDE.md, tests/style/test_release.bats.
 #
-# Exit Codes:
-#   0: Success.
-#   30: NOTES_ERR_MISSING
-#      CHANGELOG.md has no section, or an empty one, for the version.
-#   39: NOTES_ERR_INTERNAL
-#      A bug: a command failed where no code planned it.
+# How it works:
+#   The section is the body of the GitHub release of the version,
+#   so the CHANGELOG stays the one place where release notes are written.
+#
+# Version: 1.0.0
 
 readonly NOTES_ERR_MISSING=30
 readonly NOTES_ERR_INTERNAL=39

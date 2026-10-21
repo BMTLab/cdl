@@ -1,16 +1,10 @@
 #!/usr/bin/env bats
 
-# Name: tests/integration/test_stdin.bats
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Test a path piped into cdl, and the stdin that cdl must leave alone.
 #
-# Description:
-#   A path piped into cdl, and the stdin cdl must leave alone.
-#   bash and zsh differ by design here:
-#   bash runs the last command of a pipeline in a subshell,
-#   zsh runs it in the current shell.
-#
-#   Each test follows the Arrange-Act-Assert pattern.
+# bash and zsh differ by design here:
+# bash runs the last command of a pipeline in a subshell,
+# zsh runs it in the current shell.
 
 bats_require_minimum_version 1.11.0
 

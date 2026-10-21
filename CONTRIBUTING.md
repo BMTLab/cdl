@@ -123,6 +123,8 @@ for people and coding agents alike. In short:
 
 - English for code, comments and messages; no em-dash anywhere.
 - Single quotes unless a string expands something.
+- Every script opens with a card: what it does, its usage, effects,
+  dependencies, settings and exit codes, and its version.
 - `function name() { ... }` declarations, each with a documentation header.
 - The `local` declarations open each function and each test;
   `local -r`, `local -i` and friends wherever they fit,

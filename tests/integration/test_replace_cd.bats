@@ -1,17 +1,11 @@
 #!/usr/bin/env bats
 
-# Name: tests/integration/test_replace_cd.bats
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Test the cd that runs cdl, which CDL_REPLACE_CD=1 brings before sourcing.
 #
-# Description:
-#   CDL_REPLACE_CD=1, set before cdl.sh is sourced, makes cd run cdl:
-#   on a terminal, with the options, files and listing of cdl,
-#   and wherever an option only cdl knows asks for it.
-#   Elsewhere, as in a command substitution, cd stays the shell's own,
-#   and so do the options cdl does not know and the two-word cd of zsh.
-#
-#   Each test follows the Arrange-Act-Assert pattern.
+# On a terminal it has the options, files and listing of cdl,
+# and so it does wherever an option only cdl knows asks for it.
+# Elsewhere, as in a command substitution, cd stays the shell's own,
+# and so do the options cdl does not know and the two-word cd of zsh.
 
 bats_require_minimum_version 1.11.0
 

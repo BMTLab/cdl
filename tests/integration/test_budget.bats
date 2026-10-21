@@ -1,21 +1,16 @@
 #!/usr/bin/env bats
 
-# Name: tests/integration/test_budget.bats
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Test the budget of external commands that a cdl call may start.
 #
-# Description:
-#   cdl runs on every change of directory,
-#   so the external commands it starts are a budget:
-#   none while the file is sourced,
-#   ls twice and awk once on the first listing of a session
-#   (the probe that finds out what ls can do, then the listing),
-#   ls once and awk once on every listing after it,
-#   tput only when the shell does not set COLUMNS,
-#   and never git or hostname: the header reads the branch from the files,
-#   and links take the host from the shell.
-#
-#   Each test follows the Arrange-Act-Assert pattern.
+# cdl runs on every change of directory,
+# so the external commands it starts are a budget:
+# none while the file is sourced,
+# ls twice and awk once on the first listing of a session
+# (the probe that finds out what ls can do, then the listing),
+# ls once and awk once on every listing after it,
+# tput only when the shell does not set COLUMNS,
+# and never git or hostname: the header reads the branch from the files,
+# and links take the host from the shell.
 
 bats_require_minimum_version 1.11.0
 

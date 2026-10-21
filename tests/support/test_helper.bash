@@ -1,25 +1,20 @@
 #!/usr/bin/env bash
 
-# Name: tests/support/test_helper.bash
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Load what every test needs: the paths, the shell under test, the helpers.
 #
-# Description:
-#   The one file every test loads:
-#     load '../support/test_helper'
-#
-#   It resolves the project paths and the shell under test,
-#   then loads the focused helper modules:
-#     - sandbox.bash:     a hermetic environment for each test;
-#     - shells.bash:      run cdl inside the shell under test;
-#     - assertions.bash:  assertions that explain their failures;
-#     - fixtures.bash:    directory trees and canned `ls -l` lines;
-#     - screen.bash:      strip escapes, count screen cells, find columns;
-#     - fakes.bash:       stand-in ls, gls and awk binaries on PATH.
-#
-#   The shell under test comes from CDL_TEST_SHELL:
-#   'bash' (the default), 'zsh',
-#   or a path such as /bin/bash to test the bash 3.2 of macOS.
+# Every test file loads it:
+#   load '../support/test_helper'
+# It resolves the project paths and the shell under test,
+# then loads the focused helper modules:
+#   - sandbox.bash:     a hermetic environment for each test;
+#   - shells.bash:      run cdl inside the shell under test;
+#   - assertions.bash:  assertions that explain their failures;
+#   - fixtures.bash:    directory trees and canned `ls -l` lines;
+#   - screen.bash:      strip escapes, count screen cells, find columns;
+#   - fakes.bash:       stand-in ls, gls and awk binaries on PATH.
+# The shell under test comes from CDL_TEST_SHELL:
+# 'bash' (the default), 'zsh',
+# or a path such as /bin/bash to test the bash 3.2 of macOS.
 
 # shellcheck disable=SC2034 # used by the modules and the tests
 CDL_ROOT="$(cd "${BATS_TEST_DIRNAME}/../.." && pwd -P)"

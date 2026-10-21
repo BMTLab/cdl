@@ -1,22 +1,24 @@
 #!/usr/bin/env bash
 
-# Name: docs/demo/setup.bash
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Prepare the shell that docs/demo/demo.tape records.
 #
-# Description:
-#   Prepare the shell that docs/demo/demo.tape records:
-#   a scratch HOME with a small project, a folder of photos
-#   and a folder that may not be entered, every file with a size
-#   and a date of its own; then cdl, sourced, and a short prompt.
+# Usage: sourced by docs/demo/demo.tape, from the root of the repository:
+#   source docs/demo/setup.bash
+# Effects: makes a scratch HOME in ${TMPDIR:-/tmp}/cdl-demo,
+#   in place of the one an earlier recording left,
+#   and exports HOME and CDL_LINKS=never;
+#   then it sources cdl.sh, enters HOME and sets a short prompt.
+# Dependencies: git, awk, and the GNU truncate and touch: record on Linux.
+# See: make demo, docs/demo/demo.tape.
 #
-#   The tape sources this file out of sight, so the recording
-#   shows the same listings on every machine.
+# How it works:
+#   The scratch HOME holds a small project, a folder of photos
+#   and a folder that may not be entered, each file with a size
+#   and a date of its own, so the recording shows the same listings
+#   on every machine. The tape sources this file out of sight.
 #   Links stay off: the terminal of the recorder underlines them all.
-#   The fixtures use GNU truncate and touch: record on Linux.
 #
-# Usage:
-#   source docs/demo/setup.bash   # from the root of the repository
+# Version: 1.0.0
 
 # region Fixtures
 
@@ -32,10 +34,10 @@ function demo_make_home() {
 
   # The folder that may not be entered has to open up before it can go.
   if [[ -d "${home}" ]]; then
-    chmod -R u+rwx "${home}"
-    rm -rf -- "${home}"
+    command chmod -R u+rwx "${home}"
+    command rm -rf -- "${home}"
   fi
-  mkdir -p -- "${home}"
+  command mkdir -p -- "${home}"
 }
 
 #######################################
@@ -48,7 +50,7 @@ function demo_make_home() {
 #   The number of bytes.
 #######################################
 function demo_bytes() {
-  awk -v size="$1" 'BEGIN {
+  command awk -v size="$1" 'BEGIN {
     unit["K"] = 1024
     unit["M"] = 1024 * 1024
     unit["G"] = 1024 * 1024 * 1024
@@ -71,9 +73,9 @@ function demo_file() {
   local -r size="$2"
   local -r date="$3"
 
-  mkdir -p -- "${path%/*}"
-  truncate -s "$(demo_bytes "${size}")" -- "${path}"
-  touch -d "${date}" -- "${path}"
+  command mkdir -p -- "${path%/*}"
+  command truncate -s "$(demo_bytes "${size}")" -- "${path}"
+  command touch -d "${date}" -- "${path}"
 }
 
 #######################################
@@ -90,7 +92,7 @@ function demo_make_project() {
   demo_file "${project}/LICENSE" 1.1K '2026-01-14 09:00'
   demo_file "${project}/Makefile" 2.3K '2026-09-28 21:17'
   demo_file "${project}/deploy.sh" 760 '2026-09-30 16:42'
-  chmod +x "${project}/deploy.sh"
+  command chmod +x "${project}/deploy.sh"
   demo_file "${project}/Отчёт за квартал.pdf" 1.4M '2026-09-29 10:12'
   demo_file "${project}/日本語メモ.txt" 380 '2026-09-25 08:31'
   demo_file "${project}/.gitignore" 120 '2026-01-14 09:00'
@@ -106,10 +108,10 @@ function demo_make_project() {
   demo_file "${project}/assets/screenshot.webp" 184K '2026-09-30 17:05'
   demo_file "${project}/assets/fonts/Inter.woff2" 98K '2026-08-02 10:00'
   demo_file "${project}/assets/icons/menu.svg" 640 '2026-08-02 10:00'
-  ln -s docs/guide.md "${project}/latest"
-  git init --quiet --initial-branch=main "${project}"
-  touch -h -d '2026-10-01 14:56' -- "${project}/latest"
-  touch -d '2026-10-05 09:00' -- \
+  command ln -s docs/guide.md "${project}/latest"
+  command git init --quiet --initial-branch=main "${project}"
+  command touch -h -d '2026-10-01 14:56' -- "${project}/latest"
+  command touch -d '2026-10-05 09:00' -- \
     "${project}"/{.git,src,tests,docs,assets,docs/images,assets/fonts,assets/icons}
 }
 
@@ -139,8 +141,8 @@ function demo_make_photos() {
 function demo_make_locked() {
   local -r locked="$1"
 
-  mkdir -p -- "${locked}/inner"
-  chmod 000 "${locked}"
+  command mkdir -p -- "${locked}/inner"
+  command chmod 000 "${locked}"
 }
 
 # endregion Fixtures
@@ -167,7 +169,7 @@ function demo_setup() {
   # shellcheck source=../../cdl.sh
   source "${cdl_script}"
 
-  cd "${HOME}" || return
+  builtin cd -- "${HOME}" || return
   PS1='\[\e[1;36m\]\W\[\e[0m\] \[\e[1;35m\]❯\[\e[0m\] '
 }
 

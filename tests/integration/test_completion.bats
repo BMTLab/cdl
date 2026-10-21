@@ -1,20 +1,13 @@
 #!/usr/bin/env bats
 
-# Name: tests/integration/test_completion.bats
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Test what Tab offers after cdl and cdl_list, and after cd when cdl replaces it.
 #
-# Description:
-#   What Tab offers after cdl and cdl_list, and after cd when cdl replaces it:
-#   the options after a dash; otherwise the directories and files
-#   a word begins, as cdl takes both,
-#   and the directories under CDPATH, as cd offers them.
-#   bash runs the completion function itself;
-#   zsh runs on a pseudo-terminal through tests/support/bin/zsh-completions,
-#   with compinit, as a user meets it.
-#   Each test belongs to one shell and skips in the other.
-#
-#   Each test follows the Arrange-Act-Assert pattern.
+# A dash brings the options; any other word brings the directories and files
+# that it begins, as cdl takes both, and the directories under CDPATH,
+# as cd offers them. bash runs the completion function itself;
+# zsh runs on a pseudo-terminal through tests/support/bin/zsh-completions,
+# with compinit, as a user meets it.
+# Each test belongs to one shell and skips in the other.
 
 bats_require_minimum_version 1.11.0
 

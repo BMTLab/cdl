@@ -1,17 +1,11 @@
 #!/usr/bin/env bash
 
-# Name: tests/support/assertions.bash
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Assert on the status, output and stderr that run --separate-stderr leaves.
 #
-# Description:
-#   Assertions over the `status`, `output` and `stderr`
-#   that bats' `run --separate-stderr` leaves behind.
-#   On failure each one prints what it expected,
-#   what it got, and the whole run,
-#   so a red test explains itself without a rerun.
-#
-#   Loaded by tests/support/test_helper.bash.
+# On failure each one prints what it expected,
+# what it got, and the whole run,
+# so a red test explains itself without a rerun.
+# test_helper.bash loads it.
 
 # region Status
 

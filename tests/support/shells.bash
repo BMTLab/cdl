@@ -1,19 +1,13 @@
 #!/usr/bin/env bash
 
-# Name: tests/support/shells.bash
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Run cdl inside the shell under test, bash or zsh.
 #
-# Description:
-#   Run cdl inside the shell under test (bash or zsh),
-#   always in a fresh process with no rc files,
-#   so every test starts from the same clean shell.
-#
-#   Snippets run in bash and in zsh alike,
-#   so they avoid names that zsh reserves,
-#   such as `status`, `path` and `argv`.
-#
-#   Loaded by tests/support/test_helper.bash.
+# Each run is a fresh process with no rc files,
+# so every test starts from the same clean shell.
+# Snippets run in bash and in zsh alike,
+# so they avoid the names that zsh reserves,
+# such as `status`, `path` and `argv`.
+# test_helper.bash loads it.
 
 # region Runners
 

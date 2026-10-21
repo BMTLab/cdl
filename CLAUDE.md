@@ -164,6 +164,27 @@ prose of at most 80 columns, tables aligned so their source reads
 like the rendered page, `### Fixed` and its kin repeated only per version.
 A table holds short cells; a longer explanation goes below it, as a list.
 
+## File headers
+
+- A script opens with a card, which a reader judges at a glance:
+  one sentence in the imperative mood, what the script does,
+  then the keys that apply, in this order, a line each:
+  `Usage:`, `Effects:`, `Dependencies:`, `Settings:`, `Exit codes:`, `See:`.
+  `How it works:` follows, only for what the code does not show,
+  and `# Version:` closes the card.
+- `Effects:` lists every change outside the script,
+  and how to run it without one, or that there is no such way.
+  `Settings:` holds the variables a user sets, with their defaults;
+  a variable it only reads to learn where it runs belongs in How it works.
+  `Exit codes:` names each code;
+  a tool without `--help` and a README of its own says there what it means.
+- A test file or a support module opens with one sentence,
+  what it tests or gives, and a short paragraph where a reader needs one;
+  it takes no keys and no version.
+- Nothing else goes into a header: git knows the author and the date,
+  the path names the file, and LICENSE holds the license.
+  A style test checks both kinds.
+
 ## Regions
 
 - A file longer than a screen folds
@@ -250,8 +271,7 @@ A table holds short cells; a longer explanation goes below it, as a list.
 
 - Standard library only; runs on Python 3.10 and later.
 - Type hints on every signature, numpydoc docstrings, `# region` markers,
-  and the same `# Name / # Author / # License / # Description` header
-  as a shell file.
+  and the same card as a script (see "File headers").
 - Clean under ruff with the ScriptsLib profile
   (every rule group, preview, line length 99, numpy docstrings)
   and under `mypy --strict`.
@@ -393,14 +413,14 @@ the code of the recipe shows in its error line (`Error 71`).
 
 ## Versions, changelog, release
 
-- The version lives in the `# Version:` and `# Date:` lines of `cdl.sh`.
-  `CHANGELOG.md` has a `## [X.Y.Z] - YYYY-MM-DD` section for it
-  (a style test checks),
-  and the release tag `vX.Y.Z` sits on the commit that bumps them.
+- The version lives in the `# Version:` line of the card of `cdl.sh`.
+  `CHANGELOG.md` has a `## [X.Y.Z] - YYYY-MM-DD` section for it,
+  dated on the day of the release (a style test checks),
+  and the release tag `vX.Y.Z` sits on the commit that bumps it.
 - The changelog follows Keep a Changelog: Fixed, Changed, Added.
   One entry per behavior a user can notice, written for that user,
   with the old behavior named.
-- Every return code appears in the file header, in `cdl --help`
+- Every return code appears in the card of `cdl.sh`, in `cdl --help`
   and in the README (a style test checks).
 
 ## Git

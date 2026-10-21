@@ -1,16 +1,10 @@
 #!/usr/bin/env bats
 
-# Name: tests/style/test_width_table.bats
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Test the width table inside cdl.sh against its generator.
 #
-# Description:
-#   The width table inside cdl.sh is generated
-#   by tools/gen-width-table.py from the Unicode data of Python,
-#   so it must match the generator and keep the order
-#   that the binary search of the formatter relies on.
-#
-#   Each test follows the Arrange-Act-Assert pattern.
+# tools/gen-width-table.py makes the table from the Unicode data of Python,
+# so it must match the generator and keep the order
+# that the binary search of the formatter relies on.
 
 bats_require_minimum_version 1.11.0
 
@@ -103,6 +97,7 @@ function generated_cells() {
   local disorder
 
   # Arrange: the binary search in cdl.sh needs this order.
+
   # Act
   run generated_ranges
 

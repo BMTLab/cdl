@@ -1,18 +1,11 @@
 #!/usr/bin/env bats
 
-# Name: tests/style/test_conventions.bats
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Test the rules of the code style that ShellCheck and shfmt cannot see.
 #
-# Description:
-#   The conventions of the BMTLab ScriptsLib code style
-#   that shellcheck and shfmt cannot see,
-#   and the facts that several files must agree on:
-#   the version, the date and the return codes.
-#
-#   Each test collects every violation first and then reports them all,
-#   so one run shows the whole list.
-#   Each test follows the Arrange-Act-Assert pattern.
+# The rules include the facts that several files must agree on:
+# the version and the return codes.
+# Each test collects every violation first and then reports them all,
+# so one run shows the whole list.
 
 bats_require_minimum_version 1.11.0
 
@@ -33,6 +26,17 @@ function shell_files() {
       \( -name '*.sh' -o -name '*.bash' -o -name '*.bats' -o -path './tests/support/bin/*' \) \
       -print | sed 's#^\./##' | sort
   )
+}
+
+#######################################
+# List the scripts of the project, which open with a card.
+#
+# Outputs:
+#   One path per line, relative to the project root:
+#   the shell files without the tests and their support modules.
+#######################################
+function script_files() {
+  shell_files | grep -v -E '\.bats$|^tests/support/[^/]+\.bash$'
 }
 
 #######################################
@@ -65,47 +69,92 @@ function report_violations() {
 
 # region Headers
 
-@test "every shell file starts with a header naming itself, its author and license" {
-  local file
+@test "every script opens with a card, its keys in order and its version last" {
+  local file verdict
   local -a violations=()
-  local header
 
-  # Arrange: the shell files of the repository are the input.
+  # Arrange: the scripts of the repository are the input.
 
-  # Act
+  # Act:
+  # the card runs from the line after the shebang
+  # to the first line that is no comment:
+  # a summary, then the keys of the style in their order, and the version.
   while IFS= read -r file; do
-    header="$(head -n 12 "${CDL_ROOT}/${file}")"
-    if ! grep -qxF "# Name: ${file##*/}" <<<"${header}" \
-      && ! grep -qxF "# Name: ${file}" <<<"${header}"; then
-      violations+=("${file}: no '# Name:' line naming the file")
+    verdict="$(awk '
+      FNR <= 2 && (/^#!/ || /^$/) { next }
+      !/^#/ { exit }
+      { card[++count] = $0 }
+      END {
+        split("Usage Effects Dependencies Settings Exit-codes See How-it-works Version", names, " ")
+        for (i in names) { name = names[i]; gsub(/-/, " ", name); rank[name] = i }
+        if (card[1] !~ /^# [A-Z].*[.]$/) { print "no summary sentence opens the card"; exit }
+        for (i = 2; i <= count; i++) {
+          if (match(card[i], /^# (Name|Author|License|Date|Description):/)) {
+            print "line " i " of the card is " substr(card[i], 3, RLENGTH - 3) ", which git or LICENSE keeps"
+            exit
+          }
+          if (!match(card[i], /^# [A-Z][a-z]+( [a-z]+)*:/)) continue
+          key = substr(card[i], 3, RLENGTH - 3)
+          if (!(key in rank)) continue
+          if (rank[key] <= last_rank) { print key " comes out of order"; exit }
+          last_rank = rank[key]
+        }
+        if (card[count] !~ /^# Version: [0-9]+\.[0-9]+\.[0-9]+$/) print "the card does not end with its version"
+      }
+    ' "${CDL_ROOT}/${file}")"
+    if [[ -n "${verdict}" ]]; then
+      violations+=("${file}: ${verdict}")
     fi
-    if ! grep -qx '# Author: Nikita Neverov (BMTLab)' <<<"${header}"; then
-      violations+=("${file}: no '# Author:' line")
-    fi
-    if ! grep -qx '# License: MIT' <<<"${header}"; then
-      violations+=("${file}: no '# License: MIT' line")
-    fi
-  done < <(shell_files)
+  done < <(script_files)
 
   # Assert
-  report_violations 'headers' "${violations[@]}"
+  report_violations 'cards' "${violations[@]}"
 }
 
-@test "cdl.sh declares a semantic version and an ISO date" {
-  local version
-  local date
+@test "every test file and support module opens with a sentence, without keys" {
+  local file verdict
+  local -a violations=()
 
-  # Arrange: the header of cdl.sh is the input.
+  # Arrange: the test files and the support modules are the input.
+
+  # Act:
+  # the header runs from the line after the shebang
+  # to the first line that is no comment.
+  while IFS= read -r file; do
+    verdict="$(awk '
+      FNR <= 2 && (/^#!/ || /^$/) { next }
+      !/^#/ { exit }
+      { header[++count] = $0 }
+      END {
+        if (header[1] !~ /^# [A-Z]/) { print "no sentence opens the header"; exit }
+        for (i = 1; i <= count; i++) {
+          if (match(header[i], /^# (Name|Author|License|Date|Description|Usage|Effects|Dependencies|Settings|Exit codes|See|How it works|Version):/)) {
+            print "line " i " of the header is a key: " substr(header[i], 3, RLENGTH - 3)
+            exit
+          }
+        }
+      }
+    ' "${CDL_ROOT}/${file}")"
+    if [[ -n "${verdict}" ]]; then
+      violations+=("${file}: ${verdict}")
+    fi
+  done < <(shell_files | grep -E '\.bats$|^tests/support/[^/]+\.bash$')
+
+  # Assert
+  report_violations 'headers of the tests' "${violations[@]}"
+}
+
+@test "cdl.sh declares a semantic version" {
+  local version
+
+  # Arrange: the card of cdl.sh is the input.
+
   # Act
   version="$(script_header 'Version')"
-  date="$(script_header 'Date')"
 
   # Assert
   if [[ ! "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     fail_with_report "not a semantic version: '${version}'"
-  fi
-  if [[ ! "${date}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
-    fail_with_report "not an ISO date: '${date}'"
   fi
 }
 
@@ -127,16 +176,14 @@ function report_violations() {
   assert_output '1'
 }
 
-@test "the CHANGELOG has a section for the version and date of cdl.sh" {
+@test "the CHANGELOG has a dated section for the version of cdl.sh" {
   local version
-  local date
 
   # Arrange
   version="$(script_header 'Version')"
-  date="$(script_header 'Date')"
 
   # Act
-  run grep -cxF "## [${version}] - ${date}" "${CDL_ROOT}/CHANGELOG.md"
+  run grep -cxE "## \[${version}\] - [0-9]{4}-[0-9]{2}-[0-9]{2}" "${CDL_ROOT}/CHANGELOG.md"
 
   # Assert
   assert_success
@@ -146,17 +193,20 @@ function report_violations() {
 @test "every return code is documented in the header, the help and the README" {
   local help_text
   local readme
+  local card
   local name value
   local -a violations=()
 
   # Arrange
   help_text="$(in_shell 'cdl --help')"
   readme="$(<"${CDL_ROOT}/README.md")"
+  card="$(awk 'FNR > 2 && !/^#/ { exit } FNR > 2 { print }' "${CDL_SCRIPT}")"
 
   # Act
   while IFS='=' read -r name value; do
-    if ! grep -qxF "#   ${value}: ${name}" "${CDL_SCRIPT}"; then
-      violations+=("${name}=${value}: missing from the header of cdl.sh")
+    # The card lists the codes as "30 CDL_ERR_CHDIR, 31 CDL_ERR_NOT_FOUND,".
+    if ! grep -qE "(^#|,) +${value} ${name}[,.]" <<<"${card}"; then
+      violations+=("${name}=${value}: missing from the card of cdl.sh")
     fi
     if ! grep -qE "^  ${value}  ${name} " <<<"${help_text}"; then
       violations+=("${name}=${value}: missing from cdl --help")

@@ -1,15 +1,10 @@
 #!/usr/bin/env bash
 
-# Name: tests/support/sandbox.bash
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Give each test a hermetic environment.
 #
-# Description:
-#   A hermetic environment for each test.
-#   Everything cdl reads from the environment is pinned,
-#   so a result never depends on the machine that runs the suite.
-#
-#   Loaded by tests/support/test_helper.bash.
+# Everything cdl reads from the environment is pinned,
+# so a result never depends on the machine that runs the suite.
+# test_helper.bash loads it.
 
 # region Locale
 

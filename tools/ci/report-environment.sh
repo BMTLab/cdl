@@ -1,28 +1,23 @@
 #!/usr/bin/env bash
 
-# Name: tools/ci/report-environment.sh
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Report the tools that a CI job runs cdl with, as a Markdown table.
 #
-# Description:
-#   Report the tools a CI job runs cdl with:
-#   the shells under test, the ls and awk it will pick, and the test tools.
-#   A failure in one matrix leg reads differently
-#   once you know it ran uutils ls with mawk under bash 3.2.
-#
-#   The report is a Markdown table on stdout,
-#   and the run summary when GITHUB_STEP_SUMMARY is set.
-#
-# Usage:
-#   tools/ci/report-environment.sh [SHELL...]
-#
+# Usage: tools/ci/report-environment.sh [SHELL...]
 #   tools/ci/report-environment.sh bash zsh
 #   tools/ci/report-environment.sh /bin/bash zsh
+# Effects: appends the table to GITHUB_STEP_SUMMARY when it is set.
+# Dependencies: awk, python3; gls and mawk when they are installed.
+# Exit codes: 0 success,
+#   99 REPORT_ENVIRONMENT_ERR_INTERNAL: a bug in this script.
+# See: CLAUDE.md (Continuous integration).
 #
-# Exit Codes:
-#   0: Success.
-#   99: REPORT_ENVIRONMENT_ERR_INTERNAL
-#      A bug: a command failed where no code planned it.
+# How it works:
+#   The table names the shells under test, the ls and awk that cdl picks,
+#   and the test tools: a failure in one matrix leg reads differently
+#   once you know it ran uutils ls with mawk under bash 3.2.
+#   GitHub Actions sets GITHUB_STEP_SUMMARY, the summary of the run.
+#
+# Version: 1.0.0
 
 readonly REPORT_ENVIRONMENT_ERR_INTERNAL=99
 

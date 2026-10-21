@@ -1,116 +1,37 @@
 #!/usr/bin/env bash
 
-# Name: cdl.sh
-# Author: Nikita Neverov (BMTLab)
+# Change into a directory and list it: cd and a compact ls in one step.
+#
+# Usage: sourced by ~/.bashrc or ~/.zshrc, or by cdl.plugin.zsh;
+#   then cdl [-a] [-1] [-L | -P] [--] [DIRECTORY], or cdl_list [-a] [-1].
+# Effects: defines cdl, cdl_list and their Tab completion
+#   in the shell that sources it, and with CDL_REPLACE_CD=1 a cd that runs cdl;
+#   cdl changes the directory of that shell and prints a listing.
+#   It needs no root and no network; cdl --help changes nothing.
+# Dependencies: awk; tput only without COLUMNS;
+#   a GNU, uutils or Homebrew ls (gls) for the compact listing,
+#   which falls back to a plain ls -Alh with a BSD ls.
+# Settings: CDL_COLOR (auto), CDL_HIDDEN (1), CDL_WIDTH, CDL_MAX_ROWS,
+#   CDL_MAX_COLUMNS, CDL_HEADER (auto), CDL_GIT (1), CDL_LINKS (auto),
+#   CDL_REPLACE_CD (0), and NO_COLOR.
+# Exit codes: 0 success,
+#   10 CDL_ERR_USAGE,
+#   20 CDL_ERR_SETTING,
+#   30 CDL_ERR_CHDIR, 31 CDL_ERR_NOT_FOUND, 32 CDL_ERR_DENIED, 33 CDL_ERR_NOT_DIRECTORY,
+#   40 CDL_ERR_LIST,
+#   50 CDL_ERR_NOT_SOURCED.
+# See: cdl --help, README.md, CLAUDE.md, tests/.
+#
+# How it works:
+#   The file runs in bash 3.2+ and zsh 5.0+, on Linux and macOS,
+#   and sourcing it runs no external command.
+#   A listing runs ls once and awk once: the awk program in this file
+#   lays out the columns and counts names in screen cells,
+#   so CJK and emoji take two cells and escape sequences none.
+#   The tens digit of a return code names what failed, and the units why,
+#   so `(( $? / 10 == 3 ))` holds whenever a directory could not be entered.
+#
 # Version: 2.0.0
-# Date: 2026-10-07
-# License: MIT
-#
-# Description:
-#   Interactive helper that combines `cd` and a compact, colored `ls`:
-#   it changes the current directory
-#   and immediately prints a readable listing of the new one.
-#
-#   Compatibility:
-#     - Source it into bash 3.2+ or zsh 5.0+, on Linux or macOS.
-#     - The compact listing needs an ls that speaks GNU options:
-#       GNU ls, uutils ls, or Homebrew's gls.
-#       With BSD ls (the macOS default) cdl prints `ls -Alh` as is.
-#     - Any POSIX awk will do: gawk, mawk, BSD awk or busybox awk 1.34+.
-#
-#   Listing format (GNU-compatible ls):
-#     - On a terminal, a header line first:
-#       the directory, its git branch, read without running git,
-#       and how many directories, files and bytes it holds.
-#     - One row per entry: SIZE  DATE TIME  NAME,
-#       directories first, symlinks with their targets.
-#       Sizes read like those of GNU `ls -h`, whatever ls lists them.
-#     - Names sort by bytes (uppercase first), whatever the locale:
-#       the one order every ls implementation agrees on.
-#     - As many columns as fit the terminal, filled top to bottom like ls.
-#       Widths are measured in screen cells:
-#       escape sequences take none, CJK and emoji take two.
-#     - On a terminal, a long listing is cut at its height,
-#       with a last line that says how many entries it left out.
-#     - A file given to cdl is marked with ❯ (> without UTF-8),
-#       and a cut listing moves to show it.
-#     - Control characters in names show as '?', like `ls -q`,
-#       so a crafted file name cannot drive the terminal.
-#     - Colors only on a terminal, and never when NO_COLOR is set.
-#     - With colors, names are hyperlinks (OSC 8) to their files,
-#       and the header path to the directory.
-#
-# Usage:
-#   # In ~/.bashrc or ~/.zshrc:
-#   source /path/to/cdl.sh
-#
-#   # Then, interactively:
-#   cdl [<directory>]
-#   cdl "$(xclip -o)"       # Change into the path from the clipboard
-#   echo '/some/path' | cdl # Read the directory from a pipe (see Notes)
-#
-#   # Or make cd itself run cdl, with its options and completion
-#   # (set it before sourcing):
-#   export CDL_REPLACE_CD=1
-#
-#   Tab completion for cdl and cdl_list, and for cd when cdl replaces it,
-#   comes with sourcing, in bash, and in zsh once compinit has run.
-#   zsh plugin managers can load cdl.plugin.zsh instead.
-#
-#   Notes:
-#     - cdl reads the directory from stdin only when stdin is a pipe;
-#       a redirected file or a terminal is never read.
-#     - In bash, a pipeline runs cdl in a subshell:
-#       `echo /path | cdl` prints the listing,
-#       but your shell stays where it was.
-#       zsh runs the last command of a pipeline in the current shell,
-#       so there the directory does change.
-#       `cdl "$(command)"` changes directory in both shells.
-#     - An explicit operand wins over stdin.
-#       From stdin, the first non-blank line is used, trimmed.
-#     - With neither, cdl goes to $HOME, like cd.
-#     - A file takes cdl to the directory that holds it.
-#     - A file:// URI and a leading ~ work too,
-#       as they come from a clipboard or a pipe.
-#
-# Exit Codes / Return Codes:
-#   The tens digit names what failed, and the units digit why.
-#   A code keeps its value within a major version,
-#   and a new reason takes the next free code of its ten,
-#   so a script that compares the tens keeps working:
-#   `(( $? / 10 == CDL_ERR_CHDIR / 10 ))` holds for every reason
-#   a directory could not be entered.
-#   0: Success.
-#   10: CDL_ERR_USAGE
-#       Unknown option, empty directory name,
-#       or more than one directory operand.
-#   20: CDL_ERR_SETTING
-#       A CDL_* setting holds an invalid value.
-#   30: CDL_ERR_CHDIR
-#       The directory could not be entered,
-#       for a reason none of the codes below names.
-#   31: CDL_ERR_NOT_FOUND
-#       The directory does not exist,
-#       or `cdl -` has no previous directory to go back to.
-#   32: CDL_ERR_DENIED
-#       The directory, or a directory on the way to it,
-#       may not be entered.
-#   33: CDL_ERR_NOT_DIRECTORY
-#       A file stands where the path needs a directory,
-#       as in 'notes.md/' or 'notes.md/drafts'.
-#   40: CDL_ERR_LIST
-#       The directory was entered, but ls could not list it in full
-#       (e.g., it is searchable but not readable).
-#   50: CDL_ERR_NOT_SOURCED
-#       This script was executed instead of being sourced,
-#       or sourced into a shell other than bash or zsh.
-#
-# Disclaimer:
-#   This script is provided "as is",
-#   without any warranty or guarantee of correctness, performance,
-#   or fitness for a particular purpose.
-#   Always verify that the resolved target path is what you expect
-#   before relying on it in automation or critical workflows.
 
 # region Version and error codes
 

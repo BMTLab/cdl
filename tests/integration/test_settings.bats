@@ -1,18 +1,12 @@
 #!/usr/bin/env bats
 
-# Name: tests/integration/test_settings.bats
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Test the settings of cdl, and its options that are not about the listing.
 #
-# Description:
-#   The settings of cdl, which come from environment variables,
-#   and the options of cdl that are not about the listing:
-#   --version, and -L and -P for cd.
-#   A setting is checked before cdl moves,
-#   so a typo in an rc file shows at once and changes nothing.
-#   The settings of the shell that runs the suite stay out of every test.
-#
-#   Each test follows the Arrange-Act-Assert pattern.
+# The settings come from environment variables;
+# the options are --version, and -L and -P for cd.
+# A setting is checked before cdl moves,
+# so a typo in an rc file shows at once and changes nothing.
+# The settings of the shell that runs the suite stay out of every test.
 
 bats_require_minimum_version 1.11.0
 

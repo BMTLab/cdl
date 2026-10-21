@@ -1,51 +1,38 @@
 #!/usr/bin/env bash
 
-# Name: tools/ci/install-tools.sh
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Install the tools that a CI job needs, at pinned versions.
 #
-# Description:
-#   Install the tools a CI job needs, at pinned versions,
-#   and put them on the PATH of the steps that follow.
-#   Every download is checked against a pinned SHA-256 digest
-#   before it reaches the PATH,
-#   and bats-core is checked out at a pinned commit,
+# Usage: tools/ci/install-tools.sh TOOL...
+#   TOOL is shellcheck, shfmt or actionlint for their pinned release binaries
+#   (Linux x86_64 or arm64), bats for bats-core at a pinned commit,
+#   or any other name for a system package, from apt-get or Homebrew.
+# Effects: installs the tools under ${RUNNER_TEMP:-~/.local}/cdl-tools,
+#   adds their bin to GITHUB_PATH, installs packages as root with apt-get
+#   on Linux or with Homebrew on macOS, and fills the cache directory.
+#   It needs the network, and has no way to run without a change.
+# Dependencies: curl, git, tar, xz; sudo, apt-get and dpkg, or brew.
+# Settings: CI_CACHE_DIR, the cache directory (~/.cache/cdl-ci).
+# Exit codes: 0 success,
+#   10 INSTALL_ERR_USAGE: no tool was named,
+#   11 INSTALL_ERR_DOWNLOAD: a download failed or did not match its digest,
+#     or apt-get could not reach its mirrors,
+#   12 INSTALL_ERR_PLATFORM: there is no pinned binary for this machine,
+#   19 INSTALL_ERR_INTERNAL: a bug in this script.
+# See: CLAUDE.md (Continuous integration), .github/workflows/ci-test.yml.
+#
+# How it works:
+#   Every download is checked against its pinned SHA-256 digest
+#   before it reaches the PATH, and bats-core against its pinned commit,
 #   so a moved tag or a swapped asset cannot slip into a build.
+#   actions/cache keeps the cache directory between runs:
+#   a pinned download found there is used while it still matches its digest,
+#   the .deb files there install without apt-get update,
+#   and Homebrew keeps its bottles there, checked against its formulae.
+#   GitHub Actions sets RUNNER_TEMP and GITHUB_PATH; without them,
+#   the tools land in ~/.local/cdl-tools, which the caller puts on PATH.
+#   macOS runs this script with its bash 3.2, before Homebrew brings another.
 #
-#   The cache directory, which actions/cache keeps between runs,
-#   spares the network: a pinned download found there is used
-#   while it still matches its digest, the .deb files there install
-#   without apt-get update, and Homebrew keeps its bottles there,
-#   checked against the digests of its formulae.
-#
-# Usage:
-#   tools/ci/install-tools.sh TOOL...
-#
-#   Tools with pinned versions:
-#     - shellcheck: the ShellCheck release binary (Linux x86_64 or arm64);
-#     - shfmt: the shfmt release binary (Linux x86_64 or arm64);
-#     - actionlint: the actionlint release binary (Linux x86_64 or arm64);
-#     - bats: bats-core at a pinned commit.
-#   Any other name is a system package:
-#   apt-get installs it on Linux, Homebrew on macOS.
-#
-# Environment:
-#   GITHUB_PATH: set by GitHub Actions (and by nektos/act);
-#   without it, the tools still land in the tools directory,
-#   which the caller puts on PATH.
-#   CI_CACHE_DIR: the cache directory (default: ~/.cache/cdl-ci).
-#
-# Exit Codes:
-#   0: Success.
-#   10: INSTALL_ERR_USAGE
-#      No tool was named.
-#   11: INSTALL_ERR_DOWNLOAD
-#      A download failed or did not match its pinned digest,
-#      or apt-get could not reach its mirrors.
-#   12: INSTALL_ERR_PLATFORM
-#      There is no pinned binary for this machine.
-#   19: INSTALL_ERR_INTERNAL
-#      A bug: a command failed where no code planned it.
+# Version: 1.0.0
 
 readonly INSTALL_ERR_USAGE=10
 readonly INSTALL_ERR_DOWNLOAD=11

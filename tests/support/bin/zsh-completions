@@ -1,15 +1,23 @@
 #!/usr/bin/env bash
 
-# Name: tests/support/bin/zsh-completions
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Print what zsh offers to complete a command line, one candidate a line.
 #
-# Description:
-#   Print what zsh offers to complete a command line,
-#   one candidate per line, sorted:
-#   the completion of cdl as a user meets it at the prompt.
+# Usage: zsh-completions [--before-compinit] SCRIPT DIRECTORY LINE
+#   zsh-completions cdl.sh ~/work 'cdl p'   # pictures, projects, ...
+#   --before-compinit sources SCRIPT first, then runs compinit,
+#   as an rc file may do.
+# Effects: none; its scratch directory goes when it ends.
+# Dependencies: zsh with its zpty and zselect modules, grep.
+# Settings: CDL_ZSH, the zsh to run (zsh from PATH).
+# Exit codes: 0 success,
+#   60 ZSH_COMPLETIONS_ERR_USAGE: an unknown option, or not three arguments,
+#   61 ZSH_COMPLETIONS_ERR_TIMEOUT: the completion did not end in five seconds,
+#   69 ZSH_COMPLETIONS_ERR_INTERNAL: a bug in this script.
+# See: tests/integration/test_completion.bats.
 #
-#   An interactive zsh runs on a pseudo-terminal (the zpty module)
+# How it works:
+#   The candidates come sorted, as a user meets them at the prompt.
+#   An interactive zsh runs on a pseudo-terminal (the zpty module),
 #   with compinit and cdl.sh loaded.
 #   The line is typed only once its prompt shows,
 #   when the line editor owns the terminal;
@@ -17,28 +25,9 @@
 #   A wrapper around compadd writes down every candidate it is handed,
 #   and a key bound to a widget after the Tab says
 #   when the completion is over, so nothing waits on a timer.
+#   The zsh code lives in strings, as the linters here read only bash.
 #
-#   The zsh code lives in strings,
-#   because the linters of this repository read only bash.
-#
-# Usage:
-#   zsh-completions [--before-compinit] SCRIPT DIRECTORY LINE
-#   zsh-completions cdl.sh ~/work 'cdl p'   # pictures, projects, ...
-#
-#   --before-compinit sources SCRIPT first, then runs compinit,
-#   as an rc file may do.
-#
-# Environment:
-#   CDL_ZSH: the zsh to run (default: zsh from PATH).
-#
-# Exit Codes:
-#   0: Success.
-#   60: ZSH_COMPLETIONS_ERR_USAGE
-#      Unknown option, or not three arguments.
-#   61: ZSH_COMPLETIONS_ERR_TIMEOUT
-#      The completion did not finish within five seconds.
-#   69: ZSH_COMPLETIONS_ERR_INTERNAL
-#      A bug: a command failed where no code planned it.
+# Version: 1.0.0
 
 readonly ZSH_COMPLETIONS_ERR_USAGE=60
 readonly ZSH_COMPLETIONS_ERR_TIMEOUT=61

@@ -1,17 +1,10 @@
 #!/usr/bin/env bats
 
-# Name: tests/integration/test_listing.bats
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Test the listing that cdl prints for real directories, through the ls here.
 #
-# Description:
-#   The listing cdl prints for real directories,
-#   through the ls found on this machine:
-#   GNU ls, uutils ls or gls for the compact listing.
-#   Machines with only a BSD ls skip these tests;
-#   the BSD path is covered by test_ls_flavors.bats.
-#
-#   Each test follows the Arrange-Act-Assert pattern.
+# GNU ls, uutils ls or gls make the compact listing.
+# Machines with only a BSD ls skip these tests;
+# test_ls_flavors.bats covers the BSD path.
 
 bats_require_minimum_version 1.11.0
 
@@ -122,6 +115,7 @@ function setup() {
   local null_row
 
   # Arrange: /dev/null exists on every supported system.
+
   # Act
   run --separate-stderr in_shell 'COLUMNS=60 cdl /dev'
 

@@ -1,17 +1,12 @@
 #!/usr/bin/env bash
 
-# Name: tests/support/fixtures.bash
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Make the data of the tests: directory trees and canned ls -l lines.
 #
-# Description:
-#   Test data:
-#     - real directory trees for end-to-end tests,
-#       described in a tiny syntax and stamped with one fixed time;
-#     - canned `ls -l` lines and the rows cdl prints for them,
-#       for testing the formatter in isolation.
-#
-#   Loaded by tests/support/test_helper.bash.
+# The trees are real, for the tests from end to end,
+# described in a tiny syntax and stamped with one fixed time.
+# The canned lines, and the rows cdl prints for them,
+# test the formatter on its own.
+# test_helper.bash loads it.
 
 # region Fixed time
 

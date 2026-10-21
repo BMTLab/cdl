@@ -1,16 +1,11 @@
 #!/usr/bin/env bash
 
-# Name: tests/support/fakes.bash
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Stand in for the external tools that cdl runs: ls, gls and awk.
 #
-# Description:
-#   Stand-ins for the external tools cdl runs: ls, gls and awk.
-#   Each one lands in FAKE_BIN_DIRECTORY, which sandbox_setup puts first on PATH,
-#   so a test can reproduce another system (BSD ls, Homebrew gls)
-#   or another awk without touching the machine.
-#
-#   Loaded by tests/support/test_helper.bash.
+# Each one lands in FAKE_BIN_DIRECTORY, which sandbox_setup puts first on PATH,
+# so a test can reproduce another system (BSD ls, Homebrew gls)
+# or another awk without touching the machine.
+# test_helper.bash loads it.
 
 # region Real tools
 

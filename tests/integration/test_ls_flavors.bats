@@ -1,15 +1,9 @@
 #!/usr/bin/env bats
 
-# Name: tests/integration/test_ls_flavors.bats
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Test which ls cdl runs, and how it treats each flavor.
 #
-# Description:
-#   Which ls cdl runs and how it treats each flavor:
-#   gls before ls, the compact listing for GNU-compatible ls,
-#   the plain listing for BSD ls, one probe per shell session.
-#
-#   Each test follows the Arrange-Act-Assert pattern.
+# gls comes before ls, a GNU-compatible ls gets the compact listing,
+# a BSD ls the plain one, and the probe runs once per shell session.
 
 bats_require_minimum_version 1.11.0
 

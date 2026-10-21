@@ -1,15 +1,9 @@
 #!/usr/bin/env bats
 
-# Name: tests/integration/test_sourcing.bats
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Test that loading cdl.sh is cheap, repeatable and tidy, in any shell setup.
 #
-# Description:
-#   cdl.sh lives in ~/.bashrc and ~/.zshrc,
-#   so loading it must be cheap, repeatable and tidy,
-#   and cdl must hold up in whatever shell setup it lands in.
-#
-#   Each test follows the Arrange-Act-Assert pattern.
+# cdl.sh lives in ~/.bashrc and ~/.zshrc,
+# so cdl must hold up in whatever shell setup it lands in.
 
 bats_require_minimum_version 1.11.0
 

@@ -1,17 +1,16 @@
 #!/usr/bin/env bash
 
-# Name: tools/ci/common.sh
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Give the scripts of tools/ci their shared helpers: ci_error and sha256_of.
 #
-# Description:
-#   Helpers that the scripts in tools/ci share.
-#   A script sources this file after setting CI_SCRIPT_NAME,
-#   the title its error annotations carry.
-#
-# Usage:
+# Usage: sourced by the scripts of tools/ci,
+#   after they set CI_SCRIPT_NAME, the title of their error annotations:
 #   readonly CI_SCRIPT_NAME='release'
 #   source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
+# Effects: none; it defines functions, and CI_SCRIPT_NAME when it is unset.
+# Dependencies: sha256sum, or shasum on macOS.
+# See: CLAUDE.md (Continuous integration).
+#
+# Version: 1.0.0
 
 # The title of the error annotations, unless the sourcing script set one.
 : "${CI_SCRIPT_NAME:=ci}"

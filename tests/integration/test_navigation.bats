@@ -1,16 +1,9 @@
 #!/usr/bin/env bats
 
-# Name: tests/integration/test_navigation.bats
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Test how cdl picks the target directory, enters it, and reports a failure.
 #
-# Description:
-#   How cdl picks the target directory, enters it,
-#   and what it reports when it cannot.
-#   The pipe as a source of the target lives in test_stdin.bats,
-#   files, URIs and a leading ~ in test_paths.bats.
-#
-#   Each test follows the Arrange-Act-Assert pattern.
+# The pipe as a source of the target lives in test_stdin.bats,
+# files, URIs and a leading ~ in test_paths.bats.
 
 bats_require_minimum_version 1.11.0
 

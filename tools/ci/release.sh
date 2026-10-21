@@ -1,42 +1,39 @@
 #!/usr/bin/env bash
 
-# Name: tools/ci/release.sh
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Run one step of a release: check, notes, assets, publish or verify.
 #
-# Description:
-#   The steps of a release, one command each,
-#   for the release workflow and for a dry run on a laptop:
-#     - check TAG: the tag names the version in the header of cdl.sh;
-#     - notes VERSION FILE: the CHANGELOG section of the version, into FILE;
-#     - assets TAG DIR: cdl.sh, a source tarball and their SHA-256 files;
-#     - publish TAG DIR FILE: the GitHub release, through gh;
-#     - verify DIR: the signed build provenance of cdl.sh, through gh.
-#   Under GitHub Actions, `check` also exports VERSION to the next steps.
-#
-# Usage:
+# Usage: tools/ci/release.sh STEP ARGUMENT...
 #   tools/ci/release.sh check v2.0.0
 #   tools/ci/release.sh notes 2.0.0 release-notes.md
 #   tools/ci/release.sh assets v2.0.0 release-assets
 #   GH_TOKEN=... tools/ci/release.sh publish v2.0.0 release-assets release-notes.md
 #   GH_TOKEN=... tools/ci/release.sh verify release-assets
+# Effects: notes writes its FILE, assets fills its DIR,
+#   and publish makes the GitHub release of the tag, through gh;
+#   under GitHub Actions, check writes VERSION into GITHUB_ENV.
+#   check, notes and assets make a dry run on a laptop.
+# Dependencies: gh, git, sed, tar.
+# Settings: GH_TOKEN, which gh reads for publish and verify.
+# Exit codes: 0 success,
+#   20 RELEASE_ERR_USAGE: an unknown step, or a missing argument,
+#   21 RELEASE_ERR_VERSION: the tag does not name the version in cdl.sh,
+#   22 RELEASE_ERR_NOTES: CHANGELOG.md has no notes for the version,
+#   23 RELEASE_ERR_ASSETS: an asset could not be built,
+#   24 RELEASE_ERR_PUBLISH: gh could not publish the release,
+#   25 RELEASE_ERR_PROVENANCE: the build provenance of cdl.sh does not verify,
+#   29 RELEASE_ERR_INTERNAL: a bug in this script.
+# See: CLAUDE.md (Versions, changelog, release), .github/workflows/ci-release.yml.
 #
-# Exit Codes:
-#   0: Success.
-#   20: RELEASE_ERR_USAGE
-#      Unknown step, or a missing argument.
-#   21: RELEASE_ERR_VERSION
-#      The tag does not name the version in cdl.sh.
-#   22: RELEASE_ERR_NOTES
-#      CHANGELOG.md has no notes for the version.
-#   23: RELEASE_ERR_ASSETS
-#      An asset could not be built.
-#   24: RELEASE_ERR_PUBLISH
-#      gh could not publish the release.
-#   25: RELEASE_ERR_PROVENANCE
-#      The build provenance of cdl.sh does not verify.
-#   29: RELEASE_ERR_INTERNAL
-#      A bug: a command failed where no code planned it.
+# How it works:
+#   Each step is one command, for the release workflow
+#   and for a dry run on a laptop:
+#   check makes sure that the tag names the version in the header of cdl.sh,
+#   notes takes the CHANGELOG section of the version,
+#   assets builds cdl.sh, a source tarball and their SHA-256 files,
+#   publish makes the GitHub release,
+#   and verify checks the signed build provenance of cdl.sh.
+#
+# Version: 1.0.0
 
 readonly RELEASE_ERR_USAGE=20
 readonly RELEASE_ERR_VERSION=21

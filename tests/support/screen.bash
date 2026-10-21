@@ -1,19 +1,13 @@
 #!/usr/bin/env bash
 
-# Name: tests/support/screen.bash
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Look at a listing the way a terminal shows it.
 #
-# Description:
-#   Look at a listing the way a terminal shows it:
-#   strip escape sequences, count screen cells,
-#   and check how rows line up in columns.
-#
-#   Cells are counted by tests/support/bin/screen-cells,
-#   a separate process and a separate implementation
-#   from the width table inside cdl.sh.
-#
-#   Loaded by tests/support/test_helper.bash.
+# It strips escape sequences, counts screen cells,
+# and checks how rows line up in columns.
+# tests/support/bin/screen-cells counts the cells,
+# a separate process and a separate implementation
+# from the width table inside cdl.sh.
+# test_helper.bash loads it.
 
 SCREEN_CELLS="${__CDL_SUPPORT_DIRECTORY}/bin/screen-cells"
 

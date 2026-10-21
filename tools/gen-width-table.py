@@ -4,17 +4,28 @@
 # The header below follows the shell files of this repository;
 # ruff's "commented-out code" heuristic mistakes its `Key: value` lines for code.
 
-# Name: tools/gen-width-table.py
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Generate the width table that the awk formatter of cdl.sh aligns names with.
 #
-# Description:
-#   Generate the screen-width table
-#   that the awk formatter in cdl.sh uses to align names in two columns.
+# Usage: tools/gen-width-table.py [--write FILE | --check FILE]
+#   tools/gen-width-table.py                 Print the block to stdout.
+#   tools/gen-width-table.py --write cdl.sh  Replace the block in place.
+#   tools/gen-width-table.py --check cdl.sh  Compare the block with the file.
+# Effects: --write replaces the block in FILE; the others change nothing.
+# Exit codes: 0 success, and with --check, the block in the file is up to date,
+#   50 EXIT_USAGE: a wrong command line,
+#   51 EXIT_FAILURE: with --check, the block differs (a diff goes to stderr);
+#     otherwise the file could not be read or written,
+#   52 EXIT_UNICODE_MISMATCH: with --check, the file records a Unicode version
+#     other than the local Python's, so the comparison is skipped
+#     (a test can skip instead of failing on an older Python),
+#   53 EXIT_NO_REGION: the file has no `# region Width table`
+#     ... `# endregion Width table` block.
+# See: make widths, tests/style/test_width_table.bats.
+#
+# How it works:
 #   The table comes from the Unicode database bundled with Python
 #   (the unicodedata module), so nothing is downloaded,
-#   and the Unicode version is the one the local Python ships.
-#
+#   and its Unicode version is the one the local Python ships.
 #   Width rules, in screen cells per code point:
 #     0  nonspacing and enclosing marks (Mn, Me), format characters (Cf),
 #        and the Hangul Jamo medial vowels and final consonants
@@ -27,26 +38,11 @@
 #   unassigned code points join a range
 #   when unicodedata reports the same width for them.
 #   The scan covers U+00A0..U+10FFFF without the surrogates.
-#
 #   In cdl.sh the block lives between the `# region Width table` marker
 #   and the `# endregion Width table` marker, as one blank line, the block,
 #   and one blank line.
 #
-# Usage:
-#   tools/gen-width-table.py                 Print the block to stdout.
-#   tools/gen-width-table.py --write cdl.sh  Replace the block in place.
-#   tools/gen-width-table.py --check cdl.sh  Compare the block with the file.
-#
-# Exit codes (the block 50-59 of this repository):
-#   0   Success; with --check, the block in the file is up to date.
-#   50  Wrong command line.
-#   51  With --check, the block differs (a unified diff goes to stderr);
-#       otherwise the file could not be read or written.
-#   52  With --check, the Unicode version recorded in the file
-#       differs from the local Python's, so the comparison is skipped
-#       (a test can skip instead of failing on an older Python).
-#   53  The file has no `# region Width table` ... `# endregion Width table`
-#       block.
+# Version: 1.0.0
 
 """Generate the Unicode width table of the cdl.sh awk formatter."""
 

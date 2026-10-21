@@ -1,15 +1,9 @@
 #!/usr/bin/env bats
 
-# Name: tests/unit/test_formatter.bats
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Test the formatter that turns ls -l lines into the compact listing.
 #
-# Description:
-#   The formatter that turns `ls -l` lines into the compact listing,
-#   fed with canned lines, so every rule is checked
-#   independently of the files and the ls on this machine.
-#
-#   Each test follows the Arrange-Act-Assert pattern.
+# It gets canned lines, so every rule is checked
+# apart from the files and the ls of this machine.
 
 bats_require_minimum_version 1.11.0
 

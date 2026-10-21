@@ -1,16 +1,10 @@
 #!/usr/bin/env bats
 
-# Name: tests/style/test_release.bats
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Test that a release is possible from the current tree.
 #
-# Description:
-#   A release must be possible from the current tree:
-#   the release steps accept the version in cdl.sh,
-#   refuse anything else with their documented codes,
-#   and find the notes of the version in the CHANGELOG.
-#
-#   Each test follows the Arrange-Act-Assert pattern.
+# The release steps accept the version in cdl.sh,
+# refuse anything else with their documented codes,
+# and find the notes of the version in the CHANGELOG.
 
 bats_require_minimum_version 1.11.0
 

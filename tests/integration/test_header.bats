@@ -1,18 +1,12 @@
 #!/usr/bin/env bats
 
-# Name: tests/integration/test_header.bats
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Test the header line above the listing.
 #
-# Description:
-#   The header line above the listing:
-#   the directory, with ~ for HOME, its git branch,
-#   read from the files of the repository without running git,
-#   and how many directories and files it holds.
-#   A terminal gets the header, a file or a pipe does not,
-#   and CDL_HEADER and CDL_GIT change both.
-#
-#   Each test follows the Arrange-Act-Assert pattern.
+# It names the directory, with ~ for HOME, and its git branch,
+# read from the files of the repository without running git,
+# and counts the directories and files it holds.
+# A terminal gets the header, a file or a pipe does not,
+# and CDL_HEADER and CDL_GIT change both.
 
 # The header writes HOME as a literal ~, and the expected lines do too.
 # shellcheck disable=SC2088

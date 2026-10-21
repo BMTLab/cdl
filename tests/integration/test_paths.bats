@@ -1,17 +1,11 @@
 #!/usr/bin/env bats
 
-# Name: tests/integration/test_paths.bats
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Test the paths that are no plain directory.
 #
-# Description:
-#   Paths that are not a plain directory:
-#   a file, which cdl shows in its directory with a mark;
-#   a file:// URI, as file managers copy them;
-#   and a leading ~ that the shell left alone,
-#   as in a quoted operand or a piped path.
-#
-#   Each test follows the Arrange-Act-Assert pattern.
+# A file, which cdl shows in its directory with a mark;
+# a file:// URI, as file managers copy them;
+# and a leading ~ that the shell left alone,
+# as in a quoted operand or a piped path.
 
 # The tests spell out the ~ that cdl expands.
 # shellcheck disable=SC2088

@@ -1,35 +1,28 @@
 #!/usr/bin/env bash
 
-# Name: tests/support/bin/screen-cells
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Print how many screen cells each line of stdin takes, one number a line.
 #
-# Description:
-#   Print how many screen cells each line of stdin takes,
-#   one number per line, ignoring escape sequences.
+# Usage: printf '%s\n' 'Отчёт 日本' | screen-cells   # prints 10
+# Effects: none.
+# Dependencies: sed.
+# Settings: SANDBOX_UTF8_LOCALE, a UTF-8 locale to read characters in
+#   (C.UTF-8), which tests/support/sandbox.bash sets.
+# Exit codes: 0 success,
+#   89 SCREEN_CELLS_ERR_INTERNAL: a bug in this script.
+# See: tests/support/screen.bash.
 #
-#   A deliberately small oracle, independent of the width table
-#   inside cdl.sh, so the two cannot share a mistake.
-#   It knows only the scripts the tests use:
-#     - combining marks (U+0300..U+036F): no cells;
-#     - CJK, kana, Hangul, fullwidth forms, emoji: two cells;
-#     - everything else: one cell.
-#
-#   It runs as its own process on purpose:
+# How it works:
+#   A small oracle, apart from the width table inside cdl.sh,
+#   so the two cannot share a mistake. It skips escape sequences,
+#   and knows only the scripts that the tests use:
+#   combining marks (U+0300..U+036F) take no cells;
+#   CJK, kana, Hangul, fullwidth forms and emoji take two;
+#   everything else takes one.
+#   It runs as a process of its own on purpose:
 #   bats traps every command of a test,
-#   which makes a per-character loop inside a test crawl.
+#   which makes a loop over characters inside a test crawl.
 #
-# Usage:
-#   printf '%s\n' 'Отчёт 日本' | screen-cells   # prints 10
-#
-# Environment:
-#   SANDBOX_UTF8_LOCALE: a UTF-8 locale for reading characters
-#   (set by tests/support/sandbox.bash).
-#
-# Exit Codes:
-#   0: Success.
-#   89: SCREEN_CELLS_ERR_INTERNAL
-#      A bug: a command failed where no code planned it.
+# Version: 1.0.0
 
 readonly SCREEN_CELLS_ERR_INTERNAL=89
 

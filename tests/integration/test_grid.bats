@@ -1,21 +1,14 @@
 #!/usr/bin/env bats
 
-# Name: tests/integration/test_grid.bats
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Test how many entries the listing shows, and in how many columns.
 #
-# Description:
-#   How many entries the listing shows and in how many columns:
-#   a terminal cuts a long listing at its height and says what it left out,
-#   a file or a pipe gets everything,
-#   and -a, -1, CDL_MAX_ROWS and CDL_MAX_COLUMNS change both.
-#   A flag wins over a setting.
-#
-#   Thirty entries of 36 cells sit in one column at 60 columns.
-#   A terminal puts a header above them,
-#   so a test counts the rows of entries apart from the lines.
-#
-#   Each test follows the Arrange-Act-Assert pattern.
+# A terminal cuts a long listing at its height and says what it left out,
+# a file or a pipe gets everything,
+# and -a, -1, CDL_MAX_ROWS and CDL_MAX_COLUMNS change both.
+# A flag wins over a setting.
+# Thirty entries of 36 cells sit in one column at 60 columns.
+# A terminal puts a header above them,
+# so a test counts the rows of entries apart from the lines.
 
 bats_require_minimum_version 1.11.0
 

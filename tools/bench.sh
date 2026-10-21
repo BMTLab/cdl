@@ -1,35 +1,27 @@
 #!/usr/bin/env bash
 
-# Name: tools/bench.sh
-# Author: Nikita Neverov (BMTLab)
-# License: MIT
+# Time one cdl call against a plain cd and ls, in each shell given.
 #
-# Description:
-#   Measure what one cdl call costs, next to a plain `cd` and `ls`,
-#   in every shell given.
-#   Each shell runs all its calls in one process,
-#   so the numbers show cdl itself and not shell start-up.
-#   Output goes to /dev/null: the cost of the terminal is left out.
-#
-# Usage:
-#   tools/bench.sh [-n CALLS] [-d DIRECTORY] [SHELL ...]
-#
-#   The shells must provide EPOCHREALTIME: bash 5 or later, or zsh;
-#   the bash 3.2 of macOS cannot be measured this way.
-#
+# Usage: tools/bench.sh [-n CALLS] [-d DIRECTORY] [SHELL...]
 #   tools/bench.sh                   # 200 calls in /usr/bin, bash and zsh
 #   tools/bench.sh -n 500 -d ~ bash  # 500 calls in ~, bash only
+# Effects: none; it only lists DIRECTORY.
+# Dependencies: the shells to measure, with EPOCHREALTIME
+#   (bash 5 or later, or zsh); awk and sed.
+# Exit codes: 0 success,
+#   40 BENCH_ERR_USAGE: an unknown option, or an option without its value,
+#   41 BENCH_ERR_SHELL: a shell to measure is not installed,
+#   42 BENCH_ERR_CLOCK: a shell to measure has no EPOCHREALTIME clock,
+#   49 BENCH_ERR_INTERNAL: a bug in this script.
+# See: tools/bench.sh -h, make bench, CLAUDE.md.
 #
-# Exit Codes:
-#   0: Success.
-#   40: BENCH_ERR_USAGE
-#      Unknown option or missing value.
-#   41: BENCH_ERR_SHELL
-#      A shell to measure is not installed.
-#   42: BENCH_ERR_CLOCK
-#      A shell to measure has no EPOCHREALTIME clock.
-#   49: BENCH_ERR_INTERNAL
-#      A bug: a command failed where no code planned it.
+# How it works:
+#   Each shell runs all its calls in one process,
+#   so the numbers show cdl itself and not the start of a shell.
+#   Output goes to /dev/null: the cost of the terminal is left out.
+#   The bash 3.2 of macOS has no EPOCHREALTIME, so it cannot be measured.
+#
+# Version: 1.0.0
 
 readonly BENCH_ERR_USAGE=40
 readonly BENCH_ERR_SHELL=41
@@ -147,7 +139,7 @@ function has_clock() {
 # Print the usage.
 #######################################
 function usage() {
-  sed -n '/^# Usage:/,/^# Exit Codes:/{/^# Exit Codes:/d; s/^# \{0,1\}//; p;}' \
+  sed -n '/^# Usage:/,/^# Effects:/{/^# Effects:/d; s/^# \{0,1\}//; p;}' \
     "${BASH_SOURCE[0]}"
 }
 
