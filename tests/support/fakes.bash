@@ -130,7 +130,7 @@ function available_awks() {
   fi
 }
 
-# endregion
+# endregion Real tools
 
 # region Fakes
 
@@ -309,6 +309,6 @@ function __fakes_install() {
   chmod +x "${FAKE_BIN}/${name}"
 }
 
-# endregion
+# endregion Fakes
 
 ### End

@@ -38,7 +38,7 @@ function setup() {
   assert_output "cdl ${version}"$'\n'"cdl ${version}"
 }
 
-# endregion
+# endregion Version
 
 # region Invalid values
 
@@ -144,7 +144,7 @@ done
   assert_stderr_contains "cdl: CDL_HIDDEN: not 0 or 1: 'maybe'"
 }
 
-# endregion
+# endregion Invalid values
 
 # region Colors
 
@@ -187,7 +187,7 @@ done
   refute_output_contains $'\033'
 }
 
-# endregion
+# endregion Colors
 
 # region Hidden entries
 
@@ -215,7 +215,7 @@ done
   assert_output 'bsd-ls -lh'
 }
 
-# endregion
+# endregion Hidden entries
 
 # region Width
 
@@ -234,7 +234,7 @@ done
   assert_columns_aligned "${output}"
 }
 
-# endregion
+# endregion Width
 
 # region Symbolic links
 
@@ -281,7 +281,7 @@ done
   assert_output "${HOME}/link"$'\n'"${HOME}/link"
 }
 
-# endregion
+# endregion Symbolic links
 
 # region cdl_list
 
@@ -307,7 +307,7 @@ done
   assert_stderr_contains "cdl: Unexpected argument: '${LISTED_DIR}'"
 }
 
-# endregion
+# endregion cdl_list
 
 # region The shell of the user
 
@@ -324,6 +324,6 @@ done
   assert_output 'unset unset'
 }
 
-# endregion
+# endregion The shell of the user
 
 ### End

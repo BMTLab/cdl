@@ -59,7 +59,7 @@ function setup() {
   assert_equal "$(<"${GITHUB_ENV}")" "VERSION=${VERSION}" 'GITHUB_ENV'
 }
 
-# endregion
+# endregion Tag check
 
 # region Notes
 
@@ -88,7 +88,7 @@ function setup() {
   assert_stderr_contains 'CHANGELOG.md has no notes for 0.0.0'
 }
 
-# endregion
+# endregion Notes
 
 # region Usage
 
@@ -103,6 +103,6 @@ function setup() {
   assert_stderr_contains "unknown step 'deploy'"
 }
 
-# endregion
+# endregion Usage
 
 ### End

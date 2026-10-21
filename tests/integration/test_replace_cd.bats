@@ -97,7 +97,7 @@ function only_in_zsh() {
   assert_output "${NOTES_DIR}"
 }
 
-# endregion
+# endregion cd as cdl
 
 # region The shell's own cd
 
@@ -159,6 +159,6 @@ function only_in_zsh() {
   assert_output_contains "pwd=${HOME}/beta/docs"
 }
 
-# endregion
+# endregion The shell's own cd
 
 ### End

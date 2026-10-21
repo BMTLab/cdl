@@ -143,7 +143,7 @@ function demo_make_locked() {
   chmod 000 "${locked}"
 }
 
-# endregion
+# endregion Fixtures
 
 # region Shell
 
@@ -173,6 +173,6 @@ function demo_setup() {
 
 demo_setup
 
-# endregion
+# endregion Shell
 
 ### End

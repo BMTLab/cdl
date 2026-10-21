@@ -76,7 +76,7 @@ readonly ACTIONLINT_SHA256_ARM64='325e971b6ba9bfa504672e29be93c24981eeb1c07576d7
 readonly BATS_VERSION='1.14.0'
 readonly BATS_COMMIT='eb7f42f8d608ac693d7a4b67474f6714ea68cfc5'
 
-# endregion
+# endregion Pinned versions
 
 # region Limits
 
@@ -86,7 +86,7 @@ readonly BATS_COMMIT='eb7f42f8d608ac693d7a4b67474f6714ea68cfc5'
 readonly APT_UPDATE_TIMEOUT_SECONDS=120
 readonly APT_UPDATE_ATTEMPTS=3
 
-# endregion
+# endregion Limits
 
 TOOLS_PREFIX="${RUNNER_TEMP:-${HOME}/.local}/cdl-tools"
 readonly TOOLS_PREFIX
@@ -191,7 +191,7 @@ function digest_for() {
   fi
 }
 
-# endregion
+# endregion Helpers
 
 # region Installers
 
@@ -419,7 +419,7 @@ function download_debs() {
   sudo chown -R "$(id -u):$(id -g)" "${debs}"
 }
 
-# endregion
+# endregion Installers
 
 # region Entry point
 
@@ -455,7 +455,7 @@ function main() {
   install_packages ${packages[@]+"${packages[@]}"}
 }
 
-# endregion
+# endregion Entry point
 
 main "$@"
 

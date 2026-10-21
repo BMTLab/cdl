@@ -75,7 +75,7 @@ function generated_cells() {
   '
 }
 
-# endregion
+# endregion Helpers
 
 # region Agreement
 
@@ -93,7 +93,7 @@ function generated_cells() {
   assert_success
 }
 
-# endregion
+# endregion Agreement
 
 # region Content
 
@@ -157,6 +157,6 @@ for __sample in "${__CELL_SAMPLES[@]}"; do
     -- character_takes_cells "${__code}" "${__cells}"
 done
 
-# endregion
+# endregion Content
 
 ### End

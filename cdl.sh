@@ -146,7 +146,7 @@ CDL_VERSION='2.0.0'
 : "${CDL_ERR_LIST:=40}"
 : "${CDL_ERR_NOT_SOURCED:=50}"
 
-# endregion
+# endregion Version and error codes
 
 # region Shell check
 
@@ -177,7 +177,7 @@ else
     CDL_ERR_LIST CDL_ERR_NOT_SOURCED
 fi
 
-# endregion
+# endregion Shell check
 
 # region Session state
 
@@ -208,7 +208,7 @@ __cdl_setting_git=''
 __cdl_setting_links=''
 __cdl_setting_replace_cd=''
 
-# endregion
+# endregion Session state
 
 # region Messages
 
@@ -329,7 +329,7 @@ function __cdl_error() {
   return "${code}"
 }
 
-# endregion
+# endregion Messages
 
 # region Settings
 
@@ -532,7 +532,7 @@ function __cdl_join_choices() {
   fi
 }
 
-# endregion
+# endregion Settings
 
 # region Input
 
@@ -621,7 +621,7 @@ function __cdl_check_operands() {
   fi
 }
 
-# endregion
+# endregion Input
 
 # region Paths
 
@@ -711,7 +711,7 @@ function __cdl_percent_decode() {
   REPLY="${decoded}${rest}"
 }
 
-# endregion
+# endregion Paths
 
 # region Navigation
 
@@ -1025,7 +1025,7 @@ function __cdl_report_chdir_failure() {
   __cdl_error "${REPLY}" "${code}"
 }
 
-# endregion
+# endregion Navigation
 
 # region Terminal
 
@@ -1219,7 +1219,7 @@ function __cdl_should_link() {
   esac
 }
 
-# endregion
+# endregion Terminal
 
 # region Header
 
@@ -1351,7 +1351,7 @@ function __cdl_find_git_dir() {
   esac
 }
 
-# endregion
+# endregion Header
 
 # region Tool detection
 
@@ -1412,7 +1412,7 @@ function __cdl_detect_awk() {
   fi
 }
 
-# endregion
+# endregion Tool detection
 
 # region Listing
 
@@ -1608,7 +1608,7 @@ function __cdl_print_plain_listing() {
   fi
 }
 
-# endregion
+# endregion Listing
 
 # region Formatter
 
@@ -1967,7 +1967,7 @@ function __cdl_format_listing() {
       return n > 0 ? sprintf("%" n "s", "") : ""
     }
 
-    # endregion
+    # endregion Layout
 
     # region Parsing
 
@@ -2077,7 +2077,7 @@ function __cdl_format_listing() {
       return text
     }
 
-    # endregion
+    # endregion Parsing
 
     # region Links
 
@@ -2133,7 +2133,7 @@ function __cdl_format_listing() {
       return low
     }
 
-    # endregion
+    # endregion Links
 
     # region Text measurement
 
@@ -2232,7 +2232,7 @@ function __cdl_format_listing() {
         128 + int(code / 4096) % 64, 128 + int(code / 64) % 64, 128 + code % 64)
     }
 
-    # endregion
+    # endregion Text measurement
 
     # region Width table
 
@@ -2309,11 +2309,11 @@ function __cdl_format_listing() {
       return t
     }
 
-    # endregion
+    # endregion Width table
 AWK
 }
 
-# endregion
+# endregion Formatter
 
 # region Public API
 
@@ -2389,7 +2389,7 @@ function cdl() {
   __cdl_list_current_directory "${REPLY}"
 }
 
-# endregion
+# endregion Public API
 
 # region Completion
 
@@ -2629,7 +2629,7 @@ elif complete -o filenames -o default -F __cdl_complete_bash cdl 2>/dev/null; th
   __cdl_register_bash_cd_completion
 fi
 
-# endregion
+# endregion Completion
 
 # region Replacing cd
 
@@ -2762,7 +2762,7 @@ if [[ ${CDL_REPLACE_CD-} == 1 ]]; then
   __cdl_define_cd
 fi
 
-# endregion
+# endregion Replacing cd
 
 # region Execution guard
 
@@ -2793,6 +2793,6 @@ fi
 
 unset -f __cdl_is_executed
 
-# endregion
+# endregion Execution guard
 
 ### End

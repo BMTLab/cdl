@@ -133,7 +133,7 @@ function setup() {
   assert_output "${target}"
 }
 
-# endregion
+# endregion Target selection
 
 # region Usage errors
 
@@ -218,7 +218,7 @@ function setup() {
   assert_stderr_contains 'cdl: Too many arguments: expected one directory, got 2'
 }
 
-# endregion
+# endregion Usage errors
 
 # region Directory errors
 
@@ -345,6 +345,6 @@ bats_test_function \
   assert_output "${blind}"
 }
 
-# endregion
+# endregion Directory errors
 
 ### End

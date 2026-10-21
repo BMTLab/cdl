@@ -163,7 +163,7 @@ function entry_rows() {
   assert_equal "${#lines[@]}" '30' 'lines'
 }
 
-# endregion
+# endregion Cut at the terminal height
 
 # region Columns
 
@@ -206,6 +206,6 @@ function entry_rows() {
   assert_one_column "${output}"
 }
 
-# endregion
+# endregion Columns
 
 ### End

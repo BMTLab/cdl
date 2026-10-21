@@ -38,7 +38,7 @@ function assert_failure() {
   fi
 }
 
-# endregion
+# endregion Status
 
 # region Output
 
@@ -125,7 +125,7 @@ function assert_equal() {
   fi
 }
 
-# endregion
+# endregion Output
 
 # region Failure report
 
@@ -161,6 +161,6 @@ function __assert_fail() {
   return 1
 }
 
-# endregion
+# endregion Failure report
 
 ### End

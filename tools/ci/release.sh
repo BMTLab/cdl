@@ -76,7 +76,7 @@ function write_checksums() {
   done
 }
 
-# endregion
+# endregion Helpers
 
 # region Steps
 
@@ -213,7 +213,7 @@ function verify_provenance() {
   fi
 }
 
-# endregion
+# endregion Steps
 
 # region Entry point
 
@@ -280,7 +280,7 @@ function main() {
   esac
 }
 
-# endregion
+# endregion Entry point
 
 main "$@"
 

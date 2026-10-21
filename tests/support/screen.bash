@@ -45,7 +45,7 @@ function screen_cells() {
   printf '%s\n' "$1" | "${SCREEN_CELLS}"
 }
 
-# endregion
+# endregion Text
 
 # region Columns
 
@@ -161,6 +161,6 @@ function assert_fits_width() {
   fi
 }
 
-# endregion
+# endregion Columns
 
 ### End

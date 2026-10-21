@@ -39,7 +39,7 @@ function __sandbox_find_utf8_locale() {
 # Probed once per test file rather than once per test.
 SANDBOX_UTF8_LOCALE="$(__sandbox_find_utf8_locale)"
 
-# endregion
+# endregion Locale
 
 # region Settings
 
@@ -59,7 +59,7 @@ function list_cdl_settings() {
 # Read once per test file, as the locale is probed.
 SANDBOX_CDL_SETTINGS="$(list_cdl_settings)"
 
-# endregion
+# endregion Settings
 
 # region Setup
 
@@ -103,6 +103,6 @@ function sandbox_setup() {
   cd "${HOME}" || return 1
 }
 
-# endregion
+# endregion Setup
 
 ### End

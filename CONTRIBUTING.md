@@ -130,7 +130,7 @@ for people and coding agents alike. In short:
   and the units digit why. Every tool of the repository owns
   a block of ten exit codes that no other tool uses.
   CLAUDE.md has both, under "Exit codes".
-- Long files fold into `# region` and `# endregion` blocks.
+- Long files fold into `# region Name` and `# endregion Name` blocks.
 - Comments explain why, and break lines between phrases, never inside one.
 
 `make format` applies `.editorconfig` through shfmt,

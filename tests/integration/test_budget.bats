@@ -131,6 +131,6 @@ function setup() {
   assert_equal "$(logged_runs tput)" '1' 'runs of tput'
 }
 
-# endregion
+# endregion Budget
 
 ### End

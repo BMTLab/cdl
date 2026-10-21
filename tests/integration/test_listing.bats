@@ -132,7 +132,7 @@ function setup() {
   fi
 }
 
-# endregion
+# endregion Content
 
 # region Layout
 
@@ -208,7 +208,7 @@ for __columns in 'abc' '0' '080' '-1'; do
     -- unusable_columns_fall_back_to_80 "${__columns}"
 done
 
-# endregion
+# endregion Layout
 
 # region Sizes
 
@@ -259,7 +259,7 @@ done
   assert_output_contains '4.9K  '
 }
 
-# endregion
+# endregion Sizes
 
 # region Colors
 
@@ -319,7 +319,7 @@ done
   refute_output_contains $'\033'
 }
 
-# endregion
+# endregion Colors
 
 # region Links
 
@@ -376,6 +376,6 @@ done
   assert_output_contains "$(hyperlink "file://box${LISTED_DIR}/notes.md" 'notes.md')"
 }
 
-# endregion
+# endregion Links
 
 ### End

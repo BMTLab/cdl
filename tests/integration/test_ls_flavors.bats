@@ -65,7 +65,7 @@ function setup() {
   assert_equal "$(wc -l <"${LS_PROBE_LOG}" | tr -d ' ')" '2' 'number of probes'
 }
 
-# endregion
+# endregion Choosing ls
 
 # region BSD ls
 
@@ -136,6 +136,6 @@ function setup() {
   assert_output 'bsd-ls -Alh'
 }
 
-# endregion
+# endregion BSD ls
 
 ### End

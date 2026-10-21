@@ -63,7 +63,7 @@ function sandbox_git() {
     -c commit.gpgsign=false "$@"
 }
 
-# endregion
+# endregion Helpers
 
 # region Where the header shows
 
@@ -151,7 +151,7 @@ function sandbox_git() {
   assert_output ''
 }
 
-# endregion
+# endregion Where the header shows
 
 # region The path
 
@@ -203,7 +203,7 @@ done
   assert_equal "${lines[0]}" '~/projects/app · 1 dir, 1 file' 'the header'
 }
 
-# endregion
+# endregion The path
 
 # region Git branch
 
@@ -342,6 +342,6 @@ done
   assert_output_contains '~/worktree · topic · '
 }
 
-# endregion
+# endregion Git branch
 
 ### End

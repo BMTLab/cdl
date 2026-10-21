@@ -111,7 +111,7 @@ function has_clock() {
   "${shell}" -c 'zmodload zsh/datetime 2>/dev/null; [ -n "${EPOCHREALTIME-}" ]'
 }
 
-# endregion
+# endregion Measurement
 
 # region Entry point
 
@@ -178,7 +178,7 @@ function main() {
   printf '\n'
 }
 
-# endregion
+# endregion Entry point
 
 main "$@"
 

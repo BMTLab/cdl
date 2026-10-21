@@ -21,7 +21,7 @@
 FIXTURE_STAMP='202601020304'
 FIXTURE_DATE='2026-01-02 03:04'
 
-# endregion
+# endregion Fixed time
 
 # region Directory trees
 
@@ -101,7 +101,7 @@ function __fixtures_stamp() {
   done
 }
 
-# endregion
+# endregion Directory trees
 
 # region Canned ls -l lines
 
@@ -206,6 +206,6 @@ function paint() {
   printf '\033[%sm%s\033[0m' "$1" "$2"
 }
 
-# endregion
+# endregion Canned ls -l lines
 
 ### End

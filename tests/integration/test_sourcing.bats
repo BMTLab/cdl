@@ -231,7 +231,7 @@ done
   done <<<"${output}"
 }
 
-# endregion
+# endregion Loading
 
 # region Hostile shell setups
 
@@ -315,7 +315,7 @@ done
   assert_output 'mine'
 }
 
-# endregion
+# endregion Hostile shell setups
 
 # region Listing without moving
 
@@ -351,6 +351,6 @@ done
   assert_output "$(listing_row '0' 'entry')"
 }
 
-# endregion
+# endregion Listing without moving
 
 ### End

@@ -190,7 +190,7 @@ done
     "cdl: Not a directory: '${DOCS_DIR}/notes.md/inner' ('${DOCS_DIR}/notes.md' is a file)"
 }
 
-# endregion
+# endregion Files
 
 # region URIs
 
@@ -266,7 +266,7 @@ done
   assert_stderr_contains "cdl: No such file or directory: 'file://server/share'"
 }
 
-# endregion
+# endregion URIs
 
 # region Tilde
 
@@ -326,6 +326,6 @@ bats_test_function \
   assert_output "${literal}"
 }
 
-# endregion
+# endregion Tilde
 
 ### End

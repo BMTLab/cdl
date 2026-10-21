@@ -130,7 +130,7 @@ zpty -d session
 exit 1
 '
 
-# endregion
+# endregion zsh code
 
 # region Main
 
@@ -192,6 +192,6 @@ function main() {
 
 main "$@"
 
-# endregion
+# endregion Main
 
 ### End

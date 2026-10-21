@@ -98,7 +98,7 @@ function setup() {
   assert_output_contains 'home-entry'
 }
 
-# endregion
+# endregion Reading a pipe
 
 # region Stdin that is not a pipe
 
@@ -130,6 +130,6 @@ function setup() {
   assert_output "$(printf '%s\n' one two three)"
 }
 
-# endregion
+# endregion Stdin that is not a pipe
 
 ### End

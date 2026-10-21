@@ -79,7 +79,8 @@ The regions of `cdl.sh` read top to bottom:
   they catch the common slips early and never replace `make check`.
   On macOS add the system shell, which is bash 3.2:
   `make test TEST_SHELLS='/bin/bash zsh'`.
-- The width table between `# region Width table` and `# endregion` is generated.
+- The width table between `# region Width table`
+  and `# endregion Width table` is generated.
   Change `tools/gen-width-table.py` and run `make widths`; never edit the table.
 - `cdl` runs on every directory change, so it has a budget:
   nothing external runs when the file is sourced,
@@ -155,9 +156,10 @@ A table holds short cells; a longer explanation goes below it, as a list.
 ## Regions
 
 - A file longer than a screen folds
-  into `# region Name` ... `# endregion` blocks,
+  into `# region Name` ... `# endregion Name` blocks,
   with one blank line inside each marker.
-  The markers balance in every file; a style test checks.
+  The end repeats the name, so a reader who lands on it knows what closes there.
+  The markers balance and their names match in every file; a style test checks.
 - One region holds one concern.
   New code goes into the region of its concern,
   or into a new region placed where a reader meets the concern first.

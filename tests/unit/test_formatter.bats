@@ -183,7 +183,7 @@ function setup() {
   assert_output ''
 }
 
-# endregion
+# endregion Parsing
 
 # region Layout
 
@@ -433,7 +433,7 @@ done
   assert_output_contains '... 2 more; -a shows all'
 }
 
-# endregion
+# endregion Layout
 
 # region Sizes
 
@@ -483,7 +483,7 @@ for __sample in "${__SIZE_SAMPLES[@]}"; do
     -- sizes_read_like_ls_h "${__sample%%|*}" "${__sample#*|}"
 done
 
-# endregion
+# endregion Sizes
 
 # region Header
 
@@ -614,7 +614,7 @@ bats_test_function \
   assert_equal "${lines[0]}" '/tmp | main | 0 dirs, 1 file, 1B' 'the header'
 }
 
-# endregion
+# endregion Header
 
 # region Mark
 
@@ -762,7 +762,7 @@ done
   assert_output "$(listing_row 12 'a')"$'\n'"$(listing_row 12 'b')"$'\n''… 1 more; -a shows all'
 }
 
-# endregion
+# endregion Mark
 
 # region Links
 
@@ -918,7 +918,7 @@ while IFS= read -r __awk; do
     -- a_link_percent_encodes_what_a_uri_cannot_hold "${__awk}"
 done < <(available_awks)
 
-# endregion
+# endregion Links
 
 # region Screen width of names
 
@@ -971,6 +971,6 @@ while IFS= read -r __awk_name; do
   done
 done < <(available_awks)
 
-# endregion
+# endregion Screen width of names
 
 ### End

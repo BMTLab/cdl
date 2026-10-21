@@ -79,7 +79,7 @@ function zsh_completions() {
     ${options[@]+"${options[@]}"} "${CDL_SCRIPT}" "${WORK_DIR}" "$1"
 }
 
-# endregion
+# endregion Helpers
 
 # region bash
 
@@ -249,7 +249,7 @@ function zsh_completions() {
   assert_output_contains "-W '-a --all -1 --one-column'"
 }
 
-# endregion
+# endregion bash
 
 # region zsh
 
@@ -341,6 +341,6 @@ function zsh_completions() {
   assert_no_stderr
 }
 
-# endregion
+# endregion zsh
 
 ### End

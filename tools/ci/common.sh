@@ -67,6 +67,6 @@ function sha256_of() {
   printf '%s\n' "${line%% *}"
 }
 
-# endregion
+# endregion Helpers
 
 ### End

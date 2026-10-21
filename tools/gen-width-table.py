@@ -29,7 +29,7 @@
 #   The scan covers U+00A0..U+10FFFF without the surrogates.
 #
 #   In cdl.sh the block lives between the `# region Width table` marker
-#   and the next `# endregion` marker, as one blank line, the block,
+#   and the `# endregion Width table` marker, as one blank line, the block,
 #   and one blank line.
 #
 # Usage:
@@ -45,7 +45,8 @@
 #   52  With --check, the Unicode version recorded in the file
 #       differs from the local Python's, so the comparison is skipped
 #       (a test can skip instead of failing on an older Python).
-#   53  The file has no `# region Width table` ... `# endregion` block.
+#   53  The file has no `# region Width table` ... `# endregion Width table`
+#       block.
 
 """Generate the Unicode width table of the cdl.sh awk formatter."""
 
@@ -72,7 +73,7 @@ NARROW_CELLS = 1
 
 GENERATOR_NAME = "tools/gen-width-table.py"
 REGION_START = "# region Width table"
-REGION_END = "# endregion"
+REGION_END = "# endregion Width table"
 UNICODE_VERSION_PATTERN = re.compile(r"# Unicode (\d+(?:\.\d+)*)")
 MAX_LINE_LENGTH = 100
 FUNCTION_INDENT = " " * 4
@@ -85,7 +86,7 @@ EXIT_FAILURE = 51
 EXIT_UNICODE_MISMATCH = 52
 EXIT_NO_REGION = 53
 
-# endregion
+# endregion Constants
 
 
 # region Width rules
@@ -119,7 +120,7 @@ def cell_width(code_point: int) -> int:
     return NARROW_CELLS
 
 
-# endregion
+# endregion Width rules
 
 
 # region Ranges
@@ -217,7 +218,7 @@ def width_ranges() -> list[WidthRange]:
     return merge_adjacent(measured)
 
 
-# endregion
+# endregion Ranges
 
 
 # region Block rendering
@@ -329,7 +330,7 @@ def region_content(block: Sequence[str]) -> list[str]:
     return ["", *block, ""]
 
 
-# endregion
+# endregion Block rendering
 
 
 # region Region in the file
@@ -456,7 +457,7 @@ def recorded_unicode_version(region: Iterable[str]) -> str | None:
     return None
 
 
-# endregion
+# endregion Region in the file
 
 
 # region Commands
@@ -564,7 +565,7 @@ def check_block(path: Path, block: Sequence[str], unicode_version: str) -> int:
     return EXIT_FAILURE
 
 
-# endregion
+# endregion Commands
 
 
 # region Command line
@@ -688,4 +689,4 @@ def main(argv: Sequence[str] | None = None) -> int:
 if __name__ == "__main__":
     sys.exit(main())
 
-# endregion
+# endregion Command line

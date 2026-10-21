@@ -128,7 +128,7 @@ function in_terminal() {
   return "${rc}"
 }
 
-# endregion
+# endregion Runners
 
 # region Shortcuts
 
@@ -173,6 +173,6 @@ function format_listing() {
   in_shell_with_stdin '__cdl_format_listing "$@"' "$@"
 }
 
-# endregion
+# endregion Shortcuts
 
 ### End

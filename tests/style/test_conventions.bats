@@ -61,7 +61,7 @@ function report_violations() {
   fi
 }
 
-# endregion
+# endregion Helpers
 
 # region Headers
 
@@ -106,7 +106,7 @@ function report_violations() {
   fi
 }
 
-# endregion
+# endregion Headers
 
 # region Facts several files share
 
@@ -303,7 +303,7 @@ function named_exit_codes() {
   assert_equal "${mapped}" "${regions}" 'regions'
 }
 
-# endregion
+# endregion Facts several files share
 
 # region Code style
 
@@ -374,23 +374,41 @@ function named_exit_codes() {
   assert_output ''
 }
 
-@test "region markers are balanced in every shell file" {
+@test "every endregion closes the open region it names" {
   # Arrange
-  local file
+  local file verdict
   local -a violations=()
 
-  # Act
+  # Act:
+  # a stack of the open regions, which each endregion must name in turn,
+  # in the shell files and in the Python tools alike.
   while IFS= read -r file; do
-    local verdict
     verdict="$(awk '
-      /^[[:space:]]*# region / { depth++ }
-      /^[[:space:]]*# endregion/ { if (--depth < 0) { print "endregion without region at line " FNR; exit } }
+      /^[[:space:]]*# region / {
+        name = $0
+        sub(/^[[:space:]]*# region /, "", name)
+        open_names[++depth] = name
+        next
+      }
+      /^[[:space:]]*# endregion/ {
+        name = $0
+        sub(/^[[:space:]]*# endregion ?/, "", name)
+        if (depth == 0) { print "endregion without region at line " FNR; exit }
+        if (name != open_names[depth]) {
+          print "line " FNR " closes \"" open_names[depth] "\" as \"" name "\""
+          exit
+        }
+        depth--
+      }
       END { if (depth > 0) print depth " region(s) left open" }
     ' "${CDL_ROOT}/${file}")"
-    if [[ -n ${verdict} ]]; then
+    if [[ -n "${verdict}" ]]; then
       violations+=("${file}: ${verdict}")
     fi
-  done < <(shell_files)
+  done < <(
+    shell_files
+    cd "${CDL_ROOT}" && printf '%s\n' tools/*.py
+  )
 
   # Assert
   report_violations 'regions' "${violations[@]}"
@@ -436,6 +454,6 @@ function named_exit_codes() {
   report_violations 'tests without Arrange, Act and Assert in order' "${violations[@]}"
 }
 
-# endregion
+# endregion Code style
 
 ### End
