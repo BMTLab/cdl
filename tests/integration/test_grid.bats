@@ -104,7 +104,7 @@ function entry_rows() {
   # Act:
   # both listings go to the terminal itself, so a cut would show.
   run --separate-stderr in_terminal \
-    'cd "${CDL_TEST_DIRECTORY}" && cdl -a . && echo -- && cdl_list --all'
+    'cd "${CDL_TEST_DIRECTORY}" && cdl -a . && printf "%s\n" -- && cdl_list --all'
 
   # Assert:
   # thirty rows from each, and no note about a cut.

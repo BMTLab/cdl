@@ -20,7 +20,7 @@
 #######################################
 function assert_success() {
   if ((status != 0)); then
-    __assert_fail "expected success, got status ${status}"
+    fail_with_report "expected success, got status ${status}"
   fi
 }
 
@@ -34,7 +34,7 @@ function assert_failure() {
   local -ir expected="$1"
 
   if ((status != expected)); then
-    __assert_fail "expected status ${expected}, got ${status}"
+    fail_with_report "expected status ${expected}, got ${status}"
   fi
 }
 
@@ -52,7 +52,7 @@ function assert_output() {
   local -r expected="$1"
 
   if [[ "${output}" != "${expected}" ]]; then
-    __assert_fail 'output differs' "${expected}" "${output}"
+    fail_with_report 'output differs' "${expected}" "${output}"
   fi
 }
 
@@ -66,7 +66,7 @@ function assert_output_contains() {
   local -r fragment="$1"
 
   if [[ "${output}" != *"${fragment}"* ]]; then
-    __assert_fail "output lacks: ${fragment}"
+    fail_with_report "output lacks: ${fragment}"
   fi
 }
 
@@ -80,7 +80,7 @@ function refute_output_contains() {
   local -r fragment="$1"
 
   if [[ "${output}" == *"${fragment}"* ]]; then
-    __assert_fail "output must not contain: ${fragment}"
+    fail_with_report "output must not contain: ${fragment}"
   fi
 }
 
@@ -94,7 +94,7 @@ function assert_stderr_contains() {
   local -r fragment="$1"
 
   if [[ "${stderr-}" != *"${fragment}"* ]]; then
-    __assert_fail "stderr lacks: ${fragment}"
+    fail_with_report "stderr lacks: ${fragment}"
   fi
 }
 
@@ -103,7 +103,7 @@ function assert_stderr_contains() {
 #######################################
 function assert_no_stderr() {
   if [[ -n "${stderr-}" ]]; then
-    __assert_fail 'expected an empty stderr'
+    fail_with_report 'expected an empty stderr'
   fi
 }
 
@@ -121,7 +121,7 @@ function assert_equal() {
   local -r subject="$3"
 
   if [[ "${actual}" != "${expected}" ]]; then
-    __assert_fail "${subject} differs" "${expected}" "${actual}"
+    fail_with_report "${subject} differs" "${expected}" "${actual}"
   fi
 }
 
@@ -143,7 +143,7 @@ function assert_equal() {
 # Returns:
 #   1, always.
 #######################################
-function __assert_fail() {
+function fail_with_report() {
   local -r message="$1"
 
   {

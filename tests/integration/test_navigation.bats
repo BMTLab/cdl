@@ -125,7 +125,7 @@ function setup() {
 
   # Act
   run --separate-stderr in_shell \
-    'function cd() { echo "user cd called"; }
+    'function cd() { printf "%s\n" "user cd called"; }
      cdl "$1" >/dev/null && printf "%s\n" "${PWD}"' "${target}"
 
   # Assert

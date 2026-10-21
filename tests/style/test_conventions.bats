@@ -57,7 +57,7 @@ function report_violations() {
   shift
 
   if (($# > 0)); then
-    __assert_fail "${rule}:$(printf '\n  - %s' "$@")"
+    fail_with_report "${rule}:$(printf '\n  - %s' "$@")"
   fi
 }
 
@@ -99,10 +99,10 @@ function report_violations() {
 
   # Assert
   if [[ ! "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    __assert_fail "not a semantic version: '${version}'"
+    fail_with_report "not a semantic version: '${version}'"
   fi
   if [[ ! "${date}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
-    __assert_fail "not an ISO date: '${date}'"
+    fail_with_report "not an ISO date: '${date}'"
   fi
 }
 
@@ -158,7 +158,7 @@ function report_violations() {
 
   # Assert
   if ((${#violations[@]} == 0)) && [[ -z "${help_text}" ]]; then
-    __assert_fail 'cdl --help printed nothing'
+    fail_with_report 'cdl --help printed nothing'
   fi
   report_violations 'return codes' "${violations[@]}"
 }
@@ -214,7 +214,7 @@ function named_exit_codes() {
 
   # Assert
   if [[ -z "${codes}" ]]; then
-    __assert_fail 'no return codes found in cdl.sh'
+    fail_with_report 'no return codes found in cdl.sh'
   fi
   report_violations 'return codes of cdl' "${violations[@]}"
 }
@@ -248,7 +248,7 @@ function named_exit_codes() {
 
   # Assert
   if [[ -z "${codes}" ]]; then
-    __assert_fail 'no named exit codes found'
+    fail_with_report 'no named exit codes found'
   fi
   report_violations 'exit codes' "${violations[@]}"
 }
@@ -279,7 +279,7 @@ function named_exit_codes() {
 
   # Assert
   if ((setting_count == 0)); then
-    __assert_fail 'no settings found in __cdl_read_settings'
+    fail_with_report 'no settings found in __cdl_read_settings'
   fi
   report_violations 'settings' "${violations[@]}"
 }

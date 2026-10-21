@@ -187,12 +187,12 @@ function fake_bsd_ls() {
 
   __fakes_install ls "
 for arg in \"\$@\"; do
-  case \${arg} in
-    --*) echo \"ls: unrecognized option: \${arg}\" >&2; exit 2 ;;
-    -*G*) [ '${accepts_g}' = 'yes' ] || { echo 'ls: unknown option -- G' >&2; exit 1; } ;;
+  case \"\${arg}\" in
+    --*) printf '%s\n' \"ls: unrecognized option: \${arg}\" >&2; exit 2 ;;
+    -*G*) [ '${accepts_g}' = 'yes' ] || { printf '%s\n' 'ls: unknown option -- G' >&2; exit 1; } ;;
   esac
 done
-echo \"bsd-ls \$*\"
+printf '%s\n' \"bsd-ls \$*\"
 exit ${listing_status}"
 
   export PATH="${FAKE_BIN_DIRECTORY}:/usr/bin:/bin"
@@ -215,7 +215,7 @@ function fake_recording_gls() {
   real_ls="$(gnu_compatible_ls)" || skip 'no GNU-compatible ls here'
 
   GLS_LOG="${BATS_TEST_TMPDIR}/gls.log"
-  __fakes_install gls "echo \"\$*\" >>'${GLS_LOG}'
+  __fakes_install gls "printf '%s\n' \"\$*\" >>'${GLS_LOG}'
 exec '${real_ls}' \"\$@\""
 }
 
@@ -264,12 +264,12 @@ function fake_logging_tools() {
   local name real_path
   for name in ls gls awk mawk gawk tput; do
     real_path="$(PATH="${PATH#"${FAKE_BIN_DIRECTORY}":}" command -v "${name}")" || continue
-    __fakes_install "${name}" "echo '${name}' >>'${TOOL_LOG}'
+    __fakes_install "${name}" "printf '%s\n' '${name}' >>'${TOOL_LOG}'
 exec '${real_path}' \"\$@\""
   done
 
   for name in git hostname; do
-    __fakes_install "${name}" "echo '${name}' >>'${TOOL_LOG}'
+    __fakes_install "${name}" "printf '%s\n' '${name}' >>'${TOOL_LOG}'
 exit 1"
   done
 }

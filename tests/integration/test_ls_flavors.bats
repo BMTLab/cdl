@@ -34,7 +34,7 @@ function setup() {
   assert_success
   assert_output "$(listing_row '0' 'entry')"
   if [[ ! -s "${GLS_LOG}" ]]; then
-    __assert_fail 'gls was never called'
+    fail_with_report 'gls was never called'
   fi
 }
 

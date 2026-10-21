@@ -115,14 +115,14 @@ function assert_columns_aligned() {
   offsets="$(entry_offsets <<<"${listing}" | sort -u)"
 
   if [[ -z "${offsets}" ]]; then
-    __assert_fail 'expected rows with more than one entry'
+    fail_with_report 'expected rows with more than one entry'
     return
   fi
 
   local misaligned
   misaligned="$(awk '{ seen[$1]++ } END { for (c in seen) if (seen[c] > 1) print c }' <<<"${offsets}")"
   if [[ -n "${misaligned}" ]]; then
-    __assert_fail "column(s) ${misaligned//$'\n'/, } start at different cells: ${offsets//$'\n'/; }"
+    fail_with_report "column(s) ${misaligned//$'\n'/, } start at different cells: ${offsets//$'\n'/; }"
   fi
 }
 
@@ -136,7 +136,7 @@ function assert_one_column() {
   local -r listing="$1"
 
   if [[ -n "$(entry_offsets <<<"${listing}")" ]]; then
-    __assert_fail 'expected one entry per row'
+    fail_with_report 'expected one entry per row'
   fi
 }
 
@@ -157,7 +157,7 @@ function assert_fits_width() {
 
   widest="$("${SCREEN_CELLS}" <<<"${listing}" | sort -n | tail -n 1)"
   if ((widest >= width)); then
-    __assert_fail "the widest row takes ${widest} cells of ${width}"
+    fail_with_report "the widest row takes ${widest} cells of ${width}"
   fi
 }
 

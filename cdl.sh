@@ -606,18 +606,18 @@ function __cdl_read_stdin_target() {
 function __cdl_check_operands() {
   if (($# > 1)) && [[ "$2" == -?* ]]; then
     __cdl_error "Options go before the directory: '$2'" "${CDL_ERR_USAGE}" \
-      || return "$?"
+      || return
   fi
   if (($# > 1)); then
     __cdl_error "Too many arguments: expected one directory, got $#" \
-      "${CDL_ERR_USAGE}" || return "$?"
+      "${CDL_ERR_USAGE}" || return
   fi
 
   # An empty operand mostly comes from an empty substitution,
   # such as `cdl "$(xclip -o)"` with nothing in the clipboard,
   # where a jump to HOME would surprise.
   if (($# == 1)) && [[ -z "$1" ]]; then
-    __cdl_error 'Empty directory name' "${CDL_ERR_USAGE}" || return "$?"
+    __cdl_error 'Empty directory name' "${CDL_ERR_USAGE}" || return
   fi
 }
 
@@ -700,9 +700,10 @@ function __cdl_percent_decode() {
       continue
     fi
 
-    # $'\xHH' makes a byte of hex digits without a fork
-    # in bash 3.2 and zsh 5.0 alike, which lack `printf -v`;
-    # eval sees nothing else, as the two digits are checked above.
+    # $'\xHH' makes a byte of hex digits without a fork,
+    # in bash 3.2 and zsh 5.0 alike;
+    # `printf -v` would need zsh 5.2, so eval builds the byte,
+    # and sees nothing else, as the two digits are checked above.
     eval "byte=\$'\\x${hex}'"
     decoded="${decoded}${byte}"
     rest="${rest:2}"
@@ -1444,9 +1445,9 @@ function cdl_list() {
 
   local REPLY
 
-  __cdl_read_settings || return "$?"
+  __cdl_read_settings || return
   if (($# > 0)); then
-    __cdl_apply_listing_options "$@" || return "$?"
+    __cdl_apply_listing_options "$@" || return
   fi
 
   __cdl_list_current_directory
@@ -2370,22 +2371,22 @@ function cdl() {
         ;;
       -?*)
         __cdl_error "Unknown option: '$1' (see 'cdl --help')" "${CDL_ERR_USAGE}" \
-          || return "$?"
+          || return
         ;;
       *) break ;;
     esac
     shift
   done
 
-  __cdl_check_operands "$@" || return "$?"
-  __cdl_read_settings || return "$?"
+  __cdl_check_operands "$@" || return
+  __cdl_read_settings || return
   if ((${#listing_options[@]} > 0)); then
-    __cdl_apply_listing_options "${listing_options[@]}" || return "$?"
+    __cdl_apply_listing_options "${listing_options[@]}" || return
   fi
 
   __cdl_resolve_target "${1-}"
   __cdl_expand_target "${REPLY}"
-  __cdl_enter "${REPLY}" "${cd_option}" || return "$?"
+  __cdl_enter "${REPLY}" "${cd_option}" || return
   __cdl_list_current_directory "${REPLY}"
 }
 

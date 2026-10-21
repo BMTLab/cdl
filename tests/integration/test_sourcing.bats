@@ -79,7 +79,9 @@ function setup() {
   run --separate-stderr in_shell \
     'for target in missing notes.md/drafts gone/inner; do
        cdl "${HOME}/${target}" 2>/dev/null
-       (( $? / 10 == CDL_ERR_CHDIR / 10 )) && printf "caught %s\n" "${target}"
+       if (( $? / 10 == CDL_ERR_CHDIR / 10 )); then
+         printf "caught %s\n" "${target}"
+       fi
      done'
 
   # Assert
@@ -99,7 +101,7 @@ function a_return_code_is_read_only() {
   # Arrange: no fixtures needed.
 
   # Act
-  run --separate-stderr in_shell '(eval "$1=99") 2>/dev/null || echo refused' "${name}"
+  run --separate-stderr in_shell '(eval "$1=99") 2>/dev/null || printf "%s\n" refused' "${name}"
 
   # Assert
   assert_success
@@ -198,7 +200,7 @@ done
 
   # Act
   run --separate-stderr in_bare_shell \
-    'PATH="$1" source "${CDL_SCRIPT}" && echo loaded' "${empty_path}"
+    'PATH="$1" source "${CDL_SCRIPT}" && printf "%s\n" loaded' "${empty_path}"
 
   # Assert
   assert_success
@@ -226,7 +228,7 @@ done
   while IFS= read -r name; do
     case "${name}" in
       cdl | cdl_list | __cdl_*) ;;
-      *) __assert_fail "unexpected function: ${name}" ;;
+      *) fail_with_report "unexpected function: ${name}" ;;
     esac
   done <<<"${output}"
 }
@@ -266,13 +268,13 @@ done
   # aliases come before sourcing, the way an rc file defines them;
   # without COLUMNS, cdl has to ask tput for the width.
   run --separate-stderr in_bare_shell \
-    'if [ -n "${BASH_VERSION-}" ]; then shopt -s expand_aliases; fi
-     alias ls="echo hijacked"
-     alias awk="echo hijacked"
+    'if [[ -n "${BASH_VERSION-}" ]]; then shopt -s expand_aliases; fi
+     alias ls="printf \"%s\n\" hijacked"
+     alias awk="printf \"%s\n\" hijacked"
      source "${CDL_SCRIPT}"
-     function ls() { echo hijacked; }
-     function awk() { echo hijacked; }
-     function tput() { echo hijacked; }
+     function ls() { printf "%s\n" hijacked; }
+     function awk() { printf "%s\n" hijacked; }
+     function tput() { printf "%s\n" hijacked; }
      unset COLUMNS
      cdl "$1"' "${target}"
 
@@ -294,7 +296,9 @@ done
   run --separate-stderr in_shell \
     'setopt KSH_ARRAYS SH_WORD_SPLIT NO_UNSET WARN_CREATE_GLOBAL
      cdl "$1"
-     [[ -o KSH_ARRAYS && -o SH_WORD_SPLIT ]] && echo options-kept' "${target}"
+     if [[ -o KSH_ARRAYS && -o SH_WORD_SPLIT ]]; then
+       printf "%s\n" options-kept
+     fi' "${target}"
 
   # Assert
   assert_success

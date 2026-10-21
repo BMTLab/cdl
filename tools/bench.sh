@@ -108,7 +108,7 @@ function has_clock() {
   local -r shell="$1"
 
   # shellcheck disable=SC2016 # expanded by the shell being checked
-  "${shell}" -c 'zmodload zsh/datetime 2>/dev/null; [ -n "${EPOCHREALTIME-}" ]'
+  "${shell}" -c 'zmodload zsh/datetime 2>/dev/null; [[ -n "${EPOCHREALTIME-}" ]]'
 }
 
 # endregion Measurement

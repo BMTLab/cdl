@@ -128,7 +128,7 @@ function setup() {
   local -r device_row='^ *[0-9]+, *[0-9]+  [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}  null$'
   local -r null_row="$(grep ' null$' <<<"${output}")"
   if [[ ! "${null_row}" =~ ${device_row} ]]; then
-    __assert_fail "unexpected /dev/null row: ${null_row}"
+    fail_with_report "unexpected /dev/null row: ${null_row}"
   fi
 }
 
