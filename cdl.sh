@@ -31,7 +31,7 @@
 #   The tens digit of a return code names what failed, and the units why,
 #   so `(( $? / 10 == 3 ))` holds whenever a directory could not be entered.
 #
-# Version: 2.0.0
+# Version: 2.0.1
 
 # region Version and error codes
 
@@ -49,7 +49,7 @@ fi
 # The version, for `cdl --version`.
 # A plain assignment, unlike the codes below:
 # sourcing a newer cdl.sh in the same shell must replace it.
-CDL_VERSION='2.0.0'
+CDL_VERSION='2.0.1'
 
 # Each code is assigned only when unset,
 # so sourcing the file again (e.g. reloading ~/.bashrc)

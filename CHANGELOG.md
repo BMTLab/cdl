@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning][semver].
 
 ## [Unreleased]
 
+## [2.0.1] - 2026-10-21
+
+### Fixed
+
+- `tools/bench.sh` ends with `BENCH_ERR_USAGE` (40)
+  when `-n` or `-d` has no value, or `-n` no number;
+  it used to end with 1.
+
+### Changed
+
+- cdl behaves as before: its code, its tests and its tools
+  now follow the house style of the maintainer,
+  from the names of the regions to a card at the top of each script.
+- A tool of the repository that fails where no code planned it
+  names the line and the command, and ends with the last code of its block;
+  it used to end with the status of the failed command, without a word.
+
 ## [2.0.0] - 2026-10-07
 
 ### Fixed
@@ -159,7 +176,8 @@ and this project adheres to [Semantic Versioning][semver].
 
 [keepachangelog]: https://keepachangelog.com/en/1.1.0/
 [semver]: https://semver.org/spec/v2.0.0.html
-[Unreleased]: https://github.com/BMTLab/cdl/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/BMTLab/cdl/compare/v2.0.1...HEAD
+[2.0.1]: https://github.com/BMTLab/cdl/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/BMTLab/cdl/compare/5f79e8d...v2.0.0
 [1.0.1]: https://github.com/BMTLab/cdl/compare/v1.0.0...5f79e8d
 [1.0.0]: https://github.com/BMTLab/cdl/releases/tag/v1.0.0
