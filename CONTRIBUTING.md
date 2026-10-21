@@ -22,7 +22,7 @@ and [markdownlint-cli2](https://github.com/DavidAnson/markdownlint-cli2)
 (`npm install --global markdownlint-cli2`);
 Python 3 runs the generator of the width table and its tests.
 With [GNU parallel](https://www.gnu.org/software/parallel/) installed,
-`make test` runs the tests at the same time.
+`make test` runs the test files at the same time.
 [pre-commit](https://pre-commit.com) runs the git hooks
 (`pipx install pre-commit` or `uv tool install pre-commit`).
 `make demo` records the GIF of the README

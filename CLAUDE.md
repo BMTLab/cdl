@@ -334,9 +334,10 @@ the code of the recipe shows in its error line (`Error 71`).
   An integration test builds a real directory with `make_entries`
   under the sandbox `HOME`,
   and runs cdl through `in_shell` in the shell under test.
-- `make test` runs the tests at the same time where GNU parallel is
-  (`BATS_JOBS`), and CI does the same,
-  so a test keeps its files in its sandbox under `BATS_TEST_TMPDIR`
+- `make test` runs the test files at the same time where GNU parallel is
+  (`BATS_JOBS`), and with 16 CPUs or more the tests of each file too;
+  CI, with its few CPUs, runs only the files at the same time.
+  So a test keeps its files in its sandbox under `BATS_TEST_TMPDIR`
   and shares no path, port or order with another.
   A file whose tests must run one by one
   sets `BATS_NO_PARALLELIZE_WITHIN_FILE=true`, with a comment that says why.

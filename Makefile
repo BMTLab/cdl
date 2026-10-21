@@ -43,11 +43,16 @@ SMOKE_FILES = $(shell grep -l '^\# bats test_tags=.*smoke' $(wildcard tests/unit
 # On macOS: make test TEST_SHELLS='/bin/bash zsh' covers bash 3.2.
 TEST_SHELLS ?= bash zsh
 
-# bats runs the tests at the same time where GNU parallel is,
-# since each test keeps its files in BATS_TEST_TMPDIR;
-# BATS_JOBS='--jobs 1' on the command line runs them one by one.
+# bats runs the test files at the same time where GNU parallel is,
+# since each test keeps its files in BATS_TEST_TMPDIR.
+# With 16 CPUs or more, it runs the tests of each file at the same time too;
+# with fewer, bats would wait a whole second for each free slot,
+# and the suite would end later than one by one.
+# BATS_JOBS='--jobs 1' on the command line runs the tests one by one.
 # getconf counts the CPUs on macOS too, which has no nproc.
-BATS_JOBS := $(if $(shell command -v parallel),--jobs $(shell getconf _NPROCESSORS_ONLN))
+BATS_CPUS := $(shell getconf _NPROCESSORS_ONLN)
+BATS_JOBS := $(if $(shell command -v parallel),--jobs $(BATS_CPUS) \
+  $(shell (( $(BATS_CPUS) < 16 )) && printf '%s' --no-parallelize-within-files))
 
 # Extra bats options, e.g. BATS_FLAGS='--filter header'.
 BATS_FLAGS ?=

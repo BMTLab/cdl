@@ -9,9 +9,10 @@ and this project adheres to [Semantic Versioning][semver].
 
 ### Changed
 
-- `make test` and `make smoke` run the tests at the same time
-  where GNU parallel is installed, and so does CI;
-  they used to run them one by one,
+- `make test` and `make smoke` run the test files at the same time
+  where GNU parallel is installed, and with 16 CPUs or more
+  the tests of each file too; CI runs its test files at the same time.
+  They used to run the tests one by one,
   as `make test BATS_JOBS='--jobs 1'` still does.
 
 ## [2.0.1] - 2026-10-21

@@ -11,8 +11,8 @@
 #                   while cdl runs on /bin/bash.
 # The awk tests run with every awk installed: gawk, mawk, busybox, BSD awk;
 # busybox from 1.34, so not the 1.30 of Ubuntu 22.04.
-# GNU parallel lets bats run the tests at the same time,
-# as `make test` does on a laptop.
+# GNU parallel lets bats run the test files at the same time;
+# on so few CPUs, `make test` runs the tests of each file one by one.
 
 name: Tests
 
