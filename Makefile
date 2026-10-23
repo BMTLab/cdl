@@ -31,7 +31,7 @@ SHELL        := bash
 BATS         ?= bats
 SHELLCHECK   ?= shellcheck
 SHFMT        ?= shfmt
-MARKDOWNLINT ?= markdownlint-cli2
+RUMDL        ?= rumdl
 PYTHON       ?= python3
 PRE_COMMIT   ?= pre-commit
 VHS          ?= vhs
@@ -111,7 +111,7 @@ version: ## Print the version of cdl.sh
 	@printf '%s\n' '$(VERSION)'
 
 deps: ## Check the tools that the targets need
-	@for tool in awk bash zsh $(BATS) parallel $(SHELLCHECK) $(SHFMT) $(MARKDOWNLINT) $(PYTHON) $(PRE_COMMIT) $(VHS); do \
+	@for tool in awk bash zsh $(BATS) parallel $(SHELLCHECK) $(SHFMT) $(RUMDL) $(PYTHON) $(PRE_COMMIT) $(VHS); do \
 	  if command -v "$$tool" >/dev/null 2>&1; then \
 	    printf '  $(GREEN)✓$(RESET) %s\n' "$$tool"; \
 	  else \
@@ -127,9 +127,9 @@ lint: ## Run ShellCheck on every shell file, and zsh -n on the files zsh sources
 	$(call step,'zsh -n $(SCRIPT) $(PLUGIN)')
 	@zsh -n $(SCRIPT) $(PLUGIN)
 
-lint-md: ## Run markdownlint on every Markdown file, as .markdownlint-cli2.jsonc says
-	$(call step,'markdownlint-cli2')
-	@$(MARKDOWNLINT)
+lint-md: ## Run rumdl on every Markdown file, as .rumdl.toml says
+	$(call step,'rumdl check')
+	@$(RUMDL) check .
 
 format: ## Format every shell file in place with shfmt
 	$(call step,'shfmt -w')

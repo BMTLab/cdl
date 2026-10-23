@@ -47,7 +47,7 @@ CONTRIBUTING.md is the short public version of the same rules.
 - `Makefile`: every task; `make help` lists them.
 - `.pre-commit-config.yaml`, `committed.toml`: the git hooks of `make hooks`,
   quick checks before a commit, then the rules of its message.
-- `.editorconfig`, `.shellcheckrc`, `.markdownlint-cli2.jsonc`:
+- `.editorconfig`, `.shellcheckrc`, `.rumdl.toml`:
   the sources of the formatting and lint rules,
   for editors, `make` and CI alike.
 
@@ -160,7 +160,7 @@ Wrong, because `a` / `PR` splits an article from its noun:
 
 The same rules hold for docstrings, Markdown, help texts and commit messages.
 
-Markdown also follows `.markdownlint-cli2.jsonc`, which `make lint-md` applies:
+Markdown also follows `.rumdl.toml`, which `make lint-md` applies:
 prose of at most 80 columns, tables aligned so their source reads
 like the rendered page, `### Fixed` and its kin repeated only per version.
 A table holds short cells; a longer explanation goes below it, as a list.
@@ -304,7 +304,7 @@ A style test holds the rule: no code named twice, no file across two blocks,
 no block shared.
 
 | Codes | File                                | Names                      |
-|------:|-------------------------------------|----------------------------|
+| ----: | ----------------------------------- | -------------------------- |
 | 10-19 | `tools/ci/install-tools.sh`         | `INSTALL_ERR_*`            |
 | 20-29 | `tools/ci/release.sh`               | `RELEASE_ERR_*`            |
 | 30-39 | `tools/release-notes.sh`            | `NOTES_ERR_*`              |
@@ -403,10 +403,10 @@ the code of the recipe shows in its error line (`Error 71`).
   Lint runs on Ubuntu 26.04 because its Python ships the Unicode version
   the width table was generated from, so `--check` really compares there.
 - actionlint and zizmor check the workflows on every run; keep both silent.
-- The lint job runs markdownlint through `DavidAnson/markdownlint-cli2-action`,
-  which bundles its dependencies, pinned by its commit;
-  a laptop runs markdownlint-cli2 with the same markdownlint inside
-  (`markdownlint-cli2 --help` names it), so the two judge alike.
+- The lint job installs rumdl through `rvben/rumdl`, pinned by its commit,
+  at the version that CONTRIBUTING.md gives a laptop,
+  and runs `make lint-md` as a laptop does, so the two judge alike;
+  the action checks the binary against the digest of the release.
   actionlint runs as a pinned binary, not through reviewdog,
   so it also works for pull requests from forks.
 - A release publishes through `gh`, then verifies its own build provenance.

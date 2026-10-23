@@ -1,9 +1,9 @@
 # .github/workflows/ci-lint.yml
 #
-# ShellCheck, shfmt and the style tests, through the same make targets
+# ShellCheck, shfmt, rumdl and the style tests, through the same make targets
 # a contributor runs, so CI and `make check` cannot disagree;
-# and markdownlint, through the action that bundles the markdownlint
-# of `make lint-md`, with every dependency pinned by its commit.
+# the action of rumdl installs the version a contributor runs,
+# pinned by its commit, as every dependency is.
 # The job runs on Ubuntu 26.04, whose Python ships the Unicode version
 # the width table in cdl.sh was generated from,
 # so the table is really compared with its generator here.
@@ -17,7 +17,7 @@ permissions: {}
 
 jobs:
   lint:
-    name: ShellCheck, shfmt, markdownlint, style
+    name: ShellCheck, shfmt, rumdl, style
     runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
@@ -52,8 +52,16 @@ jobs:
       - name: 🎨 shfmt
         run: make format-check
 
-      - name: 📝 markdownlint
-        uses: DavidAnson/markdownlint-cli2-action@21c1be1b93ad9ed58fa840aacc3f279cde2a72ff # v24.2.0
+      # The action checks the binary it downloads against the digest
+      # that the release publishes; make runs it as a contributor does.
+      - name: 🔧 Install rumdl
+        uses: rvben/rumdl@19006897519812a2fdc508314b34738e5c281233 # v0.3.0
+        with:
+          version: 0.3.0
+          install-only: true
+
+      - name: 📝 rumdl
+        run: make lint-md
 
       - name: 📐 Style tests
         run: make test-style

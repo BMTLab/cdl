@@ -18,8 +18,8 @@ Report security issues privately, as [SECURITY.md](./SECURITY.md) explains.
 
 You need bash, zsh, [bats-core](https://github.com/bats-core/bats-core) 1.11+,
 [ShellCheck](https://www.shellcheck.net), [shfmt](https://github.com/mvdan/sh)
-and [markdownlint-cli2](https://github.com/DavidAnson/markdownlint-cli2)
-(`npm install --global markdownlint-cli2`);
+and [rumdl](https://rumdl.dev) 0.3.0
+(`uv tool install rumdl==0.3.0`);
 Python 3 runs the generator of the width table and its tests.
 With [GNU parallel](https://www.gnu.org/software/parallel/) installed,
 `make test` runs the test files at the same time.
@@ -74,7 +74,7 @@ and run `make widths` to rewrite it from Python's Unicode database.
 The suite lives in `tests/`:
 
 | Directory           | What it covers                                                      |
-|---------------------|---------------------------------------------------------------------|
+| ------------------- | ------------------------------------------------------------------- |
 | `tests/unit`        | The formatter, fed with canned `ls -l` lines.                       |
 | `tests/integration` | cdl end to end: navigation, pipes, listing, `ls` flavors, rc files. |
 | `tests/style`       | The code style rules and the facts several files share.             |
@@ -141,7 +141,7 @@ for people and coding agents alike. In short:
 
 `make format` applies `.editorconfig` through shfmt,
 `make lint` applies `.shellcheckrc` through ShellCheck,
-and `make lint-md` applies `.markdownlint-cli2.jsonc` through markdownlint.
+and `make lint-md` applies `.rumdl.toml` through rumdl.
 The style tests check the rest.
 
 ## Pull requests

@@ -90,7 +90,7 @@ and this project adheres to [Semantic Versioning][semver].
   where 1.0 returned 2, `CDL_ERR_CHDIR`, for all of them:
 
   | Code | Name                    | Reason                                          |
-  |------|-------------------------|-------------------------------------------------|
+  | ---- | ----------------------- | ----------------------------------------------- |
   | 30   | `CDL_ERR_CHDIR`         | `cd` refused the directory for another reason   |
   | 31   | `CDL_ERR_NOT_FOUND`     | No such directory; `cdl -` with no previous one |
   | 32   | `CDL_ERR_DENIED`        | It, or a directory above it, may not be entered |

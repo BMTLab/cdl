@@ -34,8 +34,8 @@ Makefile  text eol=lf
 .github/                  export-ignore
 .gitignore                export-ignore
 .idea/                    export-ignore
-.markdownlint-cli2.jsonc  export-ignore
 .pre-commit-config.yaml   export-ignore
+.rumdl.toml               export-ignore
 .shellcheckrc             export-ignore
 .vscode/                  export-ignore
 CLAUDE.md                 export-ignore

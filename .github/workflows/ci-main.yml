@@ -4,7 +4,7 @@
 # It runs on pushes and pull requests to main, on version tags,
 # once a week (so a drifting runner image shows up without a push),
 # and by hand, and hands the work to reusable workflows:
-#   - ci-lint.yml:           ShellCheck, shfmt and the style tests;
+#   - ci-lint.yml:           ShellCheck, shfmt, rumdl and the style tests;
 #   - ci-workflow-lint.yml:  actionlint and zizmor for these very files;
 #   - ci-test.yml:           the suite on Linux and macOS, in bash and zsh;
 #   - ci-release.yml:        the GitHub release of a version tag.

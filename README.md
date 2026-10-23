@@ -1,8 +1,6 @@
-<h1 align="center">cdl</h1>
+# cdl
 
-<div align="center">
-
-**`cd` and a compact, colored `ls` in one step, for bash and zsh.**
+`cd` and a compact, colored `ls` in one step, for bash and zsh.
 
 [![CI][ci-badge]][ci]
 [![Release][release-badge]][releases]
@@ -11,8 +9,6 @@
 ![cdl in a terminal: a project in columns under a header with its git branch,
 a file marked in its folder, Tab completion, a long folder cut around
 a marked photo, and an error with its code][demo]
-
-</div>
 
 ## Features
 
@@ -126,17 +122,17 @@ and an invalid one fails with `CDL_ERR_SETTING` before cdl moves.
 `CDL_REPLACE_CD` acts when cdl is loaded,
 so it goes above the line that loads it.
 
-| Variable          | Values                    | Default | Effect                                              |
-|-------------------|---------------------------|---------|-----------------------------------------------------|
-| `CDL_COLOR`       | `auto`, `always`, `never` | `auto`  | Colors; `auto` colors a terminal                    |
-| `CDL_HIDDEN`      | `1`, `0`                  | `1`     | `0` leaves hidden entries out                       |
-| `CDL_WIDTH`       | a positive number         | empty   | Width of the terminal                               |
-| `CDL_MAX_ROWS`    | a number                  | empty   | Rows before a listing is cut; `0` never cuts        |
-| `CDL_MAX_COLUMNS` | a number                  | empty   | Most columns side by side                           |
-| `CDL_HEADER`      | `auto`, `always`, `never` | `auto`  | The header line; `auto` shows it on a terminal      |
-| `CDL_GIT`         | `1`, `0`                  | `1`     | `0` leaves the git branch out of the header         |
-| `CDL_LINKS`       | `auto`, `always`, `never` | `auto`  | Names as hyperlinks to their files                  |
-| `CDL_REPLACE_CD`  | `1`, `0`                  | `0`     | `cd` runs cdl, with its options and completion      |
+| Variable          | Values                    | Default | Effect                                         |
+| ----------------- | ------------------------- | ------- | ---------------------------------------------- |
+| `CDL_COLOR`       | `auto`, `always`, `never` | `auto`  | Colors; `auto` colors a terminal               |
+| `CDL_HIDDEN`      | `1`, `0`                  | `1`     | `0` leaves hidden entries out                  |
+| `CDL_WIDTH`       | a positive number         | empty   | Width of the terminal                          |
+| `CDL_MAX_ROWS`    | a number                  | empty   | Rows before a listing is cut; `0` never cuts   |
+| `CDL_MAX_COLUMNS` | a number                  | empty   | Most columns side by side                      |
+| `CDL_HEADER`      | `auto`, `always`, `never` | `auto`  | The header line; `auto` shows it on a terminal |
+| `CDL_GIT`         | `1`, `0`                  | `1`     | `0` leaves the git branch out of the header    |
+| `CDL_LINKS`       | `auto`, `always`, `never` | `auto`  | Names as hyperlinks to their files             |
+| `CDL_REPLACE_CD`  | `1`, `0`                  | `0`     | `cd` runs cdl, with its options and completion |
 
 `cdl -h` tells more about each of them.
 
@@ -150,7 +146,7 @@ The tens digit names what failed, and the units digit why,
 so `(( $? / 10 == 3 ))` holds whenever a directory could not be entered.
 
 | Code | Name                    | When                                                   |
-|------|-------------------------|--------------------------------------------------------|
+| ---- | ----------------------- | ------------------------------------------------------ |
 | `0`  |                         | Success                                                |
 | `10` | `CDL_ERR_USAGE`         | A wrong option, or a wrong directory argument          |
 | `20` | `CDL_ERR_SETTING`       | A `CDL_*` setting with an invalid value                |
