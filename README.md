@@ -12,23 +12,23 @@ a marked photo, and an error with its code][demo]
 
 ## Features
 
-- 📂 **One step.** `cdl DIR` enters `DIR` and lists it:
+- `cdl DIR` enters `DIR` and lists it in one step:
   size, date and name, directories first, in as many columns as fit.
-- 🧭 **A header line** names the folder, its git branch and what it holds:
+- A header line names the folder, its git branch and what it holds:
   `~/projects/app · main · 3 dirs, 12 files, 1.4M`.
-- 📄 **Files too.** `cdl notes/todo.md` enters `notes` and marks `todo.md`.
-- ✂️ **Long folders stay on screen.** The listing is cut at the window height,
-  around the file you asked for; `cdl -a` shows everything.
-- 🌏 **Aligned in any language.** Widths are counted in screen cells,
+- A file works too: `cdl notes/todo.md` enters `notes` and marks `todo.md`.
+- A long folder stays on screen: the listing is cut at the window height,
+  around the file you asked for, and `cdl -a` shows everything.
+- Widths are counted in screen cells,
   so Cyrillic, CJK and emoji names stay in their columns.
-- 📋 **Pasted paths work:** a `file://` URI, or a `~` that no shell expanded.
-- 🔁 **It can replace `cd`,** options and Tab completion included:
+- Pasted paths work: a `file://` URI, or a `~` that no shell expanded.
+- cdl can replace `cd`, options and Tab completion included:
   see [Replacing `cd`](#replacing-cd).
-- ⌨️ **Tab completion** in bash and zsh,
-  and **clickable names** in terminals that show hyperlinks.
-- 🚦 **Clear errors,** each with a return code of its own.
-- ⚡ **Fast.** One `ls` and one `awk` per call, about 5 ms;
-  the branch is read without running `git`.
+- Tab completion works in bash and zsh,
+  and names are clickable in terminals that show hyperlinks.
+- Errors are clear, and each has a return code of its own.
+- It is fast: one `ls` and one `awk` per call take about 5 ms,
+  and the branch is read without running `git`.
 
 ## Install
 
@@ -104,13 +104,13 @@ and `-L` and `-P` treat symlinks as `cd` does.
 ### Ways to use it
 
 ```bash
-cdl ~/Downloads/report.pdf              # land next to a file, marked
-cdl /usr/bin/zsh                        # thousands of files, cut around zsh
-cdl "$(command -v git)"                 # where a command lives
-cdl "$(git rev-parse --show-toplevel)"  # the root of this repository
-cdl "$(fzf)"                            # pick any file with fzf, land next to it
-cdl "$(wl-paste)"                       # a path or a file:// URI from the clipboard
-CDL_COLOR=always cdl -a /usr/bin | less -R   # page through a big folder, in color
+cdl ~/Downloads/report.pdf                  # land next to a file, marked
+cdl /usr/bin/zsh                            # thousands of files, cut around zsh
+cdl "$(command -v git)"                     # where a command lives
+cdl "$(git rev-parse --show-toplevel)"      # the root of this repository
+cdl "$(fzf)"                                # pick any file with fzf, land next to it
+cdl "$(wl-paste)"                           # a path or a file:// URI from the clipboard
+CDL_COLOR=always cdl -a /usr/bin | less -R  # page through a big folder, in color
 ```
 
 <details>
