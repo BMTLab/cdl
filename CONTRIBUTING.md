@@ -35,8 +35,9 @@ make hooks    # installs the git hooks, once per clone
 make check    # lint, Markdown lint, format check and every test, as CI runs it
 ```
 
-Before each commit, the hooks lint the staged files
-and run the style tests and `make smoke`, in a few seconds;
+Before each commit, the hooks check what the commit adds:
+no large file, no two names that differ in case alone,
+no conflict marker and no private key;
 then they check the commit message.
 `make check` stays the full gate.
 
