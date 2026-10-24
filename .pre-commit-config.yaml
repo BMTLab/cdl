@@ -35,7 +35,7 @@ repos:
   # a reference left to a path that the commit renames or deletes,
   # and the files it adds or leaves out.
   - repo: https://github.com/BMTLab/commit-checks
-    rev: 491ecba97614f644b204fd9aaf831a91b930a7c1 # frozen: v1.0.0
+    rev: 903740b0bc3ce9c2a5c27ddd2868ec8f06ab0c9a # frozen: v1.0.1
     hooks:
       - id: trailers
       - id: references

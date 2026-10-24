@@ -22,7 +22,7 @@ and [rumdl](https://rumdl.dev) 0.3.0
 (`uv tool install rumdl==0.3.0`);
 Python 3 runs the generator of the width table and its tests;
 the hooks of [commit-checks](https://github.com/BMTLab/commit-checks)
-need Python 3.14.
+need Python 3.10 or newer.
 With [GNU parallel](https://www.gnu.org/software/parallel/) installed,
 `make test` runs the test files at the same time.
 [pre-commit](https://pre-commit.com) runs the git hooks

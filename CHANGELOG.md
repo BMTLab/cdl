@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning][semver].
   that leaves a reference to a path it renames or deletes,
   or that adds a temporary file,
   and it names the untracked files that the commit leaves out.
-  Its hooks need Python 3.14.
+  Its hooks need Python 3.10 or newer.
 
 ## [2.0.1] - 2026-10-21
 
