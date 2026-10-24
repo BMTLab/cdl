@@ -94,8 +94,7 @@ see `bats_test_function` in `tests/unit/test_formatter.bats`.
 
 A few quick tests, one or two for each main path of cdl,
 carry the tag `# bats test_tags=smoke`.
-`make smoke` runs only them, in every shell of `TEST_SHELLS`,
-and so does the pre-commit hook.
+`make smoke` runs only them, in every shell of `TEST_SHELLS`.
 
 ## Commit messages
 

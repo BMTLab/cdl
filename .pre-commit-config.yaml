@@ -3,23 +3,25 @@
 # The git hooks of this repository, run by pre-commit (https://pre-commit.com).
 # `make hooks` installs them once per clone.
 #
-# Before a commit, quick checks of the staged files run,
-# then the style tests and the smoke tests of cdl in bash and zsh:
-# a few seconds, where `make check` takes minutes and stays the full gate.
+# The hooks check only what nothing but a commit can show:
+# what the commit adds to the history, read from the index, and its message.
+# The linters, the formatters and the tests run in `make check` and in CI,
+# on the whole working tree, so a commit stays fast.
 # On the message, committed checks the rules of committed.toml,
 # and the last hooks below add the rules committed lacks.
 #
 # A repository is pinned to a commit, with its version in a comment,
 # as `pre-commit autoupdate --freeze` writes it;
 # Dependabot moves both together, as it does for the actions.
-# The local hooks run the tools of `make`, as installed on this machine.
+# The local hooks are patterns, which pre-commit matches itself.
 
 default_install_hook_types: [pre-commit, commit-msg]
 default_stages: [pre-commit]
 minimum_pre_commit_version: '4.0.0'
 
 repos:
-  # The hygiene of every staged file.
+  # What the commit adds: no large file, no two names that differ in case alone,
+  # no conflict marker and no private key.
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c # frozen: v6.0.0
     hooks:
@@ -27,11 +29,7 @@ repos:
         args: [--maxkb=1024] # the demo GIF of the README takes about 530 KB
       - id: check-case-conflict
       - id: check-merge-conflict
-      - id: check-yaml
       - id: detect-private-key
-      - id: end-of-file-fixer
-      - id: trailing-whitespace
-        args: [--markdown-linebreak-ext=md]
 
   # The message: the rules of committed.toml.
   # Without --fixup and --wip, the defaults of the hook,
@@ -44,42 +42,6 @@ repos:
 
   - repo: local
     hooks:
-      # The lint rules of .shellcheckrc and .editorconfig, on the staged files;
-      # zsh files are for `zsh -n`, which the smoke tests cover.
-      - id: shellcheck
-        name: ShellCheck
-        entry: shellcheck
-        language: system
-        types: [shell]
-        exclude_types: [zsh]
-      - id: shfmt
-        name: shfmt
-        entry: shfmt -d
-        language: system
-        types: [shell]
-        exclude_types: [zsh]
-      - id: rumdl
-        name: rumdl
-        entry: rumdl check
-        language: system
-        types: [markdown]
-
-      # The rules and shared facts that tests/style checks across all files.
-      - id: style
-        name: style rules (make test-style)
-        entry: make test-style
-        language: system
-        pass_filenames: false
-        always_run: true
-
-      # The tests tagged smoke, in bash and zsh, when cdl or its tests change.
-      - id: smoke
-        name: smoke tests in bash and zsh (make smoke)
-        entry: make smoke
-        language: system
-        pass_filenames: false
-        files: ^(cdl\.sh|cdl\.plugin\.zsh|Makefile|tests/.+)$
-
       # The subject starts with a verb in the imperative mood:
       # "Add", never "Added", "Adds" or "Adding".
       # committed 1.1.11 has this rule, but looks the word up as written,

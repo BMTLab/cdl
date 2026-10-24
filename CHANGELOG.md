@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning][semver].
 
 ### Changed
 
+- The git hooks of `make hooks` check only what a commit adds and its message;
+  the linters and the tests run in `make check`, whose style tests now also find
+  a space or a tab at the end of a line and a text file without a last newline.
 - `make test` and `make smoke` run the test files at the same time
   where GNU parallel is installed, and with 16 CPUs or more
   the tests of each file too; CI runs its test files at the same time.

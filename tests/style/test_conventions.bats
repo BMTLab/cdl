@@ -419,6 +419,38 @@ function named_exit_codes() {
   assert_output ''
 }
 
+@test "no line of a text file ends with a space or a tab" {
+  # Arrange: the file format rule covers every text file, apart from a patch.
+
+  # Act:
+  LC_ALL=C run grep -rIl --exclude-dir=.git --exclude-dir=.idea \
+    --exclude='*.patch' --exclude='*.diff' -E '[[:blank:]]$' "${CDL_ROOT}"
+
+  # Assert:
+  # grep exits with 1 when nothing matches.
+  assert_failure 1
+  assert_output ''
+}
+
+@test "every text file that git keeps ends with a newline" {
+  # Arrange: the file format rule asks for a newline after the last line.
+  local file
+  local -a files=() violations=()
+  mapfile -d '' -t files < <(git -C "${CDL_ROOT}" ls-files -z)
+  wait "$!"
+
+  # Act:
+  for file in "${files[@]}"; do
+    if LC_ALL=C grep -Iq . "${CDL_ROOT}/${file}" \
+      && [[ -n "$(tail -c 1 "${CDL_ROOT}/${file}")" ]]; then
+      violations+=("${file}")
+    fi
+  done
+
+  # Assert:
+  report_violations 'a text file ends without a newline' "${violations[@]}"
+}
+
 @test "shell functions are declared with the function keyword" {
   local file match
   local -a violations=()

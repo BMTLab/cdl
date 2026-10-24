@@ -46,7 +46,7 @@ CONTRIBUTING.md is the short public version of the same rules.
   - `actionlint.yaml`: the runner label actionlint does not know yet.
 - `Makefile`: every task; `make help` lists them.
 - `.pre-commit-config.yaml`, `committed.toml`: the git hooks of `make hooks`,
-  quick checks before a commit, then the rules of its message.
+  which check only what a commit adds and its message.
 - `.editorconfig`, `.shellcheckrc`, `.rumdl.toml`:
   the sources of the formatting and lint rules,
   for editors, `make` and CI alike.
@@ -75,9 +75,8 @@ The regions of `cdl.sh` read top to bottom:
 ## Before and after a change
 
 - Run `make check`: it must be green before you start and after you finish.
-  `make hooks` once per clone makes every commit run the quick checks
-  of `.pre-commit-config.yaml`, `make smoke` among them;
-  they catch the common slips early and never replace `make check`.
+  `make hooks` once per clone makes every commit check what it adds
+  and its message; the linters and the tests stay in `make check`.
   On macOS add the system shell, which is bash 3.2:
   `make test TEST_SHELLS='/bin/bash zsh'`.
 - The width table between `# region Width table`
@@ -357,7 +356,7 @@ the code of the recipe shows in its error line (`Error 71`).
   and `sh` is that bash in POSIX mode.
   A test that reads the compact listing calls `require_gnu_compatible_ls`.
 - `# bats test_tags=smoke` marks the quick tests of the main paths of cdl,
-  which `make smoke` and the pre-commit hook run.
+  which `make smoke` runs.
   Tag a test only when it is fast and covers a path no tagged test does,
   and prefer the files that already hold one:
   every file adds to the run, so `make smoke` stays within a few seconds.
