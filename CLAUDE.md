@@ -401,6 +401,8 @@ the code of the recipe shows in its error line (`Error 71`).
   with the BSD ls and `/bin/bash` 3.2, then with Homebrew's gls.
   Lint runs on Ubuntu 26.04 because its Python ships the Unicode version
   the width table was generated from, so `--check` really compares there.
+- Every job names its image, never `ubuntu-latest`,
+  so the image of a job changes only with a commit.
 - actionlint and zizmor check the workflows on every run; keep both silent.
 - The lint job installs rumdl through `rvben/rumdl`, pinned by its commit,
   at the version that CONTRIBUTING.md gives a laptop,
