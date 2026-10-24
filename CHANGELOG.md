@@ -18,6 +18,15 @@ and this project adheres to [Semantic Versioning][semver].
   They used to run the tests one by one,
   as `make test BATS_JOBS='--jobs 1'` still does.
 
+### Added
+
+- The git hooks of `make hooks` also run commit-checks:
+  it stops a commit whose message has a trailer that git does not parse,
+  that leaves a reference to a path it renames or deletes,
+  or that adds a temporary file,
+  and it names the untracked files that the commit leaves out.
+  Its hooks need Python 3.14.
+
 ## [2.0.1] - 2026-10-21
 
 ### Fixed

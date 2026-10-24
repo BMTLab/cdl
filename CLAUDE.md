@@ -441,7 +441,8 @@ the code of the recipe shows in its error line (`Error 71`).
 - The commit-msg hook checks the form of every message
   against `committed.toml` and the message hooks of `.pre-commit-config.yaml`:
   a capitalized subject without a full stop, a blank line after it,
-  a body wrapped at 72, no WIP or `fixup!` commits, no em-dash.
+  a body wrapped at 72, trailers that git parses,
+  no WIP or `fixup!` commits, no em-dash.
   A URL longer than that ends its line: only a last word may run over.
   Never skip the hooks with `--no-verify`; fix what they name.
 - Nothing is committed with a red `make check`,

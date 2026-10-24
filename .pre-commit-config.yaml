@@ -31,6 +31,17 @@ repos:
       - id: check-merge-conflict
       - id: detect-private-key
 
+  # What else only a commit shows: the trailers of the message,
+  # a reference left to a path that the commit renames or deletes,
+  # and the files it adds or leaves out.
+  - repo: https://github.com/BMTLab/commit-checks
+    rev: 491ecba97614f644b204fd9aaf831a91b930a7c1 # frozen: v1.0.0
+    hooks:
+      - id: trailers
+      - id: references
+      - id: temporary-files
+      - id: untracked-files
+
   # The message: the rules of committed.toml.
   # Without --fixup and --wip, the defaults of the hook,
   # it refuses fixup and WIP commits too, since main takes only finished ones.

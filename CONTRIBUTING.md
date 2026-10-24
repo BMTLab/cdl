@@ -20,7 +20,9 @@ You need bash, zsh, [bats-core](https://github.com/bats-core/bats-core) 1.11+,
 [ShellCheck](https://www.shellcheck.net), [shfmt](https://github.com/mvdan/sh)
 and [rumdl](https://rumdl.dev) 0.3.0
 (`uv tool install rumdl==0.3.0`);
-Python 3 runs the generator of the width table and its tests.
+Python 3 runs the generator of the width table and its tests;
+the hooks of [commit-checks](https://github.com/BMTLab/commit-checks)
+need Python 3.14.
 With [GNU parallel](https://www.gnu.org/software/parallel/) installed,
 `make test` runs the test files at the same time.
 [pre-commit](https://pre-commit.com) runs the git hooks
@@ -37,8 +39,10 @@ make check    # lint, Markdown lint, format check and every test, as CI runs it
 
 Before each commit, the hooks check what the commit adds:
 no large file, no two names that differ in case alone,
-no conflict marker and no private key;
-then they check the commit message.
+no conflict marker, no private key, no temporary file,
+and no reference left to a path that the commit renames or deletes;
+they also list the untracked files that the commit leaves out.
+Then they check the commit message.
 `make check` stays the full gate.
 
 ## How cdl is built
@@ -109,6 +113,8 @@ in `.pre-commit-config.yaml`:
 - a blank line, then a body wrapped at 72 columns
   that says what changed and why;
   a longer URL ends its line, since only a last word may run over;
+- trailers, such as `Co-authored-by:`, in the form that git parses:
+  a key of one word, a long value indented, no blank line between them;
 - no WIP or `fixup!` commits, and no em-dash.
 
 ```text
