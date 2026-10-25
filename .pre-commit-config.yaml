@@ -35,7 +35,7 @@ repos:
   # and the length of its lines, a reference left to a path
   # that the commit renames or deletes, and the files it adds or leaves out.
   - repo: https://github.com/BMTLab/commit-checks
-    rev: 58014fa13305971a83feb6c6c8d19e4e960d53b5  # frozen: v1.1.0
+    rev: 54321ff33d04fb98b386217b761d1c364bf45e14  # frozen: v1.1.1
     hooks:
       - id: trailers
       - id: line-length
