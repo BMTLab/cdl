@@ -1860,7 +1860,7 @@ function __cdl_format_listing() {
     }
 
     # Shorten a path from the left until it fits the room:
-    # "~/Documents/Projects/cdl" becomes "…/Projects/cdl".
+    # "~/src/github/cdl" becomes "…/github/cdl".
     function fit_path(path, room,    tail, slash) {
       if (display_width(path) <= room) return path
 

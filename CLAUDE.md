@@ -272,8 +272,8 @@ A table holds short cells; a longer explanation goes below it, as a list.
 - Standard library only; runs on Python 3.10 and later.
 - Type hints on every signature, numpydoc docstrings, `# region` markers,
   and the same card as a script (see "File headers").
-- Clean under ruff with the ScriptsLib profile
-  (every rule group, preview, line length 99, numpy docstrings)
+- Clean under ruff with every rule group, preview,
+  a line length of 99 and numpy docstrings,
   and under `mypy --strict`.
 - Constants at the top, exit codes named (see "Exit codes" below),
   output through `sys.stdout.write` and errors through `sys.stderr.write`;

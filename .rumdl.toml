@@ -39,7 +39,7 @@ style = "aligned"
 
 [MD088]
 # The em-dash and the en-dash stay out of files, as out of messages,
-# and so do the curly quotes (writing.md).
+# and so do the curly quotes.
 normalize-dashes = true
 normalize-quotes = true
 
