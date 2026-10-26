@@ -317,27 +317,35 @@ function __cdl_read_settings() {
   if [[ -n "${CDL_COLOR-}" ]]; then
     __cdl_check_choice 'CDL_COLOR' "${CDL_COLOR}" 'auto' 'always' 'never' || return
   fi
+
   if [[ -n "${CDL_HIDDEN-}" ]]; then
     __cdl_check_choice 'CDL_HIDDEN' "${CDL_HIDDEN}" 0 1 || return
   fi
+
   if [[ -n "${CDL_WIDTH-}" ]]; then
     __cdl_check_number 'CDL_WIDTH' "${CDL_WIDTH}" 1 || return
   fi
+
   if [[ -n "${CDL_MAX_ROWS-}" ]]; then
     __cdl_check_number 'CDL_MAX_ROWS' "${CDL_MAX_ROWS}" 0 || return
   fi
+
   if [[ -n "${CDL_MAX_COLUMNS-}" ]]; then
     __cdl_check_number 'CDL_MAX_COLUMNS' "${CDL_MAX_COLUMNS}" 0 || return
   fi
+
   if [[ -n "${CDL_HEADER-}" ]]; then
     __cdl_check_choice 'CDL_HEADER' "${CDL_HEADER}" 'auto' 'always' 'never' || return
   fi
+
   if [[ -n "${CDL_GIT-}" ]]; then
     __cdl_check_choice 'CDL_GIT' "${CDL_GIT}" 0 1 || return
   fi
+
   if [[ -n "${CDL_LINKS-}" ]]; then
     __cdl_check_choice 'CDL_LINKS' "${CDL_LINKS}" 'auto' 'always' 'never' || return
   fi
+
   if [[ -n "${CDL_REPLACE_CD-}" ]]; then
     __cdl_check_choice 'CDL_REPLACE_CD' "${CDL_REPLACE_CD}" 0 1 || return
   fi
@@ -420,6 +428,7 @@ function __cdl_check_number() {
   if __cdl_is_positive_integer "${value}"; then
     return 0
   fi
+
   if ((minimum == 0)) && [[ "${value}" == 0 ]]; then
     return 0
   fi
@@ -448,6 +457,7 @@ function __cdl_join_choices() {
     REPLY="${REPLY}, $1"
     shift
   done
+
   if (($# == 1)); then
     REPLY="${REPLY} or $1"
   fi
@@ -529,6 +539,7 @@ function __cdl_check_operands() {
     __cdl_error "Options go before the directory: '$2'" "${CDL_ERR_USAGE}" \
       || return
   fi
+
   if (($# > 1)); then
     __cdl_error "Too many arguments: expected one directory, got $#" \
       "${CDL_ERR_USAGE}" || return
@@ -571,6 +582,7 @@ function __cdl_expand_target() {
   esac
 
   REPLY="${target}"
+
   # shellcheck disable=SC2088 # the ~ the shell left alone is the point
   if [[ "${target}" == '~' || "${target}" == '~/'* ]] \
     && [[ -n "${HOME-}" && ! -e "${target}" ]]; then
@@ -590,6 +602,7 @@ function __cdl_expand_target() {
 #######################################
 function __cdl_file_uri_path() {
   local uri_path="${1#file://}"
+
   uri_path="/${uri_path#*/}"
 
   __cdl_percent_decode "${uri_path}"
@@ -654,6 +667,7 @@ function __cdl_resolve_target() {
 
   if [[ -n "${operand}" ]]; then
     REPLY="${operand}"
+
     return 0
   fi
 
@@ -691,17 +705,22 @@ function __cdl_enter() {
 
   if __cdl_change_directory "${target}" "${option}"; then
     REPLY=''
+
     return 0
   fi
+
   if ! __cdl_is_file_target "${target}"; then
     __cdl_report_chdir_failure "${target}"
+
     return
   fi
 
   __cdl_holding_directory "${target}"
   directory="${REPLY}"
+
   if [[ -n "${directory}" ]] && ! __cdl_change_directory "${directory}" "${option}"; then
     __cdl_report_chdir_failure "${directory}"
+
     return
   fi
 
@@ -747,10 +766,12 @@ function __cdl_holding_directory() {
 
   if [[ "${entry_path}" != */* ]]; then
     REPLY=''
+
     return 0
   fi
 
   REPLY="${entry_path%/*}"
+
   case "${REPLY}" in
     '') REPLY='/' ;;
     '.') REPLY='' ;;
@@ -799,8 +820,10 @@ function __cdl_diagnose_chdir_failure() {
 
   if [[ "${target}" == '-' && -z "${OLDPWD-}" ]]; then
     REPLY='No previous directory: OLDPWD is not set'
+
     return "${CDL_ERR_NOT_FOUND}"
   fi
+
   if [[ "${target}" == '-' ]]; then
     target="${OLDPWD}"
   fi
@@ -815,24 +838,31 @@ function __cdl_diagnose_chdir_failure() {
   if [[ ! -d "${part}" ]]; then
     REPLY="Not a directory: '${target}'"
     __cdl_blame_part "${part}" "${bare}" 'is a file'
+
     return "${CDL_ERR_NOT_DIRECTORY}"
   fi
+
   if [[ ! -x "${part}" ]]; then
     REPLY="Permission denied: '${target}'"
     __cdl_blame_part "${part}" "${bare}" 'may not be entered'
+
     return "${CDL_ERR_DENIED}"
   fi
+
   if [[ "${part}" == "${bare}" ]]; then
     REPLY="Cannot change directory: '${target}'"
+
     return "${CDL_ERR_CHDIR}"
   fi
 
   __cdl_part_below "${part}" "${bare}"
   below="${REPLY}"
   REPLY="No such file or directory: '${target}'"
+
   if [[ -L "${below}" ]]; then
     __cdl_blame_part "${below}" "${bare}" 'is a broken symlink'
   fi
+
   return "${CDL_ERR_NOT_FOUND}"
 }
 
@@ -875,6 +905,7 @@ function __cdl_part_below() {
   local rest
 
   rest="${whole}"
+
   if [[ "${part}" == '/' ]]; then
     rest="${whole#/}"
   elif [[ "${part}" != '.' ]]; then
@@ -947,6 +978,7 @@ function __cdl_change_directory() {
 #######################################
 function __cdl_report_chdir_failure() {
   local -i code="${CDL_ERR_CHDIR}"
+
   __cdl_diagnose_chdir_failure "$1" || code=$?
 
   __cdl_error "${REPLY}" "${code}"
@@ -987,11 +1019,13 @@ function __cdl_is_positive_integer() {
 #######################################
 function __cdl_terminal_width() {
   REPLY="${__cdl_setting_width}"
+
   if [[ -n "${REPLY}" ]]; then
     return 0
   fi
 
   REPLY="${COLUMNS-}"
+
   if __cdl_is_positive_integer "${REPLY}"; then
     return 0
   fi
@@ -999,6 +1033,7 @@ function __cdl_terminal_width() {
   # tput fails without a terminal;
   # the `||` keeps that failure from ending a `set -e` shell.
   REPLY="$(command tput cols 2>/dev/null)" || REPLY=''
+
   if __cdl_is_positive_integer "${REPLY}"; then
     return 0
   fi
@@ -1020,6 +1055,7 @@ function __cdl_terminal_width() {
 #######################################
 function __cdl_terminal_height() {
   REPLY="${LINES-}"
+
   if __cdl_is_positive_integer "${REPLY}"; then
     return 0
   fi
@@ -1027,6 +1063,7 @@ function __cdl_terminal_height() {
   # tput fails without a terminal;
   # the `||` keeps that failure from ending a `set -e` shell.
   REPLY="$(command tput lines 2>/dev/null)" || REPLY=''
+
   if __cdl_is_positive_integer "${REPLY}"; then
     return 0
   fi
@@ -1059,16 +1096,20 @@ function __cdl_max_rows() {
   local -ir fewest_rows=5
 
   REPLY="${__cdl_setting_max_rows}"
+
   if [[ -n "${REPLY}" ]]; then
     return 0
   fi
+
   if [[ ! -t 1 ]]; then
     REPLY=0
+
     return 0
   fi
 
   __cdl_terminal_height
   REPLY=$((REPLY - surrounding_lines - header_lines))
+
   if ((REPLY < fewest_rows)); then
     REPLY="${fewest_rows}"
   fi
@@ -1136,6 +1177,7 @@ function __cdl_should_link() {
     always) return 0 ;;
     never) return 1 ;;
   esac
+
   if ((! is_colored)) || [[ ! -t 1 ]]; then
     return 1
   fi
@@ -1184,11 +1226,13 @@ function __cdl_should_show_header() {
 function __cdl_pretty_path() {
   local -r directory="$1"
   local home="${HOME-}"
+
   home="${home%/}"
 
   # Without a HOME, or with HOME at the root, every path stays whole.
   if [[ -z "${home}" ]]; then
     REPLY="${directory}"
+
     return 0
   fi
 
@@ -1223,6 +1267,7 @@ function __cdl_git_branch() {
   __cdl_find_git_directory
   git_directory="${REPLY}"
   REPLY=''
+
   if [[ -z "${git_directory}" ]]; then
     return 0
   fi
@@ -1260,12 +1305,14 @@ function __cdl_find_git_directory() {
   while [[ ! -e "${directory}/.git" ]]; do
     if [[ -z "${directory}" ]]; then
       REPLY=''
+
       return 0
     fi
     directory="${directory%/*}"
   done
 
   REPLY="${directory}/.git"
+
   if [[ -d "${REPLY}" ]]; then
     return 0
   fi
@@ -1305,12 +1352,14 @@ function __cdl_detect_ls() {
   fi
 
   __cdl_ls_command='ls'
+
   if command -v gls >/dev/null 2>&1; then
     __cdl_ls_command='gls'
   fi
 
   __cdl_is_gnu_ls=0
   __cdl_ls_color_flag=''
+
   if command "${__cdl_ls_command}" --group-directories-first --version \
     >/dev/null 2>&1; then
     __cdl_is_gnu_ls=1
@@ -1335,6 +1384,7 @@ function __cdl_detect_awk() {
   fi
 
   __cdl_awk_command='awk'
+
   if command -v mawk >/dev/null 2>&1; then
     __cdl_awk_command='mawk'
   fi
@@ -1373,6 +1423,7 @@ function cdl_list() {
   local REPLY
 
   __cdl_read_settings || return
+
   if (($# > 0)); then
     __cdl_apply_listing_options "$@" || return
   fi
@@ -1396,6 +1447,7 @@ function __cdl_list_current_directory() {
   local -r mark="${1-}"
 
   __cdl_detect_ls
+
   if ((__cdl_is_gnu_ls)); then
     __cdl_print_compact_listing "${mark}"
   else
@@ -1526,9 +1578,11 @@ function __cdl_print_compact_listing() {
 #######################################
 function __cdl_print_plain_listing() {
   local -a options=(-lh)
+
   if ((__cdl_setting_hidden)); then
     options=(-Alh)
   fi
+
   if [[ -n "${__cdl_ls_color_flag}" ]] && __cdl_should_color; then
     options+=("${__cdl_ls_color_flag}")
   fi
@@ -1596,6 +1650,7 @@ function __cdl_format_listing() {
   local -r link_directory="${8-}"
 
   local -i is_utf8_output=0
+
   if __cdl_can_print_utf8; then
     is_utf8_output=1
   fi
@@ -1695,12 +1750,14 @@ function __cdl_format_listing() {
     # directory_count, file_count and byte_total, and keep_link() its own.
     function add_entry(size, time, name, is_mark) {
       entry_count++
+
       if (is_mark) {
         marked = entry_count
         entry_text[entry_count] = sprintf(MARKED_ROW_FORMAT, size, time, style(BOLD, MARK) name)
       } else {
         entry_text[entry_count] = sprintf(ROW_FORMAT, size, time, name)
       }
+
       if (entry_uri_prefix != "" && (last_linkable < 0 || entry_count <= last_linkable))
         keep_link(name)
 
@@ -1725,6 +1782,7 @@ function __cdl_format_listing() {
     # entries that a cut hides are never measured.
     function cells(i) {
       if (!(i in entry_cells)) entry_cells[i] = display_width(entry_text[i])
+
       return entry_cells[i]
     }
 
@@ -1735,6 +1793,7 @@ function __cdl_format_listing() {
     function choose_layout(    count) {
       for (count = most_columns(); count > 1; count--)
         if (lay_out(count) && laid_out_width() < width) return
+
       lay_out(1)
     }
 
@@ -1744,6 +1803,7 @@ function __cdl_format_listing() {
       limit = int((width + GUTTER) / (SHORTEST_ROW_CELLS + GUTTER))
       if (limit > entry_count) limit = entry_count
       if (max_columns > 0 && limit > max_columns) limit = max_columns
+
       return limit
     }
 
@@ -1753,6 +1813,7 @@ function __cdl_format_listing() {
     function lay_out(count,    shown, column, first, last) {
       grid_columns = count
       choose_window(count)
+
       shown = last_shown - first_shown + 1
       grid_rows = int((shown + count - 1) / count)
       if ((count - 1) * grid_rows >= shown) return 0
@@ -1763,6 +1824,7 @@ function __cdl_format_listing() {
         if (last > last_shown) last = last_shown
         column_cells[column] = widest(first, last)
       }
+
       return 1
     }
 
@@ -1779,11 +1841,13 @@ function __cdl_format_listing() {
 
       if (marked <= max_rows * count) {
         last_shown = max_rows * count
+
         return
       }
 
       rows = max_rows > 1 ? max_rows - 1 : 1
       capacity = rows * count
+
       offset = (int((count + 1) / 2) - 1) * rows + int((rows + 1) / 2) - 1
       first_shown = marked - offset
       if (first_shown > entry_count - capacity + 1) first_shown = entry_count - capacity + 1
@@ -1793,16 +1857,19 @@ function __cdl_format_listing() {
     function laid_out_width(    column, total) {
       total = GUTTER * (grid_columns - 1)
       for (column = 1; column <= grid_columns; column++) total += column_cells[column]
+
       return total
     }
 
     # Return the cells of the widest entry among entries first..last.
     function widest(first, last,    i, max, c) {
       max = 0
+
       for (i = first; i <= last; i++) {
         c = cells(i)
         if (c > max) max = c
       }
+
       return max
     }
 
@@ -1834,6 +1901,7 @@ function __cdl_format_listing() {
       room = width - 1 - display_width(details)
       path = fit_path(plain_text(header_path), room)
       if (directory_uri != "") path = hyperlink(directory_uri, path)
+
       print style(BOLD, path) style(DIM, details)
     }
 
@@ -1856,6 +1924,7 @@ function __cdl_format_listing() {
       start = name_start[i]
       name = i in raw_name ? raw_name[i] : substr(text, start)
       uri = entry_uri_prefix uri_encode(plain_name(name, i in is_symlink ? "l" : ""))
+
       return substr(text, 1, start - 1) hyperlink(uri, substr(text, start))
     }
 
@@ -1865,10 +1934,12 @@ function __cdl_format_listing() {
       if (display_width(path) <= room) return path
 
       tail = path
+
       while ((slash = index(substr(tail, 2), "/")) > 0) {
         tail = substr(tail, slash + 1)
         if (display_width(ELLIPSIS tail) <= room) return ELLIPSIS tail
       }
+
       return ELLIPSIS tail
     }
 
@@ -1881,6 +1952,7 @@ function __cdl_format_listing() {
 
     function plural(count, word) {
       count += 0
+
       return count " " word (count == 1 ? "" : "s")
     }
 
@@ -1910,12 +1982,14 @@ function __cdl_format_listing() {
     function parse_entry(line,    fields, field_count, date, i) {
       field_count = split(line, fields, " ")
       date = 0
+
       for (i = 6; i <= field_count - 2; i++) {
         if (fields[i] ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) {
           date = i
           break
         }
       }
+
       if (!date) return 0
 
       entry_kind = substr(fields[1], 1, 1)
@@ -1930,6 +2004,7 @@ function __cdl_format_listing() {
         entry_bytes = fields[date - 1] + 0
         entry_size = human_size(entry_bytes)
       }
+
       return 1
     }
 
@@ -1945,6 +2020,7 @@ function __cdl_format_listing() {
       tenths = ceiling(value * 10)
       if (tenths < 100) return sprintf("%.1f%s", tenths / 10, substr(UNITS, unit, 1))
       if (ceiling(value) < 1024) return sprintf("%d%s", ceiling(value), substr(UNITS, unit, 1))
+
       return "1.0" substr(UNITS, unit + 1, 1)
     }
 
@@ -1956,6 +2032,7 @@ function __cdl_format_listing() {
     # A name is unique in a directory, so the search ends at the first match.
     function is_marked(name) {
       if (marked || !index(name, mark_name)) return 0
+
       return plain_name(name, entry_kind) == mark_name
     }
 
@@ -1966,6 +2043,7 @@ function __cdl_format_listing() {
     function plain_name(name, kind,    arrow) {
       if (index(name, "\033")) gsub(/\033\[[0-9;]*[mK]/, "", name)
       if (kind == "l" && (arrow = index(name, " -> ")) > 0) name = substr(name, 1, arrow - 1)
+
       return name
     }
 
@@ -1984,6 +2062,7 @@ function __cdl_format_listing() {
       if (name !~ CONTROL) return name
 
       clean = ""
+
       while (match(name, CONTROL)) {
         clean = clean substr(name, 1, RSTART - 1)
         name = substr(name, RSTART)
@@ -1996,6 +2075,7 @@ function __cdl_format_listing() {
           name = substr(name, control_length + 1)
         }
       }
+
       return clean name
     }
 
@@ -2004,6 +2084,7 @@ function __cdl_format_listing() {
     # none of its escapes belongs to cdl.
     function plain_text(text) {
       gsub(CONTROL, "?", text)
+
       return text
     }
 
@@ -2024,11 +2105,13 @@ function __cdl_format_listing() {
       if (path ~ /^[A-Za-z0-9._~\/-]*$/) return path
 
       encoded = ""
+
       for (i = 1; i <= length(path); i++) {
         char = substr(path, i, 1)
         if (char !~ /^[A-Za-z0-9._~\/-]$/) char = percent_escape(char)
         encoded = encoded char
       }
+
       return encoded
     }
 
@@ -2038,6 +2121,7 @@ function __cdl_format_listing() {
     function percent_escape(char) {
       if (char in escape_memo) return escape_memo[char]
       if (byte_mode || char < "\200") return escape_memo[char] = sprintf("%%%02X", byte_value(char))
+
       return escape_memo[char] = utf8_bytes(code_point(char), "%%%02X")
     }
 
@@ -2047,6 +2131,7 @@ function __cdl_format_listing() {
         for (value = 1; value < 256; value++) byte_values[sprintf("%c", value)] = value
         byte_values_ready = 1
       }
+
       return byte_values[byte]
     }
 
@@ -2055,11 +2140,13 @@ function __cdl_format_listing() {
     function code_point(char,    low, high, middle) {
       low = 128
       high = 1114111
+
       while (low < high) {
         middle = int((low + high) / 2)
         if (utf8(middle) < char) low = middle + 1
         else high = middle
       }
+
       return low
     }
 
@@ -2073,10 +2160,12 @@ function __cdl_format_listing() {
       if (plain ~ /^[ -~]*$/) return length(plain)  # printable ASCII
 
       total = 0
+
       for (i = 1; i <= length(plain); i += step) {
         step = byte_mode ? sequence_length(substr(plain, i, 1)) : 1
         total += char_cells(substr(plain, i, step))
       }
+
       return total
     }
 
@@ -2085,6 +2174,7 @@ function __cdl_format_listing() {
     function strip_escapes(text) {
       gsub(/\033\[[0-?]*[ -\/]*[@-~]/, "", text)
       gsub(/\033\][^\007\033]*(\007|\033\\)/, "", text)
+
       return text
     }
 
@@ -2093,6 +2183,7 @@ function __cdl_format_listing() {
       if (byte < "\300") return 1  # ASCII, or a stray continuation byte
       if (byte < "\340") return 2
       if (byte < "\360") return 3
+
       return 4
     }
 
@@ -2108,6 +2199,7 @@ function __cdl_format_listing() {
 
       low = 1
       high = range_count
+
       while (low <= high) {
         middle = int((low + high) / 2)
         if (!(middle in range_cells)) parse_range(middle)
@@ -2116,6 +2208,7 @@ function __cdl_format_listing() {
         else if (char > range_last[middle]) low = middle + 1
         else return cell_memo[char] = range_cells[middle]
       }
+
       return cell_memo[char] = 1
     }
 
@@ -2130,6 +2223,7 @@ function __cdl_format_listing() {
     function parse_range(i,    parts, bounds) {
       split(range_token[i], parts, ":")
       split(parts[1], bounds, "-")
+
       range_first[i] = utf8(hex(bounds[1]))
       range_last[i] = utf8(hex(bounds[2] == "" ? bounds[1] : bounds[2]))
       range_cells[i] = parts[2] + 0
@@ -2137,8 +2231,10 @@ function __cdl_format_listing() {
 
     function hex(digits,    value, i) {
       value = 0
+
       for (i = 1; i <= length(digits); i++)
         value = value * 16 + index("0123456789ABCDEF", substr(digits, i, 1)) - 1
+
       return value
     }
 
@@ -2153,11 +2249,14 @@ function __cdl_format_listing() {
     # "%c" gives the bytes themselves, "%%%02X" their URI escapes.
     function utf8_bytes(code, format) {
       if (code < 128) return sprintf(format, code)
+
       if (code < 2048)
         return sprintf(format format, 192 + int(code / 64), 128 + code % 64)
+
       if (code < 65536)
         return sprintf(format format format, 224 + int(code / 4096),
           128 + int(code / 64) % 64, 128 + code % 64)
+
       return sprintf(format format format format, 240 + int(code / 262144),
         128 + int(code / 4096) % 64, 128 + int(code / 64) % 64, 128 + code % 64)
     }
@@ -2286,10 +2385,12 @@ function cdl() {
     case "$1" in
       -h | --help)
         __cdl_usage
+
         return 0
         ;;
       -V | --version)
         printf 'cdl %s\n' "${CDL_VERSION}"
+
         return 0
         ;;
       -L | -P) cd_option="$1" ;;
@@ -2309,6 +2410,7 @@ function cdl() {
 
   __cdl_check_operands "$@" || return
   __cdl_read_settings || return
+
   if ((${#listing_options[@]} > 0)); then
     __cdl_apply_listing_options "${listing_options[@]}" || return
   fi
@@ -2352,17 +2454,20 @@ function __cdl_complete_bash() {
         compopt +o filenames 2>/dev/null
       fi
       __cdl_add_completions '' -W "${option_words}" -- "${word}"
+
       return 0
       ;;
     '~'*) return 0 ;;
   esac
 
   __cdl_add_completions '' -f -- "${word}"
+
   if [[ -z "${CDPATH-}" || "${word}" == [/.]* ]]; then
     return 0
   fi
 
   IFS=':' read -r -a bases <<<"${CDPATH}"
+
   for base in ${bases[@]+"${bases[@]}"}; do
     base="${base%/}"
     if [[ -n "${base}" && "${base}" != '.' ]]; then
@@ -2455,6 +2560,7 @@ function __cdl_register_zsh_completion() {
 
   compdef __cdl_complete_zsh cdl
   compdef __cdl_complete_zsh_list cdl_list
+
   if [[ "${CDL_REPLACE_CD-}" == 1 ]]; then
     compdef __cdl_complete_zsh cd
   fi
@@ -2490,6 +2596,7 @@ function __cdl_hand_ble_cd_completion() {
   if declare -F blehook/eval-after-load >/dev/null; then
     blehook/eval-after-load complete 'builtin unset -f ble/cmdinfo/complete:cd'
   fi
+
   if declare -F ble-import >/dev/null; then
     ble-import -C 'ble/cmdspec/opts +no-options cd' lib/core-cmdspec.sh
   fi
@@ -2517,6 +2624,7 @@ function __cdl_add_precmd_function() {
       return 0
     fi
   done
+
   precmd_functions+=("${function_name}")
 }
 
@@ -2541,6 +2649,7 @@ function __cdl_register_zsh_completion_at_prompt() {
       kept+=("${hook}")
     fi
   done
+
   precmd_functions=("${kept[@]}")
 
   __cdl_register_zsh_completion || true
@@ -2593,6 +2702,7 @@ fi
 function __cdl_cd() {
   if [[ "${CDL_REPLACE_CD-}" != 1 ]]; then
     builtin cd "$@" || return
+
     return 0
   fi
 
@@ -2601,11 +2711,13 @@ function __cdl_cd() {
     if [[ -t 1 ]]; then
       cdl_list
     fi
+
     return
   fi
 
   if [[ -t 1 ]] || __cdl_has_cdl_option "$@"; then
     cdl "$@"
+
     return
   fi
 
@@ -2625,6 +2737,7 @@ function __cdl_cd() {
 #######################################
 function __cdl_has_cdl_option() {
   local word
+
   for word in "$@"; do
     case "${word}" in
       --) return 1 ;;
@@ -2652,6 +2765,7 @@ function __cdl_has_cdl_option() {
 #######################################
 function __cdl_has_shell_option() {
   local word
+
   for word in "$@"; do
     case "${word}" in
       --) return 1 ;;

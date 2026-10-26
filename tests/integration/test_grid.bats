@@ -23,9 +23,11 @@ function setup() {
 
   # Thirty entries: more than a short terminal shows.
   LISTED_DIRECTORY="$(make_directory 'listed')"
+
   for ((number = 10; number < 40; number++)); do
     names+=("entry-${number}")
   done
+
   make_entries "${LISTED_DIRECTORY}" "${names[@]}"
   export CDL_TEST_DIRECTORY="${LISTED_DIRECTORY}"
 }

@@ -161,6 +161,7 @@ function main() {
         # The number reaches arithmetic in the shell it times.
         if [[ ! "${2-}" =~ ^[1-9][0-9]*$ ]]; then
           printf 'bench: -n needs a number of calls, not: %s\n' "${2-}" >&2
+
           return "${BENCH_ERR_USAGE}"
         fi
         calls="$2"
@@ -169,6 +170,7 @@ function main() {
       -d)
         if [[ -z "${2-}" ]]; then
           printf 'bench: -d needs a directory\n' >&2
+
           return "${BENCH_ERR_USAGE}"
         fi
         directory="$2"
@@ -176,10 +178,12 @@ function main() {
         ;;
       -h | --help)
         usage
+
         return 0
         ;;
       -*)
         printf 'bench: unknown option: %s\n' "$1" >&2
+
         return "${BENCH_ERR_USAGE}"
         ;;
       *) break ;;
@@ -187,6 +191,7 @@ function main() {
   done
 
   shells=("$@")
+
   if ((${#shells[@]} == 0)); then
     shells=(bash zsh)
   fi
@@ -196,15 +201,18 @@ function main() {
   for shell in "${shells[@]}"; do
     if ! command -v "${shell}" >/dev/null; then
       printf 'bench: shell not found: %s\n' "${shell}" >&2
+
       return "${BENCH_ERR_SHELL}"
     fi
     if ! has_clock "${shell}"; then
       printf 'bench: %s has no EPOCHREALTIME (bash 5+ or zsh)\n' "${shell}" >&2
+
       return "${BENCH_ERR_CLOCK}"
     fi
 
     measure_shell "${shell}" "${calls}" "${directory}"
   done
+
   printf '\n'
 }
 

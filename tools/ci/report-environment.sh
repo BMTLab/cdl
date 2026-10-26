@@ -53,6 +53,7 @@ function __internal_error() {
 #######################################
 function version_of() {
   local line
+
   line="$("$@" 2>&1 | head -n 1)" || true
   printf '%s\n' "${line:--}"
 }
@@ -121,6 +122,7 @@ function main() {
   )"
 
   printf '%s\n' "${report}"
+
   if [[ -n "${GITHUB_STEP_SUMMARY-}" ]]; then
     printf '### Environment\n\n%s\n\n' "${report}" >>"${GITHUB_STEP_SUMMARY}"
   fi

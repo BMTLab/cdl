@@ -63,6 +63,7 @@ function bash_completions() {
 #######################################
 function zsh_completions() {
   local -a options=()
+
   if [[ "$1" == '--before-compinit' ]]; then
     options=("$1")
     shift
@@ -161,6 +162,7 @@ function zsh_completions() {
 @test "bash offers the options of cdl as words, not as file names" {
   # Arrange
   only_in bash
+
   if (($(in_shell 'printf "%s" "${BASH_VERSINFO[0]}"') < 4)); then
     skip 'compopt came with bash 4'
   fi

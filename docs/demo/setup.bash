@@ -37,6 +37,7 @@ function demo_make_home() {
     command chmod -R u+rwx "${home}"
     command rm -rf -- "${home}"
   fi
+
   command mkdir -p -- "${home}"
 }
 
@@ -108,8 +109,10 @@ function demo_make_project() {
   demo_file "${project}/assets/screenshot.webp" 184K '2026-09-30 17:05'
   demo_file "${project}/assets/fonts/Inter.woff2" 98K '2026-08-02 10:00'
   demo_file "${project}/assets/icons/menu.svg" 640 '2026-08-02 10:00'
+
   command ln -s docs/guide.md "${project}/latest"
   command git init --quiet --initial-branch=main "${project}"
+
   command touch -h -d '2026-10-01 14:56' -- "${project}/latest"
   command touch -d '2026-10-05 09:00' -- \
     "${project}"/{.git,src,tests,docs,assets,docs/images,assets/fonts,assets/icons}

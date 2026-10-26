@@ -39,6 +39,7 @@ function setup() {
   # Arrange
   target="$(make_directory 'target')"
   expected="${HOME}"
+
   if [[ "${CDL_SHELL_KIND}" == 'zsh' ]]; then
     expected="${target}"
   fi

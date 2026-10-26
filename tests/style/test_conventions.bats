@@ -221,6 +221,7 @@ function report_violations() {
   if ((${#violations[@]} == 0)) && [[ -z "${help_text}" ]]; then
     fail_with_report 'cdl --help printed nothing'
   fi
+
   report_violations 'return codes' "${violations[@]}"
 }
 
@@ -284,6 +285,7 @@ function named_exit_codes() {
   if [[ -z "${codes}" ]]; then
     fail_with_report 'no return codes found in cdl.sh'
   fi
+
   report_violations 'return codes of cdl' "${violations[@]}"
 }
 
@@ -320,6 +322,7 @@ function named_exit_codes() {
   if [[ -z "${codes}" ]]; then
     fail_with_report 'no named exit codes found'
   fi
+
   report_violations 'exit codes' "${violations[@]}"
 }
 
@@ -354,6 +357,7 @@ function named_exit_codes() {
   if ((setting_count == 0)); then
     fail_with_report 'no settings found in __cdl_read_settings'
   fi
+
   report_violations 'settings' "${violations[@]}"
 }
 
@@ -393,6 +397,7 @@ function named_exit_codes() {
   if ! command -v shfmt >/dev/null; then
     skip 'shfmt is not installed'
   fi
+
   while IFS= read -r file; do
     files+=("${CDL_ROOT}/${file}")
   done < <(shell_files)
@@ -436,6 +441,7 @@ function named_exit_codes() {
   # Arrange: the file format rule asks for a newline after the last line.
   local file
   local -a files=() violations=()
+
   mapfile -d '' -t files < <(git -C "${CDL_ROOT}" ls-files -z)
   wait "$!"
 

@@ -254,6 +254,7 @@ function a_target_cdl_cannot_enter_fails_with_its_reason() {
   if [[ "${target}" == locked* ]] && ((EUID == 0)); then
     skip 'root enters any directory'
   fi
+
   make_entries "${HOME}" 'notes.md' 'gone -> nowhere' 'loop -> loop'
   make_directory 'locked/inner' >/dev/null
   chmod 000 "${HOME}/locked"
@@ -319,6 +320,7 @@ function cdl_back_to_no_directory_fails_with_its_reason() {
   if [[ "${CDL_SHELL_KIND}" == 'zsh' ]]; then
     skip 'zsh keeps its own record of the previous directory'
   fi
+
   make_entries "${HOME}" 'file'
 
   # Act
@@ -347,6 +349,7 @@ bats_test_function \
   if ((EUID == 0)); then
     skip 'root reads any directory'
   fi
+
   blind="$(make_directory 'blind')"
   chmod 100 "${blind}"
 

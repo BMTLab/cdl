@@ -86,12 +86,14 @@ function section_of() {
 #######################################
 function main() {
   local version="${1-}"
+
   if [[ -z "${version}" ]]; then
     version="$(sed -n 's/^# Version: *//p' "${PROJECT_ROOT}/cdl.sh")"
   fi
 
   if ! section_of "${version}"; then
     printf 'release-notes: no notes for %s in CHANGELOG.md\n' "${version}" >&2
+
     return "${NOTES_ERR_MISSING}"
   fi
 }

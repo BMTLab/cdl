@@ -104,12 +104,15 @@ def cell_width(code_point: int) -> int:
     """
     if code_point == SOFT_HYPHEN or code_point in SURROGATES:
         return NARROW_CELLS
+
     if code_point in HANGUL_JAMO_COMBINING:
         return 0
 
     character = chr(code_point)
+
     if unicodedata.category(character) in ZERO_WIDTH_CATEGORIES:
         return 0
+
     if unicodedata.east_asian_width(character) in WIDE_EAST_ASIAN_WIDTHS:
         return 2
 
@@ -167,6 +170,7 @@ class WidthRange:
             or ``FIRST:CELLS`` when the run holds one code point.
         """
         first = f"{self.first:04X}"
+
         if self.first == self.last:
             return f"{first}:{self.cells}"
 
@@ -337,6 +341,7 @@ class RegionNotFoundError(ValueError):
 
     def __init__(self, path: Path) -> None:
         message = f"{path}: no '{REGION_START}' ... '{REGION_END}' block"
+
         super().__init__(message)
 
 
@@ -422,10 +427,12 @@ def load_region(path: Path) -> FileRegion:
     lines = path.read_text(encoding="utf-8").split("\n")
 
     start = find_marker(lines, REGION_START)
+
     if start is None:
         raise RegionNotFoundError(path)
 
     end = find_marker(lines, REGION_END, start + 1)
+
     if end is None:
         raise RegionNotFoundError(path)
 
@@ -495,6 +502,7 @@ def write_block(path: Path, block: Sequence[str]) -> int:
     region = load_region(path)
 
     updated = region.replaced_with(region_content(block))
+
     if updated != region.lines:
         path.write_text("\n".join(updated), encoding="utf-8")
 
@@ -546,18 +554,22 @@ def check_block(path: Path, block: Sequence[str], unicode_version: str) -> int:
     current = load_region(path).content
 
     recorded = recorded_unicode_version(current)
+
     if recorded is not None and recorded != unicode_version:
         sys.stderr.write(
             f"{GENERATOR_NAME}: {path} was generated from Unicode {recorded}, "
             f"this Python has Unicode {unicode_version}: comparison skipped\n",
         )
+
         return EXIT_UNICODE_MISMATCH
 
     expected = region_content(block)
+
     if current == expected:
         return EXIT_OK
 
     report_difference(path, current, expected)
+
     return EXIT_FAILURE
 
 
@@ -602,6 +614,7 @@ def parse_arguments(argv: Sequence[str] | None) -> argparse.Namespace:
     )
 
     mode = parser.add_mutually_exclusive_group()
+
     mode.add_argument(
         "--write", metavar="FILE", type=Path, help="replace the block in FILE in place"
     )
@@ -631,6 +644,7 @@ def run(arguments: argparse.Namespace, block: Sequence[str], unicode_version: st
     """
     if arguments.write is not None:
         return write_block(arguments.write, block)
+
     if arguments.check is not None:
         return check_block(arguments.check, block, unicode_version)
 

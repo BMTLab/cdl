@@ -103,6 +103,7 @@ function in_terminal() {
   printf 'source "${CDL_SCRIPT}" || exit\n%s\n' "${snippet}" >"${script_file}"
 
   command=("${CDL_SHELL_PATH}" --noprofile --norc "${script_file}")
+
   if [[ "${CDL_SHELL_KIND}" == 'zsh' ]]; then
     command=("${CDL_SHELL_PATH}" -f "${script_file}")
   fi
@@ -120,6 +121,7 @@ function in_terminal() {
   # and two backspaces over them.
   transcript="${transcript//$'\r'/}"
   printf '%s\n' "${transcript//$'^D\b\b'/}"
+
   return "${exit_code}"
 }
 

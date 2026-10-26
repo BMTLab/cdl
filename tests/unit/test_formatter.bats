@@ -814,6 +814,7 @@ done
   for ((number = 10; number < 40; number++)); do
     names+=("n${number}")
   done
+
   input="$(for name in "${names[@]}"; do ls_file "${name}"; done)"
 
   # Act

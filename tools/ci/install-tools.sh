@@ -130,16 +130,19 @@ function download_verified() {
 
   if [[ -f "${file}" && "$(sha256_of "${file}")" == "${expected}" ]]; then
     printf '%s\n' "${file}"
+
     return 0
   fi
 
   mkdir -p "${file%/*}"
+
   if ! curl --fail --silent --show-error --location --retry 3 \
     --output "${file}" "${url}"; then
     ci_error "download failed: ${url}" "${INSTALL_ERR_DOWNLOAD}" || return
   fi
 
   actual="$(sha256_of "${file}")"
+
   if [[ "${actual}" != "${expected}" ]]; then
     rm -f "${file}"
     ci_error "digest mismatch for ${url}: got ${actual}" "${INSTALL_ERR_DOWNLOAD}" || return
@@ -228,6 +231,7 @@ function install_shellcheck() {
 #######################################
 function install_shfmt() {
   local arch digest binary
+
   arch="$(asset_arch 'amd64' 'arm64')"
   digest="$(digest_for "${arch}" 'amd64' "${SHFMT_SHA256_AMD64}" "${SHFMT_SHA256_ARM64}")"
 
@@ -247,6 +251,7 @@ function install_shfmt() {
 function install_actionlint() {
   local -r work_directory="$1"
   local arch digest archive
+
   arch="$(asset_arch 'amd64' 'arm64')"
   digest="$(digest_for "${arch}" 'amd64' \
     "${ACTIONLINT_SHA256_AMD64}" "${ACTIONLINT_SHA256_ARM64}")"
@@ -276,6 +281,7 @@ function install_bats() {
     https://github.com/bats-core/bats-core.git "${checkout}"
 
   commit="$(git -C "${checkout}" rev-parse HEAD)"
+
   if [[ "${commit}" != "${BATS_COMMIT}" ]]; then
     ci_error "bats v${BATS_VERSION} is ${commit}, not ${BATS_COMMIT}" \
       "${INSTALL_ERR_DOWNLOAD}" || return
@@ -339,8 +345,10 @@ function install_apt_packages() {
       missing+=("${package}")
     fi
   done
+
   if ((${#missing[@]} == 0)); then
     printf 'apt: %s already installed\n' "$*"
+
     return 0
   fi
 
@@ -351,12 +359,14 @@ function install_apt_packages() {
 
   if install_debs "${debs}"; then
     printf 'apt: %s installed from the cache\n' "${missing[*]}"
+
     return 0
   fi
 
   rm -rf "${debs}"
   update_package_lists || return
   download_debs "${debs}" "${missing[@]}" || return
+
   if ! install_debs "${debs}"; then
     ci_error "the .deb files of ${missing[*]} did not install" "${INSTALL_ERR_DOWNLOAD}" || return
   fi
@@ -428,10 +438,12 @@ function download_debs() {
 
   mkdir -p "${debs}/partial"
   printf 'apt-get install --download-only %s\n' "$*"
+
   if ! sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
     --download-only -o Dir::Cache::archives="${debs}" "$@" >/dev/null; then
     ci_error "apt-get could not download $*" "${INSTALL_ERR_DOWNLOAD}" || return
   fi
+
   sudo rm -rf "${debs}/partial" "${debs}/lock"
   sudo chown -R "$(id -u):$(id -g)" "${debs}"
 }
@@ -462,6 +474,7 @@ function main() {
   trap "rm -rf -- ${quoted_work_directory}" EXIT
 
   mkdir -p "${TOOLS_BIN_DIRECTORY}"
+
   if [[ -n "${GITHUB_PATH-}" ]]; then
     printf '%s\n' "${TOOLS_BIN_DIRECTORY}" >>"${GITHUB_PATH}"
   fi

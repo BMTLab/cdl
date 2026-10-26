@@ -28,6 +28,7 @@ function gnu_compatible_ls() {
     path="$(PATH="${PATH#"${FAKE_BIN_DIRECTORY}":}" command -v "${candidate}")" || continue
     if "${path}" --group-directories-first --version >/dev/null 2>&1; then
       printf '%s\n' "${path}"
+
       return 0
     fi
   done
@@ -57,10 +58,12 @@ function has_supported_busybox_awk() {
   version="$(busybox 2>&1 | head -n 1)"
   version="${version#BusyBox v}"
   version="${version%% *}"
+
   # The numbers reach arithmetic only as plain digits.
   if [[ ! "${version}" =~ ^([0-9]+)\.([0-9]+) ]]; then
     return 1
   fi
+
   major="${BASH_REMATCH[1]}"
   minor="${BASH_REMATCH[2]}"
 
@@ -96,6 +99,7 @@ function gnu_ls() {
     path="$(PATH="${PATH#"${FAKE_BIN_DIRECTORY}":}" command -v "${candidate}")" || continue
     if "${path}" --version 2>/dev/null | grep -q 'GNU coreutils'; then
       printf '%s\n' "${path}"
+
       return 0
     fi
   done
@@ -117,14 +121,17 @@ function available_awks() {
   local name
 
   printf 'awk\n'
+
   for name in gawk mawk original-awk; do
     if command -v "${name}" >/dev/null; then
       printf '%s\n' "${name}"
     fi
   done
+
   if has_supported_busybox_awk; then
     printf 'busybox-awk\n'
   fi
+
   if command -v gawk >/dev/null && [[ "${SANDBOX_UTF8_LOCALE}" != 'C' ]]; then
     printf 'gawk-utf8\n'
   fi
@@ -181,6 +188,7 @@ function fake_bsd_ls() {
   local -r colors="$1"
   local -ir listing_status="${2:-0}"
   local accepts_g='yes'
+
   if [[ "${colors}" == 'without-color' ]]; then
     accepts_g='no'
   fi
@@ -196,6 +204,7 @@ printf '%s\n' \"bsd-ls \$*\"
 exit ${listing_status}"
 
   export PATH="${FAKE_BIN_DIRECTORY}:/usr/bin:/bin"
+
   if command -v gls >/dev/null; then
     skip 'a gls in /usr/bin would take precedence over the fake BSD ls'
   fi
@@ -212,6 +221,7 @@ exit ${listing_status}"
 #######################################
 function fake_recording_gls() {
   local real_ls
+
   real_ls="$(gnu_compatible_ls)" || skip 'no GNU-compatible ls here'
 
   GLS_LOG="${BATS_TEST_TMPDIR}/gls.log"

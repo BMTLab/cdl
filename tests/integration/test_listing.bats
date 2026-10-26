@@ -123,6 +123,7 @@ function setup() {
   assert_success
   device_row='^ *[0-9]+, *[0-9]+  [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}  null$'
   null_row="$(grep ' null$' <<<"${output}")"
+
   if [[ ! "${null_row}" =~ ${device_row} ]]; then
     fail_with_report "unexpected /dev/null row: ${null_row}"
   fi
@@ -221,6 +222,7 @@ done
   # each named by its size.
   reference_ls="$(gnu_ls)" || skip 'no GNU ls to compare with'
   directory="$(make_directory 'sizes')"
+
   for unit in 1024 1048576 1073741824; do
     sizes+=(
       "${unit}" "$((unit + 1))" "$((unit * 5 + unit / 2))"
@@ -228,9 +230,11 @@ done
       "$((unit * 1023))" "$((unit * 1023 + 1))" "$((unit * 1024 - 1))"
     )
   done
+
   for size in "${sizes[@]}"; do
     dd if=/dev/null of="${directory}/${size}" bs=1 seek="${size}" 2>/dev/null
   done
+
   expected="$(
     LC_ALL=C "${reference_ls}" -lh "${directory}" | awk 'NF > 2 { print $NF, $5 }' | sort
   )"

@@ -26,6 +26,7 @@ function __sandbox_find_utf8_locale() {
   for candidate in C.UTF-8 C.utf8 en_US.UTF-8 en_US.utf8; do
     if grep -qx "${candidate}" <<<"${installed}"; then
       printf '%s\n' "${candidate}"
+
       return 0
     fi
   done
@@ -76,6 +77,7 @@ SANDBOX_CDL_SETTINGS="$(list_cdl_settings)"
 #######################################
 function sandbox_setup() {
   local root setting
+
   root="$(cd "${BATS_TEST_TMPDIR}" && pwd -P)"
 
   export HOME="${root}/home"

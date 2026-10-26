@@ -116,6 +116,7 @@ function write_checksums() {
 function check_tag() {
   local -r tag="$1"
   local version
+
   version="$(script_version)"
 
   if [[ "${tag}" != "v${version}" ]]; then
@@ -126,6 +127,7 @@ function check_tag() {
   if [[ -n "${GITHUB_ENV-}" ]]; then
     printf 'VERSION=%s\n' "${version}" >>"${GITHUB_ENV}"
   fi
+
   printf '%s\n' "${version}"
 }
 
@@ -266,6 +268,7 @@ function require_arguments() {
 #######################################
 function main() {
   local -r step="${1-}"
+
   if (($# > 0)); then
     shift
   fi

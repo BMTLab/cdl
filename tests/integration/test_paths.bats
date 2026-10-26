@@ -147,9 +147,11 @@ done
   # forty entries in one column; ten lines keep six rows,
   # five of them around the mark under the line about those before.
   long_directory="$(make_directory 'long')"
+
   for ((number = 10; number < 50; number++)); do
     names+=("entry-${number}")
   done
+
   make_entries "${long_directory}" "${names[@]}"
   export LINES=10 COLUMNS=60 CDL_COLOR='never' CDL_TEST_FILE="${long_directory}/entry-40"
 

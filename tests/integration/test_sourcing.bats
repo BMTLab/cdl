@@ -150,6 +150,7 @@ done
   if [[ "${CDL_SHELL_KIND}" != 'zsh' ]]; then
     skip 'cdl.plugin.zsh is for zsh plugin managers'
   fi
+
   target="$(make_directory 'target')"
 
   # Act:
@@ -174,6 +175,7 @@ done
   if [[ "${CDL_SHELL_KIND}" != 'zsh' ]]; then
     skip 'WARN_CREATE_GLOBAL is an option of zsh'
   fi
+
   target="$(make_directory 'target')"
   export CDL_REPLACE_CD=1
 
@@ -227,6 +229,7 @@ done
 
   # Assert
   assert_success
+
   while IFS= read -r name; do
     case "${name}" in
       cdl | cdl_list | __cdl_*) ;;
@@ -296,6 +299,7 @@ done
   if [[ "${CDL_SHELL_KIND}" != 'zsh' ]]; then
     skip 'zsh only'
   fi
+
   require_gnu_compatible_ls
   target="$(make_directory 'my target')"
   make_entries "${target}" 'entry'

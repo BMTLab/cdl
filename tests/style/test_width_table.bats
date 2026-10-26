@@ -86,6 +86,7 @@ function generated_cells() {
   if ((status == UNICODE_MISMATCH)); then
     skip "${stderr}"
   fi
+
   assert_success
 }
 

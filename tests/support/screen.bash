@@ -75,6 +75,7 @@ __SCREEN_ENTRY_SCAN='
 #######################################
 function entry_offsets() {
   local plain
+
   plain="$(strip_escapes)"
 
   paste -d ' ' \
@@ -112,10 +113,12 @@ function assert_columns_aligned() {
 
   if [[ -z "${offsets}" ]]; then
     fail_with_report 'expected rows with more than one entry'
+
     return
   fi
 
   misaligned="$(awk '{ seen[$1]++ } END { for (c in seen) if (seen[c] > 1) print c }' <<<"${offsets}")"
+
   if [[ -n "${misaligned}" ]]; then
     fail_with_report "column(s) ${misaligned//$'\n'/, } start at different cells: ${offsets//$'\n'/; }"
   fi
@@ -151,6 +154,7 @@ function assert_fits_width() {
   local -i widest
 
   widest="$("${SCREEN_CELLS}" <<<"${listing}" | sort -n | tail -n 1)"
+
   if ((widest >= width)); then
     fail_with_report "the widest row takes ${widest} cells of ${width}"
   fi

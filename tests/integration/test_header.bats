@@ -135,6 +135,7 @@ function sandbox_git() {
   if ((EUID == 0)); then
     skip 'root reads any directory'
   fi
+
   blind="$(make_directory 'blind')"
   chmod 100 "${blind}"
 
@@ -260,6 +261,7 @@ function a_worktree_shows_its_own_branch() {
   git_directory="${HOME}/repo.git/worktrees/app"
   mkdir -p -- "${git_directory}"
   printf 'ref: refs/heads/topic\n' >"${git_directory}/HEAD"
+
   if [[ "${spelling}" == 'absolute' ]]; then
     printf 'gitdir: %s\n' "${git_directory}" >"${LISTED_DIRECTORY}/.git"
   else
@@ -325,6 +327,7 @@ done
   if ! command -v git >/dev/null; then
     skip 'git is not installed'
   fi
+
   repository="$(make_directory 'repository')"
   sandbox_git init --quiet --initial-branch=trunk "${repository}"
   sandbox_git -C "${repository}" commit --quiet --allow-empty --message='Start'
