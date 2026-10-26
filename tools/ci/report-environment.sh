@@ -9,7 +9,7 @@
 # Dependencies: awk, python3; gls, mawk and GNU parallel when they are installed.
 # Exit codes: 0 success,
 #   99 REPORT_ENVIRONMENT_ERR_INTERNAL: a bug in this script.
-# See: CLAUDE.md (Continuous integration).
+# See: .claude/rules/ci.md.
 #
 # How it works:
 #   The table names the shells under test, the ls and awk that cdl picks,

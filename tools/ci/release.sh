@@ -22,7 +22,7 @@
 #   24 RELEASE_ERR_PUBLISH: gh could not publish the release,
 #   25 RELEASE_ERR_PROVENANCE: the build provenance of cdl.sh does not verify,
 #   29 RELEASE_ERR_INTERNAL: a bug in this script.
-# See: CLAUDE.md (Versions, changelog, release), .github/workflows/ci-release.yml.
+# See: .claude/rules/release.md, .github/workflows/ci-release.yml.
 #
 # How it works:
 #   Each step is one command, for the release workflow

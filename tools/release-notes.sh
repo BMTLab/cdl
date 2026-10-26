@@ -11,7 +11,7 @@
 #   30 NOTES_ERR_MISSING: CHANGELOG.md has no section, or an empty one,
 #     for the version,
 #   39 NOTES_ERR_INTERNAL: a bug in this script.
-# See: CLAUDE.md, tests/style/test_release.bats.
+# See: .claude/rules/release.md, tests/style/test_release.bats.
 #
 # How it works:
 #   The section is the body of the GitHub release of the version,

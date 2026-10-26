@@ -5,6 +5,8 @@ with an awk program inside it, a bats suite around it,
 the tools of the repository in `tools/`, and a thin CI in `.github/`.
 This file holds the house rules for every change here,
 whether a person or an agent makes it.
+The rules of one part of the repository live in `.claude/rules/`,
+and Claude Code loads each one when a session reads a file of that part.
 CONTRIBUTING.md is the short public version of the same rules.
 
 ## Map
@@ -27,23 +29,15 @@ CONTRIBUTING.md is the short public version of the same rules.
   - `bench.sh`: times one cdl call against a plain `cd` and `ls`.
   - `release-notes.sh`: prints the CHANGELOG section of a version,
     the body of its GitHub release.
-  - `ci/install-tools.sh`: installs the CI tools, pinned
-    (see "Continuous integration").
-  - `ci/common.sh`: what the CI scripts share:
-    `ci_error` (a GitHub annotation and a code) and `sha256_of`.
-  - `ci/report-environment.sh`: writes the tool versions of a job
-    into its summary.
-  - `ci/release.sh`: the release steps, one command each:
-    `check`, `notes`, `assets`, `publish`, `verify`.
+  - `ci/`: the scripts that the jobs of CI run,
+    which `.claude/rules/ci.md` names.
 - `docs/demo`: the GIF of the README, which `make demo` records
   from `demo.tape`; `setup.bash` builds what it shows.
-- `.github/`
-  - `workflows`: `ci-main.yml` calls the reusable
-    `ci-lint`, `ci-workflow-lint`, `ci-test` and `ci-release`.
-  - `dependabot.yml`: weekly grouped updates of the actions
-    and the hook repositories, after a seven-day cooldown.
-  - `zizmor.yml`: the one zizmor finding this repository accepts.
-  - `actionlint.yaml`: the runner label actionlint does not know yet.
+- `.github/`: the workflows, Dependabot, zizmor and actionlint,
+  which `.claude/rules/ci.md` names.
+- `.claude/rules/`: the rules of one part each,
+  with the paths in its header that load it:
+  `code.md` for every script, `tests.md`, `tools.md`, `ci.md`, `release.md`.
 - `Makefile`: every task; `make help` lists them.
 - `.pre-commit-config.yaml`, `committed.toml`: the git hooks of `make hooks`,
   which check only what a commit adds and its message.
@@ -89,33 +83,17 @@ The regions of `cdl.sh` read top to bottom:
   Measure with `make bench` when you touch the listing path.
 - The GIF of the README shows real listings:
   when the listing looks different, record it again with `make demo`.
+- Every new rule of behavior has a test named after that rule,
+  and every fixed bug a test that fails on the old code
+  (`.claude/rules/tests.md`).
+- The file header, `cdl --help`, the README and the CHANGELOG
+  agree with the code (`.claude/rules/release.md`).
 
 ## Language and punctuation
 
 - English (en-US) for code, comments, messages and documentation.
 - Never the em-dash (U+2014); a style test rejects it in every file.
   Use a colon, a comma or a new sentence.
-- Single quotes for literal strings in shell;
-  double quotes only when something inside expands
-  or the text holds a single quote.
-- Braces around every variable (`"${name}"`, `"${directory}/${file}"`)
-  and double quotes around every expansion, even a safe one.
-  ShellCheck enforces both through `.shellcheckrc`
-  (`require-variable-braces`, `quote-safe-variables`);
-  `shellcheck -f diff FILE | patch -p1` applies its own fixes.
-- The same holds where ShellCheck cannot see:
-  inside `[[ ]]`, in the subject of `case`,
-  and in the code strings that tests and tools hand to a shell.
-  The right side of `==`, `!=` or `=~` stays unquoted
-  only when it is a pattern on purpose.
-- A name says in full what the thing is, however long that makes it:
-  `entry_size`, `__cdl_terminal_width`, `assert_two_columns_aligned`;
-  `directory`, never `dir`. Common terms keep their short form
-  (ID, URL, JSON, MIME, PID, hex), and a name that mirrors a public one
-  keeps its words, as `__cdl_setting_max_rows` does `CDL_MAX_ROWS`.
-- A function that answers yes or no with its status, and a flag of 0 or 1,
-  open their names with the question: `is_`, `has_`, `can_` or `should_`,
-  right after the prefix (`__cdl_is_gnu_ls`, `is_colored`).
 
 ## Comments
 
@@ -143,141 +121,12 @@ They explain why and what is not obvious; the code already says what it does.
   shell files sit around 50 to 72 columns, Python up to 99,
   Markdown prose up to 80.
 
-Right:
-
-```bash
-# We pin actions to an exact tag
-# so Dependabot opens a PR when a new version is released.
-```
-
-Wrong, because `a` / `PR` splits an article from its noun:
-
-```bash
-# We pin actions to an exact tag so Dependabot opens a
-# PR when a new version is released.
-```
-
 The same rules hold for docstrings, Markdown, help texts and commit messages.
 
 Markdown also follows `.rumdl.toml`, which `make lint-md` applies:
 prose of at most 80 columns, tables aligned so their source reads
 like the rendered page, `### Fixed` and its kin repeated only per version.
 A table holds short cells; a longer explanation goes below it, as a list.
-
-## File headers
-
-- A script opens with a card, which a reader judges at a glance:
-  one sentence in the imperative mood, what the script does,
-  then the keys that apply, in this order, a line each:
-  `Usage:`, `Effects:`, `Dependencies:`, `Settings:`, `Exit codes:`, `See:`.
-  `How it works:` follows, only for what the code does not show,
-  and `# Version:` closes the card.
-- `Effects:` lists every change outside the script,
-  and how to run it without one, or that there is no such way.
-  `Settings:` holds the variables a user sets, with their defaults;
-  a variable it only reads to learn where it runs belongs in How it works.
-  `Exit codes:` names each code;
-  a tool without `--help` and a README of its own says there what it means.
-- A test file or a support module opens with one sentence,
-  what it tests or gives, and a short paragraph where a reader needs one;
-  it takes no keys and no version.
-- Nothing else goes into a header: git knows the author and the date,
-  the path names the file, and LICENSE holds the license.
-  A style test checks both kinds.
-
-## Regions
-
-- A file longer than a screen folds
-  into `# region Name` ... `# endregion Name` blocks,
-  with one blank line inside each marker.
-  The end repeats the name, so a reader who lands on it knows what closes there.
-  The markers balance and their names match in every file; a style test checks.
-- One region holds one concern.
-  New code goes into the region of its concern,
-  or into a new region placed where a reader meets the concern first.
-- The awk program inside `cdl.sh` uses the same markers for its own regions.
-  The Width table region holds only the generated block.
-
-## Functions
-
-- One function, one job, named by that job.
-  A function whose summary needs a paragraph is two functions.
-- A blank line separates the logical parts of a body:
-  the declarations, then each step, then the result.
-  A `return` that follows a block gets a blank line before it.
-  The simple cases return early, at the top.
-- Helpers instead of nesting: a condition or a loop body that needs a name
-  becomes a function with that name, rather than one more level of indentation.
-- Constants instead of magic numbers:
-  `TWO_COLUMN_MIN_WIDTH = 100`, never a bare `100`.
-- Every function carries a documentation header:
-  the fenced Google-style block in shell
-  (summary, Arguments, Globals, Inputs, Outputs, Returns, those that apply),
-  a numpydoc docstring in Python,
-  a comment line above an awk function.
-
-### Shell
-
-- `function name() { ... }`, never `name() { ... }`.
-- The `local` declarations open the body, as one block;
-  under zsh, an entry point runs `emulate -L zsh` before them.
-  `local -r`, `local -i`, `local -ir` and `local -a` wherever they fit;
-  a bare `local` only for a value that changes.
-  A value that a later step makes, from `$(...)` or from `REPLY`,
-  is declared in the block and assigned in its step,
-  since `local` would hide the status of a command.
-- A result travels in `REPLY` and the caller declares `local REPLY`;
-  `$(...)` costs a fork, which the listing path cannot afford.
-- External commands run through `command`,
-  so aliases and functions of the user cannot replace them;
-  `cd` is always `builtin cd --`.
-- Errors go through `__cdl_error` with a named `CDL_ERR_*` code,
-  in place of a bare `echo >&2` or a bare number.
-  Every path that can fail returns a code the file header documents.
-- `cdl.sh` runs in bash 3.2 and zsh 5.0, so it avoids
-  `local -n`, `declare -A`, `mapfile`, `${var,,}`, `${var^}`, `|&`, `;;&`,
-  negative array indexes and `EPOCHREALTIME`.
-  Under zsh an entry point starts with `emulate -L zsh`;
-  nothing else sets options.
-  The sourced file never uses `set -e`, `set -u` or `set -o pipefail`:
-  it survives whatever options the shell of the user runs with,
-  and changes none of them.
-- Every standalone script (`tools/*.sh`, `tests/support/bin/*`)
-  ends with the execution guard of the style,
-  so a test can source it for its functions:
-  strict mode, the traps and the call of `main` all sit inside it.
-  Its ERR trap names an unplanned failure with the line and the command,
-  and ends with the internal code of the tool, the last of its block;
-  a code of the block passes on unchanged, as a helper has reported it.
-- The bash 3.2 of macOS runs `install-tools.sh` before Homebrew brings
-  a newer bash, so the guard turns on `inherit_errexit` only where it exists,
-  and the scripts keep to bash 3.2: `printf -v ... '%q'`, never `${x@Q}`.
-- Sourcing runs no external command and is safe to repeat:
-  the `readonly` codes are guarded, the probes start fresh.
-
-### awk
-
-- POSIX awk only,
-  because the program runs under gawk, mawk, busybox awk (1.34 and later,
-  as the parser of 1.30 loses functions) and BSD awk:
-  no `gensub`, `strftime`, `length(array)`, `\x` escapes
-  or regex intervals (`{n}`).
-- Byte mode: `cdl.sh` runs awk under `LC_ALL=C` and decodes UTF-8 by hand.
-- The locals of a function come after four spaces in its parameter list:
-  `function widest(first, last,    i, max)`.
-- A function that sets globals names them in its comment.
-
-### Python (`tools/`)
-
-- Standard library only; runs on Python 3.10 and later.
-- Type hints on every signature, numpydoc docstrings, `# region` markers,
-  and the same card as a script (see "File headers").
-- Clean under ruff with every rule group, preview,
-  a line length of 99 and numpy docstrings,
-  and under `mypy --strict`.
-- Constants at the top, exit codes named (see "Exit codes" below),
-  output through `sys.stdout.write` and errors through `sys.stderr.write`;
-  a wrong command line exits with the first code of the block.
 
 ## Exit codes
 
@@ -290,147 +139,8 @@ and a new category the next free ten, below 126;
 a code keeps its value within a major version.
 The file header, `cdl --help` and the README document every code,
 and a style test holds the scheme.
-
 Every other script of the repository, a tool,
-owns a block of ten exit codes, which no other tool uses,
-so a code in a CI log names its script and its reason at once.
-A tool names its codes after itself (`RELEASE_ERR_VERSION`),
-gives the first of its block to a wrong command line when it has one,
-the last of its block to a bug, which the ERR trap of its guard reports
-(`RELEASE_ERR_INTERNAL`, 29),
-and documents every code in its header.
-A style test holds the rule: no code named twice, no file across two blocks,
-no block shared.
-
-| Codes | File                                | Names                      |
-| ----: | ----------------------------------- | -------------------------- |
-| 10-19 | `tools/ci/install-tools.sh`         | `INSTALL_ERR_*`            |
-| 20-29 | `tools/ci/release.sh`               | `RELEASE_ERR_*`            |
-| 30-39 | `tools/release-notes.sh`            | `NOTES_ERR_*`              |
-| 40-49 | `tools/bench.sh`                    | `BENCH_ERR_*`              |
-| 50-59 | `tools/gen-width-table.py`          | `EXIT_*`                   |
-| 60-69 | `tests/support/bin/zsh-completions` | `ZSH_COMPLETIONS_ERR_*`    |
-| 70-79 | `Makefile`                          | `MAKE_ERR_*`               |
-| 80-89 | `tests/support/bin/screen-cells`    | `SCREEN_CELLS_ERR_*`       |
-| 90-99 | `tools/ci/report-environment.sh`    | `REPORT_ENVIRONMENT_ERR_*` |
-
-The codes of the Makefile belong to its recipes.
-A new tool takes the next free block, 100-109, and a line in this table.
-Codes stay below 126, where the shell's own codes begin.
-make itself exits with 2 whenever a recipe fails;
-the code of the recipe shows in its error line (`Error 71`).
-
-## Tests
-
-- A test states one rule in its name, as a sentence without "should":
-  `a second operand fails with CDL_ERR_USAGE instead of being ignored`.
-  It checks the rule, never the shape of the code.
-- Every test opens with its locals, as every function does,
-  then has the sections `# Arrange`, `# Act` and `# Assert`,
-  in that order; an empty section keeps its comment with the reason
-  (`# Arrange: no fixtures needed.`).
-- A unit test feeds the formatter canned `ls -l` lines from `fixtures.bash`.
-  An integration test builds a real directory with `make_entries`
-  under the sandbox `HOME`,
-  and runs cdl through `in_shell` in the shell under test.
-- `make test` runs the test files at the same time where GNU parallel is
-  (`BATS_JOBS`), and with 16 CPUs or more the tests of each file too;
-  CI, with its few CPUs, runs only the files at the same time.
-  So a test keeps its files in its sandbox under `BATS_TEST_TMPDIR`
-  and shares no path, port or order with another.
-  A file whose tests must run one by one
-  sets `BATS_NO_PARALLELIZE_WITHIN_FILE=true`, with a comment that says why.
-- A rule that holds for several inputs is one parameterized test
-  (`bats_test_function` over a list of samples), not copies;
-  each sample carries the description that names the test.
-- A style test collects every violation first,
-  and fails once with the whole list.
-- The width oracle `tests/support/bin/screen-cells` stays independent
-  of the width table in `cdl.sh`; extend both when the samples gain a script.
-- A fixed bug gets a test that fails on the old code;
-  a new behavior gets its test before the README mentions it.
-- The suite runs on macOS too, where act cannot take it:
-  BSD `chmod` reads a `--` after the mode as a file name,
-  BSD `script` echoes the `^D` that ends its input,
-  the file system ignores case, `/bin/bash` is 3.2,
-  and `sh` is that bash in POSIX mode.
-  A test that reads the compact listing calls `require_gnu_compatible_ls`.
-- `# bats test_tags=smoke` marks the quick tests of the main paths of cdl,
-  which `make smoke` runs.
-  Tag a test only when it is fast and covers a path no tagged test does,
-  and prefer the files that already hold one:
-  every file adds to the run, so `make smoke` stays within a few seconds.
-
-## Continuous integration
-
-- The YAML is thin. A step is one line that calls a script in `tools/ci`
-  or a `make` target; the logic lives in the script, with the same shape
-  as every other shell file here: a documentation header, functions,
-  named exit codes from its own block (see "Exit codes"), one job per function.
-  A step that works on a laptop works in CI, and a failure names itself.
-- `ci-main.yml` is the entry point: pushes to `main`, version tags,
-  pull requests, a weekly run that catches a drifting runner image,
-  and manual runs.
-  It calls the reusable workflows with `./`, which nektos/act understands;
-  zizmor's `self-repository` audit is ignored for that one file
-  in `.github/zizmor.yml`.
-- Every action is pinned to a commit, with its version in a comment,
-  for example:
-  `actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1`.
-  Dependabot moves the commit and the comment together,
-  and does the same for the hook repositories of `.pre-commit-config.yaml`.
-  A new action gets the same treatment, and `permissions` stay empty at the top
-  and minimal per job.
-- The tools a job uses are pinned too: shellcheck, shfmt and actionlint
-  by version and SHA-256 for both Linux architectures,
-  bats-core by tag and commit;
-  a download reaches the PATH only after its digest matches.
-  To move one, change the version,
-  and take the new digests from the release page.
-- A job keeps its tools and packages in a cache (`actions/cache`),
-  keyed by the runner image, the package list
-  and the hash of `tools/ci/install-tools.sh`.
-  A cached download is used only while it matches its pinned digest;
-  a package the image has already is not installed;
-  the .deb files of the others install from the cache with `dpkg`,
-  without `apt-get update`, which on a miss gets two minutes
-  and three attempts, since it stalls at times on Ubuntu 22.04.
-  The release job uses no cache.
-- The test matrix covers what cdl promises: Ubuntu 26.04 (uutils ls),
-  24.04 (GNU ls), 22.04 (the oldest bash and zsh), and macOS 26 twice,
-  with the BSD ls and `/bin/bash` 3.2, then with Homebrew's gls.
-  Lint runs on Ubuntu 26.04 because its Python ships the Unicode version
-  the width table was generated from, so `--check` really compares there.
-- Every job names its image, never `ubuntu-latest`,
-  so the image of a job changes only with a commit.
-- actionlint and zizmor check the workflows on every run; keep both silent.
-- The lint job installs rumdl through `rvben/rumdl`, pinned by its commit,
-  at the version that CONTRIBUTING.md gives a laptop,
-  and runs `make lint-md` as a laptop does, so the two judge alike;
-  the action checks the binary against the digest of the release.
-  actionlint runs as a pinned binary, not through reviewdog,
-  so it also works for pull requests from forks.
-- A release publishes through `gh`, then verifies its own build provenance.
-- Run the workflows locally with `act` before pushing CI changes
-  (`act -W .github/workflows/ci-main.yml -j lint`;
-  job names repeat across files).
-  act ignores the `runs-on` of a matrix and runs every leg in a Linux container,
-  where the macOS legs fail for want of zsh and mark the whole matrix failed;
-  so pick the Ubuntu legs, as in `-j test --matrix 'name:Ubuntu 24.04, GNU ls'`
-  (one `--matrix` per leg). act cannot upload artifacts;
-  everything else must pass.
-
-## Versions, changelog, release
-
-- The version lives in the `# Version:` line of the card of `cdl.sh`.
-  `CHANGELOG.md` has a `## [X.Y.Z] - YYYY-MM-DD` section for it,
-  dated on the day of the release (a style test checks),
-  and the release tag `vX.Y.Z` sits on the commit that bumps it.
-- The changelog follows Keep a Changelog: Fixed, Changed, Added.
-  One entry per behavior a user can notice, written for that user,
-  with the old behavior named.
-- Every return code appears in the card of `cdl.sh`, in `cdl --help`
-  and in the README (a style test checks).
+owns a block of ten exit codes (`.claude/rules/tools.md`).
 
 ## Git
 
@@ -449,17 +159,3 @@ the code of the recipe shows in its error line (`Error 71`).
   Never skip the hooks with `--no-verify`; fix what they name.
 - Nothing is committed with a red `make check`,
   and `.idea/` or other generated noise is never committed.
-
-## Review checklist
-
-Before a change is called done, and when one is reviewed:
-
-1. `make check` is green in every shell of `TEST_SHELLS`.
-2. Every new rule of behavior has a test named after that rule.
-3. Comments explain why, break at phrase boundaries
-   and match the code beside them.
-4. Functions are small and documented,
-   and separate their logical parts with blank lines.
-5. The listing path gained no fork; `make bench` shows no regression.
-6. The file header, `--help`, the README and the CHANGELOG agree with the code.
-7. The width table was regenerated if the generator changed.

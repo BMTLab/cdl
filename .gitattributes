@@ -29,6 +29,7 @@ Makefile  text eol=lf
 # what a user needs: cdl.sh and its documentation.
 # The Makefile goes too, since its targets need the tests and tools,
 # and so does the recipe of the demo; the GIF stays for the README.
+.claude/                  export-ignore
 .editorconfig             export-ignore
 .gitattributes            export-ignore
 .github/                  export-ignore

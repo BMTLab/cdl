@@ -8,7 +8,7 @@
 #   source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 # Effects: none; it defines functions, and CI_SCRIPT_NAME when it is unset.
 # Dependencies: sha256sum, or shasum on macOS.
-# See: CLAUDE.md (Continuous integration).
+# See: .claude/rules/ci.md.
 #
 # Version: 1.0.0
 

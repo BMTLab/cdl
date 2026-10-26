@@ -261,7 +261,7 @@ function named_exit_codes() {
 
   # Arrange:
   # the codes of cdl.sh, a public API of their own,
-  # apart from the blocks of the tools (see "Exit codes" in CLAUDE.md).
+  # apart from the blocks of the tools (see .claude/rules/tools.md).
   codes="$(sed -n 's/^: "\${\(CDL_ERR_[A-Z_]*\):=\([0-9]*\)}"$/\2 \1/p' "${CDL_SCRIPT}")"
 
   # Act:

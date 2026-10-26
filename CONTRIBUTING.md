@@ -126,8 +126,9 @@ so names with those letters pushed the next column to the right.
 
 ## Code style
 
-[CLAUDE.md](./CLAUDE.md) holds the full house rules,
-for people and coding agents alike. In short:
+The full house rules live in [CLAUDE.md](./CLAUDE.md)
+and [`.claude/rules/`](./.claude/rules), for people and coding agents alike.
+In short:
 
 - English for code, comments and messages; no em-dash anywhere.
 - Single quotes unless a string expands something.
@@ -141,7 +142,8 @@ for people and coding agents alike. In short:
 - The return codes of cdl go by tens: the tens digit names what failed,
   and the units digit why. Every tool of the repository owns
   a block of ten exit codes that no other tool uses.
-  CLAUDE.md has both, under "Exit codes".
+  CLAUDE.md lists the codes of cdl under "Exit codes",
+  and `.claude/rules/tools.md` the blocks of the tools.
 - Long files fold into `# region Name` and `# endregion Name` blocks.
 - Comments explain why, and break lines between phrases, never inside one.
 

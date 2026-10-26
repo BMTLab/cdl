@@ -13,7 +13,7 @@ SCRIPT  := cdl.sh
 PLUGIN  := cdl.plugin.zsh
 
 # Exit codes of the recipes, the block 70-79 of this repository
-# (see the exit codes in CLAUDE.md).
+# (see the exit codes in .claude/rules/tools.md).
 MAKE_ERR_TESTS        := 70
 MAKE_ERR_INSTALL_MODE := 71
 MAKE_ERR_SMOKE        := 72

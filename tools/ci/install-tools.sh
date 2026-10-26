@@ -18,7 +18,7 @@
 #     or apt-get could not reach its mirrors,
 #   12 INSTALL_ERR_PLATFORM: there is no pinned binary for this machine,
 #   19 INSTALL_ERR_INTERNAL: a bug in this script.
-# See: CLAUDE.md (Continuous integration), .github/workflows/ci-test.yml.
+# See: .claude/rules/ci.md, .github/workflows/ci-test.yml.
 #
 # How it works:
 #   Every download is checked against its pinned SHA-256 digest
