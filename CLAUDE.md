@@ -131,7 +131,7 @@ They explain why and what is not obvious; the code already says what it does.
   before a conjunction (and, or, but, so, because, while, if);
   before a relative pronoun (that, which, who);
   or before a preposition that opens a phrase (with, into, for, by).
-- Never split a tight unit across two lines:
+- Break a line before or after a tight unit, never inside one:
   an article and its noun (`the` / `token`), an adjective and its noun,
   a subject and its verb (`the run summary` / `makes`),
   a verb and its object (`references` / `the file`),
@@ -232,7 +232,7 @@ A table holds short cells; a longer explanation goes below it, as a list.
   so aliases and functions of the user cannot replace them;
   `cd` is always `builtin cd --`.
 - Errors go through `__cdl_error` with a named `CDL_ERR_*` code,
-  never through a bare `echo >&2` or a bare number.
+  in place of a bare `echo >&2` or a bare number.
   Every path that can fail returns a code the file header documents.
 - `cdl.sh` runs in bash 3.2 and zsh 5.0, so it avoids
   `local -n`, `declare -A`, `mapfile`, `${var,,}`, `${var^}`, `|&`, `;;&`,
